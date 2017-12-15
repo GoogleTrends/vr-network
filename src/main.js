@@ -17,6 +17,11 @@ import { generateFloor } from './generateFloor';
 import * as sphereMaterials from './materials/sphereMaterials';
 import * as lineMaterials from './materials/lineMaterials';
 
+const worldState = {
+  vrEnabled: false,
+  layoutMode: 1,
+  isTransitioning: false,
+};
 const sceneObjects = {
   nodes: new THREE.Group(),
   links: new THREE.Group(),
@@ -25,12 +30,15 @@ const linkScale = {
   min: 0.5,
   max: 5,
 };
+
 const cursor = new THREE.Group();
 const noSleep = new NoSleep();
 const stageSize = 10;
 
 let globalData = {};
+let flourishState = {};
 let timer = null;
+
 let vrDisplay;
 let scene;
 let controls;
@@ -40,11 +48,11 @@ let renderer;
 let raycaster;
 let intersected;
 
-const state = {
-  vrEnabled: false,
-  layoutMode: 1,
-  isTransitioning: false,
-};
+// const worldState = {
+//   vrEnabled: false,
+//   layoutMode: 1,
+//   isTransitioning: false,
+// };
 
 // function layoutByColumns() {
 //   const perRow = 10;
@@ -141,7 +149,7 @@ function layoutByRandom() {
 }
 
 // function layoutNetwork() {
-//   switch (state.layoutMode) {
+//   switch (worldState.layoutMode) {
 //     case 0:
 //       layoutByColumns();
 //       updateNetwork();
@@ -156,8 +164,8 @@ function layoutByRandom() {
 //   }
 // }
 
-// state.reset = () => {
-//   state.layoutMode = 1;
+// worldState.reset = () => {
+//   worldState.layoutMode = 1;
 //   layoutNetwork();
 // };
 
@@ -174,8 +182,8 @@ function enableNoSleep() {
 }
 
 function toggleVREnabled() {
-  state.vrEnabled = !state.vrEnabled;
-  if (state.vrEnabled) {
+  worldState.vrEnabled = !worldState.vrEnabled;
+  if (worldState.vrEnabled) {
     document.querySelector('#vrbutton').classList.add('enabled');
   } else {
     document.querySelector('#vrbutton').classList.remove('enabled');
@@ -199,11 +207,11 @@ function transitionElements() {
     n.quaternion.copy(camera.quaternion);
   });
   if (countTransitioning > 0) {
-    state.isTransitioning = true;
+    worldState.isTransitioning = true;
   } else {
-    state.isTransitioning = false;
+    worldState.isTransitioning = false;
   }
-  if (state.isTransitioning) {
+  if (worldState.isTransitioning) {
     sceneObjects.links.children.forEach((l) => {
       l.material.visible = false;
     });
@@ -337,7 +345,7 @@ function animate() {
 
   transitionElements();
 
-  if (!state.isTransitioning) {
+  if (!worldState.isTransitioning) {
     highlightIntersected();
     //
     if (timer !== null) {
@@ -356,7 +364,7 @@ function animate() {
   // if (vrButton.isPresenting()) { // } // Only update controls if we're presenting.
   controls.update();
 
-  if (state.vrEnabled) {
+  if (worldState.vrEnabled) {
     effect.render(scene, camera); // Render the scene.
   } else {
     renderer.render(scene, camera);
@@ -439,8 +447,16 @@ function formatData() {
   drawNetwork();
 }
 
-export function setupScene(data) {
+// function formatState(state) {
+//   state.forEach((s) => {
+//     console.log(s);
+//   });
+// }
+
+export function setupScene(data, state) {
   globalData = data;
+  flourishState = state;
+
   // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
   renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -461,7 +477,11 @@ export function setupScene(data) {
   const ctx = renderer.context; // Quiet shader complaint log: GL_ARB_gpu_shader5
   ctx.getShaderInfoLog = () => '';
 
-  scene.add(generateHorizon());
+  scene.add(generateHorizon(
+    flourishState.horizonTopColor,
+    flourishState.horizonBottomColor,
+    flourishState.horizonExponent,
+  ));
   scene.add(generateFloor(stageSize, controls.userHeight));
 
   const basicCursor = new THREE.Mesh(
@@ -519,6 +539,17 @@ export function setupScene(data) {
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
 
   formatData();
+}
+
+export function updateScene(state) {
+  flourishState = state;
+
+  scene.remove(scene.getObjectByName('horizon', true));
+  scene.add(generateHorizon(
+    flourishState.horizonTopColor,
+    flourishState.horizonBottomColor,
+    flourishState.horizonExponent,
+  ));
 }
 
 export default setupScene;

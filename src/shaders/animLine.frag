@@ -5,7 +5,6 @@ uniform float time;
 
 varying vec2 vUV;
 varying vec4 vColor;
-varying float resultWidth;
 
 void main() {
   vec4 color = vec4( vColor );

@@ -3,12 +3,12 @@ import * as THREE from 'three';
 import horizonVertex from './shaders/horizon.vert';
 import horizonFragment from './shaders/horizon.frag';
 
-export function generateHorizon() {
+export function generateHorizon(topColor, bottomColor, exponent) {
   const uniforms = {
-    topColor: { type: 'c', value: new THREE.Color(0x000000) },
-    bottomColor: { type: 'c', value: new THREE.Color(0xff7700) },
+    topColor: { type: 'c', value: new THREE.Color(topColor) },
+    bottomColor: { type: 'c', value: new THREE.Color(bottomColor) },
     offset: { type: 'f', value: 33 },
-    exponent: { type: 'f', value: 0.05 },
+    exponent: { type: 'f', value: exponent },
   };
   const skyGeo = new THREE.SphereGeometry(4000, 32, 15, 0, Math.PI * 2, 0, Math.PI / 2);
   const skyMat = new THREE.ShaderMaterial({
@@ -17,7 +17,9 @@ export function generateHorizon() {
     fragmentShader: horizonFragment,
     side: THREE.BackSide,
   });
-  return new THREE.Mesh(skyGeo, skyMat);
+  const horizon = new THREE.Mesh(skyGeo, skyMat);
+  horizon.name = 'horizon';
+  return horizon;
 }
 
 export default generateHorizon;

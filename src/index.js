@@ -1,23 +1,14 @@
-// import { event, select } from 'd3-selection';
-// import 'd3-transition';
-// import Popup from '@flourish/popup';
-
-// import * as vrVis from './main';
-import { setupScene } from './main';
-
-
-// import 'three';
-// import * as THREE from 'three';
-// import StereoEffect from '../node_modules/three/examples/js/effects/StereoEffect';
-
+import { setupScene, updateScene } from './main';
 
 export const data = {};
 
 // The current state of template. You can make some or all of the properties
 // of the state object available to the user as settings in settings.js.
 export const state = {
-  color: '#4f24ff',
-  opacity: 0.5,
+  horizonTopColor: '#000000',
+  horizonBottomColor: '#ff7700',
+  horizonExponent: 0.05,
+  // opacity: 0.5,
 };
 
 // let w;
@@ -39,6 +30,7 @@ export const state = {
 // Tip: to make your template work nicely in the story editor, ensure that all user
 // interface controls such as buttons and sliders update the state and then call update.
 export function update() {
+  updateScene(state);
   // console.log(data);
   // if (state.radius <= 0) throw new Error('Radius must be positive');
   // const circles = svg.selectAll('circle').data(data.circles);
@@ -57,7 +49,7 @@ export function update() {
 
 // The draw function is called when the template first loads
 export function draw() {
-  setupScene(data);
+  setupScene(data, state);
   // w = window.innerWidth;
   // h = window.innerHeight;
   // svg = select(document.body)

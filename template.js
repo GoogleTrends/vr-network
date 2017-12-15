@@ -46812,12 +46812,12 @@ var horizonVertex = "#define GLSLIFY 1\nvarying vec3 vWorldPosition;\nvoid main(
 
 var horizonFragment = "#define GLSLIFY 1\nuniform vec3 topColor;\nuniform vec3 bottomColor;\nuniform float offset;\nuniform float exponent;\nvarying vec3 vWorldPosition;\nvoid main() {\n  float h = normalize( vWorldPosition + offset ).y;\n  gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), exponent ), 0.0 ) ), 1.0 );\n}\n";
 
-function generateHorizon() {
+function generateHorizon(topColor, bottomColor, exponent) {
   var uniforms = {
-    topColor: { type: 'c', value: new Color(0x000000) },
-    bottomColor: { type: 'c', value: new Color(0xff7700) },
+    topColor: { type: 'c', value: new Color(topColor) },
+    bottomColor: { type: 'c', value: new Color(bottomColor) },
     offset: { type: 'f', value: 33 },
-    exponent: { type: 'f', value: 0.05 }
+    exponent: { type: 'f', value: exponent }
   };
   var skyGeo = new SphereGeometry(4000, 32, 15, 0, Math.PI * 2, 0, Math.PI / 2);
   var skyMat = new ShaderMaterial({
@@ -46826,7 +46826,9 @@ function generateHorizon() {
     fragmentShader: horizonFragment,
     side: BackSide
   });
-  return new Mesh(skyGeo, skyMat);
+  var horizon = new Mesh(skyGeo, skyMat);
+  horizon.name = 'horizon';
+  return horizon;
 }
 
 /* global document, Flourish */
@@ -46908,9 +46910,9 @@ var highlight = new MeshBasicMaterial({
   depthTest: false
 });
 
-var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvarying float vCounters;\nvarying float resultWidth;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n  vCounters = counters;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  resultWidth = w;\n  gl_Position = finalPosition;\n}\n";
+var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  gl_Position = finalPosition;\n}\n";
 
-var animLineFragment = "precision mediump float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvarying float resultWidth;\nvoid main() {\n  vec4 color = vec4( vColor );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 250.0 - time);\n  color.a = (yCurve + xCurve) * color.a;\n  gl_FragColor = color;\n}\n";
+var animLineFragment = "precision mediump float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 250.0 - time);\n  color.a = (yCurve + xCurve) * color.a;\n  gl_FragColor = color;\n}\n";
 
 var linkWidth = 0.5;
 
@@ -47176,6 +47178,11 @@ var slicedToArray = function () {
 
 /* global window, document, navigator, performance */
 
+var worldState = {
+  vrEnabled: false,
+  layoutMode: 1,
+  isTransitioning: false
+};
 var sceneObjects = {
   nodes: new Group(),
   links: new Group()
@@ -47184,12 +47191,15 @@ var linkScale = {
   min: 0.5,
   max: 5
 };
+
 var cursor = new Group();
 var noSleep = new NoSleep$1();
 var stageSize = 10;
 
 var globalData = {};
+var flourishState = {};
 var timer = null;
+
 var vrDisplay = void 0;
 var scene = void 0;
 var controls = void 0;
@@ -47199,11 +47209,11 @@ var renderer = void 0;
 var raycaster = void 0;
 var intersected = void 0;
 
-var state$1 = {
-  vrEnabled: false,
-  layoutMode: 1,
-  isTransitioning: false
-};
+// const worldState = {
+//   vrEnabled: false,
+//   layoutMode: 1,
+//   isTransitioning: false,
+// };
 
 // function layoutByColumns() {
 //   const perRow = 10;
@@ -47309,7 +47319,7 @@ function layoutByRandom() {
 }
 
 // function layoutNetwork() {
-//   switch (state.layoutMode) {
+//   switch (worldState.layoutMode) {
 //     case 0:
 //       layoutByColumns();
 //       updateNetwork();
@@ -47324,8 +47334,8 @@ function layoutByRandom() {
 //   }
 // }
 
-// state.reset = () => {
-//   state.layoutMode = 1;
+// worldState.reset = () => {
+//   worldState.layoutMode = 1;
 //   layoutNetwork();
 // };
 
@@ -47342,8 +47352,8 @@ function enableNoSleep() {
 }
 
 function toggleVREnabled() {
-  state$1.vrEnabled = !state$1.vrEnabled;
-  if (state$1.vrEnabled) {
+  worldState.vrEnabled = !worldState.vrEnabled;
+  if (worldState.vrEnabled) {
     document.querySelector('#vrbutton').classList.add('enabled');
   } else {
     document.querySelector('#vrbutton').classList.remove('enabled');
@@ -47363,11 +47373,11 @@ function transitionElements() {
     n.quaternion.copy(camera.quaternion);
   });
   if (countTransitioning > 0) {
-    state$1.isTransitioning = true;
+    worldState.isTransitioning = true;
   } else {
-    state$1.isTransitioning = false;
+    worldState.isTransitioning = false;
   }
-  if (state$1.isTransitioning) {
+  if (worldState.isTransitioning) {
     sceneObjects.links.children.forEach(function (l) {
       l.material.visible = false;
     });
@@ -47472,7 +47482,7 @@ function animate() {
 
   transitionElements();
 
-  if (!state$1.isTransitioning) {
+  if (!worldState.isTransitioning) {
     highlightIntersected();
     //
     if (timer !== null) {
@@ -47491,7 +47501,7 @@ function animate() {
   // if (vrButton.isPresenting()) { // } // Only update controls if we're presenting.
   controls.update();
 
-  if (state$1.vrEnabled) {
+  if (worldState.vrEnabled) {
     effect.render(scene, camera); // Render the scene.
   } else {
     renderer.render(scene, camera);
@@ -47579,8 +47589,16 @@ function formatData() {
   drawNetwork();
 }
 
-function setupScene(data) {
+// function formatState(state) {
+//   state.forEach((s) => {
+//     console.log(s);
+//   });
+// }
+
+function setupScene(data, state) {
   globalData = data;
+  flourishState = state;
+
   // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
   renderer = new WebGLRenderer({
     antialias: true
@@ -47603,7 +47621,7 @@ function setupScene(data) {
     return '';
   };
 
-  scene.add(generateHorizon());
+  scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
   scene.add(generateFloor(stageSize, controls.userHeight));
 
   var basicCursor = new Mesh(new RingGeometry(0.02, 0.03, 24), new MeshBasicMaterial({
@@ -47651,23 +47669,24 @@ function setupScene(data) {
   formatData();
 }
 
-// import { event, select } from 'd3-selection';
-// import 'd3-transition';
-// import Popup from '@flourish/popup';
-
-// import * as vrVis from './main';
-// import 'three';
-// import * as THREE from 'three';
-// import StereoEffect from '../node_modules/three/examples/js/effects/StereoEffect';
-
+function updateScene(state) {
+  flourishState = state;
+  // console.log(horizon)
+  // console.log()
+  scene.remove(scene.getObjectByName('horizon', true));
+  scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
+  // console.log(flourishState);
+}
 
 var data = {};
 
 // The current state of template. You can make some or all of the properties
 // of the state object available to the user as settings in settings.js.
 var state = {
-  color: '#4f24ff',
-  opacity: 0.5
+  horizonTopColor: '#000000',
+  horizonBottomColor: '#ff7700',
+  horizonExponent: 0.05
+  // opacity: 0.5,
 };
 
 // let w;
@@ -47688,26 +47707,27 @@ var state = {
 // in the visualisation editor, or when changing slides in the story editor.
 // Tip: to make your template work nicely in the story editor, ensure that all user
 // interface controls such as buttons and sliders update the state and then call update.
-function update() {}
-// console.log(data);
-// if (state.radius <= 0) throw new Error('Radius must be positive');
-// const circles = svg.selectAll('circle').data(data.circles);
-// circles.enter()
-//   .append('circle')
-//   .on('click', (d) => {
-//     popup.point(d.x * w, d.y * h).html(d.word).draw();
-//     event.stopPropagation();
-//   })
-//   .call(setAttributes);
-// circles.transition()
-//   .call(setAttributes);
-// circles.exit()
-//   .remove();
-
+function update() {
+  updateScene(state);
+  // console.log(data);
+  // if (state.radius <= 0) throw new Error('Radius must be positive');
+  // const circles = svg.selectAll('circle').data(data.circles);
+  // circles.enter()
+  //   .append('circle')
+  //   .on('click', (d) => {
+  //     popup.point(d.x * w, d.y * h).html(d.word).draw();
+  //     event.stopPropagation();
+  //   })
+  //   .call(setAttributes);
+  // circles.transition()
+  //   .call(setAttributes);
+  // circles.exit()
+  //   .remove();
+}
 
 // The draw function is called when the template first loads
 function draw() {
-  setupScene(data);
+  setupScene(data, state);
   // w = window.innerWidth;
   // h = window.innerHeight;
   // svg = select(document.body)

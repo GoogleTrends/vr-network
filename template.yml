@@ -26,19 +26,22 @@ settings:
   # • "boolean" >> gives a checkbox
   # • "color" >> gives a color picker
 
-  - Circle # Headings can be used to break up the settings into collapsible sections
-  - property: opacity # Refers to a property in the template's state object
-    name: Opacity # Display name for the settings panel
-    description: The opacity of the circle # Optional description for the settings panel
-    type: number # See available types above
+  - Horizon # Headings can be used to break up the settings into collapsible sections
+  - property: horizonTopColor # Refers to a property in the template's state object
+    name: Top Color # Display name for the settings panel
+    description: The color of the sky # Optional description for the settings panel
+    type: color # See available types above
+  - property: horizonBottomColor
+    name: Bottom Color
+    description: The color at the horizon
+    type: color
+  - property: horizonExponent
+    name: Exponent
+    description: The amount to blend top and bottom colors
+    type: number
     min: 0
     max: 1
-    step: 0.05
-  - property: color
-    name: Color
-    description: The color of the cricle
-    type: color
-
+    step: 0.01
 
 data:
   - dataset: nodes
