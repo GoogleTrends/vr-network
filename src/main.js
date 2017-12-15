@@ -17,52 +17,33 @@ import { generateFloor } from './generateFloor';
 import * as sphereMaterials from './materials/sphereMaterials';
 import * as lineMaterials from './materials/lineMaterials';
 
-/* Unused Modules */
-// import * as datguivr from '../node_modules/datguivr/modules/datguivr'; // <-- huge problem
-// import '../node_modules/datguivr/build/datguivr';
-// import 'three/VREffect';
-// import * as webvrui from 'webvr-ui';
-// import '../node_modules/three/examples/js/shaders/CopyShader.js';
-// import '../node_modules/three/examples/js/shaders/RGBShiftShader.js';
-// import '../node_modules/three/examples/js/postprocessing/EffectComposer.js';
-// import '../node_modules/three/examples/js/postprocessing/RenderPass.js';
-// import '../node_modules/three/examples/js/postprocessing/ShaderPass.js';
-/* Unused Modules */
-
+const sceneObjects = {
+  nodes: new THREE.Group(),
+  links: new THREE.Group(),
+};
+const linkScale = {
+  min: 0.5,
+  max: 5,
+};
+const cursor = new THREE.Group();
 const noSleep = new NoSleep();
-
-let vrDisplay; // Currently active VRDisplay.
 const stageSize = 10;
 
-// // Various global THREE.Objects.
+let globalData = {};
+let timer = null;
+let vrDisplay;
 let scene;
 let controls;
 let effect;
 let camera;
 let renderer;
-// // let composer;
-
-const cursor = new THREE.Group();
 let raycaster;
 let intersected;
-let timer = null;
-// let vrButton; // EnterVRButton for rendering enter/exit UI.
-
-let globalData = {};
-const sceneObjects = {
-  nodes: new THREE.Group(),
-  links: new THREE.Group(),
-};
 
 const state = {
   vrEnabled: false,
   layoutMode: 1,
   isTransitioning: false,
-};
-
-const linkScale = {
-  min: 0.5,
-  max: 5,
 };
 
 // function layoutByColumns() {
@@ -183,11 +164,8 @@ function layoutByRandom() {
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  //
   renderer.setSize(window.innerWidth, window.innerHeight);
-  // composer.setSize(window.innerWidth, window.innerHeight);
   effect.setSize(window.innerWidth, window.innerHeight);
-  //
 }
 
 function enableNoSleep() {
@@ -197,27 +175,14 @@ function enableNoSleep() {
 
 function toggleVREnabled() {
   state.vrEnabled = !state.vrEnabled;
-  //
   if (state.vrEnabled) {
     document.querySelector('#vrbutton').classList.add('enabled');
   } else {
     document.querySelector('#vrbutton').classList.remove('enabled');
   }
-  //
   renderer.setSize(window.innerWidth, window.innerHeight);
   effect.setSize(window.innerWidth, window.innerHeight);
 }
-
-// function loadData() {
-//   const request = new XMLHttpRequest();
-//   request.open('GET', 'data/show-data.json', true);
-//   request.onload = onDataLoad;
-//   request.onerror = () => {
-//     // console.warn('Request error');
-//     // console.warn(this);
-//   };
-//   request.send();
-// }
 
 function transitionElements() {
   let countTransitioning = 0;
@@ -233,13 +198,11 @@ function transitionElements() {
     }
     n.quaternion.copy(camera.quaternion);
   });
-
   if (countTransitioning > 0) {
     state.isTransitioning = true;
   } else {
     state.isTransitioning = false;
   }
-
   if (state.isTransitioning) {
     sceneObjects.links.children.forEach((l) => {
       l.material.visible = false;
@@ -390,26 +353,14 @@ function animate() {
     cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
 
-  controls.update();
   // if (vrButton.isPresenting()) { // } // Only update controls if we're presenting.
+  controls.update();
 
-  // renderer.clear();
-  // effect.render(scene, camera); // Render the scene.
-  // composer.render();
-  // renderer.render(scene, camera);
-
-  // var vrRenderFunction = renderer.render;
-  // renderer.render = ogRenderFunction;
-  // renderer.render = vrRenderFunction;
-
-  // effect = new THREE.VREffect(composer.renderer);
-  // effect.setSize(window.innerWidth, window.innerHeight);
   if (state.vrEnabled) {
     effect.render(scene, camera); // Render the scene.
   } else {
     renderer.render(scene, camera);
   }
-  // composer.render();
 
   vrDisplay.requestAnimationFrame(animate);
 }
@@ -420,10 +371,10 @@ function setupStage() {
   navigator.getVRDisplays().then((displays) => {
     if (displays.length > 0) {
       [vrDisplay] = displays;
-      if (vrDisplay.stageParameters) {
-        // TODO: Handle Stage Updates
-        // setStageDimensions(vrDisplay.stageParameters);
-      }
+      // if (vrDisplay.stageParameters) {
+      //   // TODO: Handle Stage Updates
+      //   setStageDimensions(vrDisplay.stageParameters);
+      // }
       vrDisplay.requestAnimationFrame(animate);
     }
   });
@@ -456,10 +407,6 @@ function drawNetwork() {
     node.userData.id = d.id;
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterials.basic);
-    //
-    // const sphereScale = scaleValue(50 - d.rank, { min: 1, max: 50 }, { min: 0.25, max: 1.0 });
-    // sphere.scale.set(sphereScale, sphereScale, sphereScale);
-    //
     sphere.userData.type = 'sphere';
     node.add(sphere);
     const text = generateTextureCanvas(`${d.rank}: ${d.name}`, 64, 1024, 256);
@@ -495,7 +442,6 @@ function formatData() {
 export function setupScene(data) {
   globalData = data;
   // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
-  // Only enable it if you actually need to.
   renderer = new THREE.WebGLRenderer({
     antialias: true,
   });
@@ -561,136 +507,18 @@ export function setupScene(data) {
 
   raycaster = new THREE.Raycaster();
 
-  // Postprocessing
-
-  // composer = new THREE.EffectComposer(renderer);
-  // composer.addPass(new THREE.RenderPass(scene, camera));
-
-  // const shader = new THREE.ShaderPass(THREE.RGBShiftShader);
-  // shader.uniforms.amount.value = 0.0015;
-  // // // shader.uniforms.amount.value = 0.5;
-  // shader.renderToScreen = true;
-  // composer.addPass(shader);
-
-  // console.log(renderer);
-  // console.log(composer);
-
   // Apply VR stereo rendering to renderer.
-  // effect = new THREE.VREffect(renderer);
-  // effect = new THREE.StereoEffect(renderer);
   effect = new StereoEffect(renderer);
   effect.setSize(window.innerWidth, window.innerHeight);
-  //
 
   // Event Listeners
   window.addEventListener('resize', onResize, true);
   window.addEventListener('vrdisplaypresentchange', onResize, true);
   window.addEventListener('touchstart', enableNoSleep, true);
 
-  // Initialize the WebVR UI.
-  // const uiOptions = {
-  //   color: 'black',
-  //   background: 'white',
-  //   corners: 'square',
-  // };
-  // vrButton = new webvrui.EnterVRButton(renderer.domElement, uiOptions);
-  // vrButton.on('exit', () => {
-  //   camera.quaternion.set(0, 0, 0, 1);
-  //   camera.position.set(0, controls.userHeight, 3);
-  // });
-  // vrButton.on('hide', () => {
-  //   document.getElementById('ui').style.display = 'none';
-  // });
-  // vrButton.on('show', () => {
-  //   document.getElementById('ui').style.display = 'inherit';
-  // });
-  // document.getElementById('vr-button').appendChild(vrButton.domElement);
-  // document.getElementById('vr-button').addEventListener('click', () => {
-  //   // vrButton.requestEnterFullscreen();
-  //   toggleVREnabled();
-  // });
-
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
 
-  // // Setup datguivr
-  // // if (vrButton.isPresenting) {
-  // // datguivr.disableMouse();
-  // // } else {
-  // datguivr.enableMouse(camera, renderer);
-  // // }
-  // const gazeInput = datguivr.addInputObject(camera);
-  // scene.add(gazeInput.cursor);
-
-  // const gui = datguivr.create('Settings');
-  // // gui.position.set(-1.5, (controls.userHeight / 2) * 1, -0.75);
-  // gui.position.set(-1.5, (controls.userHeight / 2) * 1, -0.75);
-  // gui.rotation.set((Math.PI / 180) * -45, (Math.PI / 180) * 45, (Math.PI / 180) * 30);
-  // // gui.rotation.set((Math.PI / 180) * -45, 0, 0);
-  // scene.add(gui);
-
-  // // gui.add(state, 'linkWidth', 0.1, 1.0).step(0.01).listen().onChange(updateLineMaterial);
-  // gui.add(state, 'layoutMode', { Columns: 0, Force: 1, Random: 2 })
-  // .listen().onChange(layoutNetwork);
-  // // gui.add(state, 'reset');
-
-  // ['touchstart'].forEach((e) => {
-  //   window.addEventListener(e, () => {
-  //     gazeInput.pressed(true);
-  //   }, false);
-  // });
-  // ['touchend'].forEach((e) => {
-  //   window.addEventListener(e, () => {
-  //     gazeInput.pressed(false);
-  //   }, false);
-  // });
-  // loadData();
-  // animate();
   formatData();
 }
-
-// function onDataLoad() {
-//   if (this.status >= 200 && this.status < 400) {
-//     globalData = JSON.parse(this.response);
-//     globalData.links = globalData.links.map((l) => {
-//       l.sourceId = l.source;
-//       l.targetId = l.target;
-//       return l;
-//     });
-//     globalData.nodes = globalData.nodes.map((n) => {
-//       n.linkCount = globalData.links.filter(l =>
-//         (l.sourceId === n.id || l.targetId === n.id)
-//       ).length;
-//       return n;
-//     });
-//     globalData.nodes = globalData.nodes.filter(n => n.linkCount);
-//     drawNetwork();
-//   } else {
-//     // console.warn(this.status);
-//   }
-// }
-
-// function setStageDimensions(stage) {
-//     // Make the skybox fit the stage.
-//     const material = skybox.material;
-//     scene.remove(skybox);
-
-//     // Size the skybox according to the size of the actual stage.
-//     const geometry = new THREE.BoxGeometry(stage.sizeX, stageSize, stage.sizeZ);
-//     skybox = new THREE.Mesh(geometry, material);
-
-//     // Place it on the floor.
-//     skybox.position.y = stageSize / 2;
-//     scene.add(skybox);
-
-//     // Place the cube in the middle of the scene, at user height.
-//     cube.position.set(0, controls.userHeight, 0);
-// }
-
-// function onLoad() {
-//   setupScene();
-// //   loadData();
-// }
-
-// window.addEventListener('load', onLoad);
 
 export default setupScene;
