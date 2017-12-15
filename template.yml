@@ -1,0 +1,94 @@
+# The 'id' should be a string that uniquely identifies your template
+id: 'vr-network'
+name: Starter Data Circles
+description: A starter/example Flourish template
+author: James Proctor
+
+# This template is compatible with SDK version 2
+sdk_version: 2
+
+# Defines how the template will behave when embedded with the default settings.
+# Use "auto" to have the iframe get taller and shorter to match the content of
+# the DOM (ideal if the template’s height is determined by the flow of the body).
+# Alternatively specify a fixed height or aspect ratio, such as "600px" or "4x3",
+# if your template fills will fill the available height. You can also specify
+# breakpoints (https://flourish.studio/developers/reference/template-files.html).
+autoheight: auto
+
+settings:
+  # Creates a settings panel that enables the end user to set the default state for
+  # individual visualisations made with this template.
+  #
+  # Available types:
+  # • "number" >> gives a number input. Optionally add "min:", "max:", and "step:" properties.
+  # • "string" >> gives an text input
+  # • "text" >> gives a textarea
+  # • "boolean" >> gives a checkbox
+  # • "color" >> gives a color picker
+
+  - Circle # Headings can be used to break up the settings into collapsible sections
+  - property: opacity # Refers to a property in the template's state object
+    name: Opacity # Display name for the settings panel
+    description: The opacity of the circle # Optional description for the settings panel
+    type: number # See available types above
+    min: 0
+    max: 1
+    step: 0.05
+  - property: color
+    name: Color
+    description: The color of the cricle
+    type: color
+
+
+data:
+  - dataset: nodes
+    key: id
+    name: ID
+    type: column
+    column: nodes::A
+  - dataset: nodes
+    key: rank
+    name: Rank
+    type: column
+    column: nodes::B
+  - dataset: nodes
+    key: name
+    name: Name
+    type: column
+    column: nodes::C
+
+  - dataset: links
+    key: source
+    name: Source
+    type: column
+    column: links::A
+  - dataset: links
+    key: target
+    name: Target
+    type: column
+    column: links::B
+  - dataset: links
+    key: value
+    name: Value
+    type: column
+    column: links::C
+
+build:
+  # Defines the build processes used to build your template from source.
+  # You can have any number of build processes, and changes to the relevant
+  # files will trigger the appropriate build. Here we define build scripts
+  # for JavaScript and CSS.
+
+  javascript:
+    script: npm run build
+    # You can specify a whole directory, or individual files, or both.
+    # A change inside the directory or to any of the listed files will
+    # trigger a rebuild and reload.
+    directory: src
+    files:
+      - package.json
+      - rollup.config.js
+
+  # less:
+  #   script: npm run less
+  #   directory: less
