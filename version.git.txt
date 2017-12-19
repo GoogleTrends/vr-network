@@ -1,0 +1,9 @@
+deployed by jamesproctor_Pitch at Mon Dec 18 16:07:00 PST 2017
+from: /Users/jamesproctor_Pitch/Dropbox/Documents/Professional/Pitch/Projects/Google/starter
+repo: https://jprctr135@bitbucket.org/pitchinc/flourish-vr-network.git
+branch: master
+commit 079afe52a109e33d782af3184af7c598bfb241d6
+Author: James Proctor <jamesproctor_Pitch@Jamess-MacBook-Pro.local>
+Date:   Fri Dec 15 11:32:06 2017 -0800
+
+    added horizon controls to flourish interface

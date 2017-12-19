@@ -46253,12 +46253,12 @@ function setMap(map$$1, key, value) {
   map$$1.set(key, value);
 }
 
-function Set() {}
+function Set$1() {}
 
 var proto = map.prototype;
 
-Set.prototype = set.prototype = {
-  constructor: Set,
+Set$1.prototype = set.prototype = {
+  constructor: Set$1,
   has: proto.has,
   add: function(value) {
     value += "";
@@ -46274,10 +46274,10 @@ Set.prototype = set.prototype = {
 };
 
 function set(object, f) {
-  var set = new Set;
+  var set = new Set$1;
 
   // Copy constructor.
-  if (object instanceof Set) object.each(function(value) { set.add(value); });
+  if (object instanceof Set$1) object.each(function(value) { set.add(value); });
 
   // Otherwise, assume it’s an array.
   else if (object) {
@@ -46795,8 +46795,8 @@ function generateCurveGeometry(start, end, userHeight) {
   var lineGeometry = new Geometry();
   var startVector = new Vector3(start.x, start.y, start.z);
 
-  var variance = 1.0;
-  var middleVector = new Vector3(startVector.x + (end.x - startVector.x) / 2 + Math.random() * variance, startVector.y + (end.y - startVector.y) / 2 + userHeight / 3 + Math.random() * variance, startVector.z + (end.z - startVector.z) / 2 + Math.random() * variance);
+  var variance = 0.25; // 1.0;
+  var middleVector = new Vector3(startVector.x + (end.x - startVector.x) / 2 + Math.random() * variance, startVector.y + (end.y - startVector.y) / 2 + userHeight / 4 + Math.random() * variance, startVector.z + (end.z - startVector.z) / 2 + Math.random() * variance);
 
   var endVector = new Vector3(end.x, end.y, end.z);
   var curveQuad = new QuadraticBezierCurve3(startVector, middleVector, endVector);
@@ -47176,6 +47176,28 @@ var slicedToArray = function () {
   };
 }();
 
+
+
+
+
+
+
+
+
+
+
+
+
+var toConsumableArray = function (arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+    return arr2;
+  } else {
+    return Array.from(arr);
+  }
+};
+
 /* global window, document, navigator, performance */
 
 var worldState = {
@@ -47222,6 +47244,7 @@ var intersected = void 0;
 //   globalData.nodes.sort((a, b) => a.rank > b.rank);
 
 //   globalData.nodes = globalData.nodes.map((n, i) => {
+//   n.shifted = false;
 //     n.pos = new THREE.Vector3(
 //       Math.cos(((Math.PI * 2) / perRow) * i) * (stageSize / 2),
 //       (controls.userHeight / 2) + Math.floor(i / perRow),
@@ -47245,6 +47268,9 @@ function updateNetwork() {
         _globalData$nodes$fil2 = slicedToArray(_globalData$nodes$fil, 1),
         nd = _globalData$nodes$fil2[0];
 
+    if (!nd.shifted) {
+      nd.lastPos = nd.pos;
+    }
     n.userData.nextPos = nd.pos;
   });
   sceneObjects.links.children.forEach(function (l) {
@@ -47284,6 +47310,7 @@ function layoutByForce() {
 
     var offset = new Vector3(-stageSize, -controls.userHeight, -stageSize);
     globalData.nodes = simulation.nodes().map(function (n) {
+      n.shifted = false;
       n.pos = new Vector3(scaleValue(n.x, dimensionMap.x, { min: 0, max: stageSize }), scaleValue(n.y, dimensionMap.y, { min: 0, max: controls.userHeight * 2.5 }), scaleValue(n.z, dimensionMap.z, { min: 0, max: stageSize })).add(offset);
       return n;
     });
@@ -47304,6 +47331,7 @@ function layoutByForce() {
 
 function layoutByRandom() {
   globalData.nodes = globalData.nodes.map(function (n) {
+    n.shifted = false;
     n.pos = new Vector3((0.5 - Math.random()) * stageSize, controls.userHeight / 2 + Math.random() * controls.userHeight, (0.5 - Math.random()) * stageSize);
     return n;
   });
@@ -47473,6 +47501,56 @@ function highlightIntersected() {
   }
 }
 
+function makeLinkedAdjacent(centerNode) {
+  var sourceLinks = globalData.links.filter(function (l) {
+    return l.sourceId === centerNode.id;
+  }).map(function (l) {
+    return l.targetId;
+  });
+  var targetLinks = globalData.links.filter(function (l) {
+    return l.targetId === centerNode.id;
+  }).map(function (l) {
+    return l.sourceId;
+  });
+  var linked = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(sourceLinks), toConsumableArray(targetLinks)))));
+
+  var _globalData$nodes$fil3 = globalData.nodes.filter(function (n) {
+    return n.id === centerNode.id;
+  }),
+      _globalData$nodes$fil4 = slicedToArray(_globalData$nodes$fil3, 1),
+      centerData = _globalData$nodes$fil4[0];
+
+  var angle = Math.atan2(centerData.pos.z, centerData.pos.x);
+  centerData.pos = new Vector3(Math.cos(angle) * (stageSize / 4), centerData.pos.y + (controls.userHeight - centerData.pos.y) / 2, Math.sin(angle) * (stageSize / 4));
+
+  var linkCount = Math.max(1, linked.length - 1);
+  var phi = Math.PI * 2 / linkCount;
+  var radius = stageSize / 10 + linkCount / 9;
+  var theta = angle + 90 * (Math.PI / 180);
+
+  var i = 0;
+  globalData.nodes.forEach(function (n) {
+    if (n.id === centerNode.id) {
+      n.shifted = true;
+    } else {
+      n.shifted = false;
+      n.pos = n.lastPos;
+    }
+    if (linked.includes(n.id)) {
+      n.shifted = true;
+      var xzradius = (i - linkCount / 2) * (radius * 2 / linkCount);
+      n.pos = new Vector3(centerData.pos.x + Math.cos(theta) * xzradius, centerData.pos.y + Math.sin(phi * (i / 2)) * radius, centerData.pos.z + Math.sin(theta) * xzradius);
+      i += 1;
+    }
+  });
+
+  updateNetwork();
+}
+
+// camera.rotation.onRotationChange((r) => {
+//   console.log(r);
+// });
+
 // Request animation frame loop function
 function animate() {
   var time = performance.now() * 0.01;
@@ -47482,6 +47560,8 @@ function animate() {
 
   transitionElements();
 
+  // console.log(camera.rotation.y * (180 / Math.PI));
+
   if (!worldState.isTransitioning) {
     highlightIntersected();
     //
@@ -47490,7 +47570,7 @@ function animate() {
         timer += Math.PI / 60;
         cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
       } else {
-        // console.log('do transition now');
+        makeLinkedAdjacent(intersected.userData);
       }
     }
   } else {
@@ -47551,6 +47631,7 @@ function drawNetwork() {
     var node = new Group();
     node.userData.name = d.name;
     node.userData.id = d.id;
+    node.shifted = false;
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
     var sphere = new Mesh(sphereGeometry, basic);
     sphere.userData.type = 'sphere';
@@ -47669,13 +47750,11 @@ function setupScene(data, state) {
   formatData();
 }
 
-function updateScene(state) {
+function updateSceneFromState(state) {
   flourishState = state;
-  // console.log(horizon)
-  // console.log()
+
   scene.remove(scene.getObjectByName('horizon', true));
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
-  // console.log(flourishState);
 }
 
 var data = {};
@@ -47708,7 +47787,7 @@ var state = {
 // Tip: to make your template work nicely in the story editor, ensure that all user
 // interface controls such as buttons and sliders update the state and then call update.
 function update() {
-  updateScene(state);
+  updateSceneFromState(state);
   // console.log(data);
   // if (state.radius <= 0) throw new Error('Radius must be positive');
   // const circles = svg.selectAll('circle').data(data.circles);

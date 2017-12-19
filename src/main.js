@@ -61,6 +61,7 @@ let intersected;
 //   globalData.nodes.sort((a, b) => a.rank > b.rank);
 
 //   globalData.nodes = globalData.nodes.map((n, i) => {
+//   n.shifted = false;
 //     n.pos = new THREE.Vector3(
 //       Math.cos(((Math.PI * 2) / perRow) * i) * (stageSize / 2),
 //       (controls.userHeight / 2) + Math.floor(i / perRow),
@@ -79,6 +80,9 @@ let intersected;
 function updateNetwork() {
   sceneObjects.nodes.children.forEach((n) => {
     const [nd] = globalData.nodes.filter(d => d.id === n.userData.id);
+    if (!nd.shifted) {
+      nd.lastPos = nd.pos;
+    }
     n.userData.nextPos = nd.pos;
   });
   sceneObjects.links.children.forEach((l) => {
@@ -113,6 +117,7 @@ function layoutByForce() {
 
     const offset = new THREE.Vector3(-stageSize, -controls.userHeight, -stageSize);
     globalData.nodes = simulation.nodes().map((n) => {
+      n.shifted = false;
       n.pos = new THREE.Vector3(
         scaleValue(n.x, dimensionMap.x, { min: 0, max: stageSize }),
         scaleValue(n.y, dimensionMap.y, { min: 0, max: controls.userHeight * 2.5 }),
@@ -134,6 +139,7 @@ function layoutByForce() {
 
 function layoutByRandom() {
   globalData.nodes = globalData.nodes.map((n) => {
+    n.shifted = false;
     n.pos = new THREE.Vector3(
       (0.5 - Math.random()) * (stageSize),
       (controls.userHeight / 2) + (Math.random() * controls.userHeight),
@@ -336,6 +342,55 @@ function highlightIntersected() {
   }
 }
 
+function makeLinkedAdjacent(centerNode) {
+  const sourceLinks = globalData.links
+    .filter(l => (l.sourceId === centerNode.id))
+    .map(l => l.targetId);
+  const targetLinks = globalData.links
+    .filter(l => (l.targetId === centerNode.id))
+    .map(l => l.sourceId);
+  const linked = [...new Set([...sourceLinks, ...targetLinks])];
+
+  const [centerData] = globalData.nodes.filter(n => n.id === centerNode.id);
+  const angle = Math.atan2(centerData.pos.z, centerData.pos.x);
+  centerData.pos = new THREE.Vector3(
+    Math.cos(angle) * (stageSize / 4),
+    centerData.pos.y + ((controls.userHeight - centerData.pos.y) / 2),
+    Math.sin(angle) * (stageSize / 4),
+  );
+
+  const linkCount = Math.max(1, (linked.length - 1));
+  const phi = (Math.PI * 2) / linkCount;
+  const radius = (stageSize / 10) + (linkCount / 9);
+  const theta = angle + (90 * (Math.PI / 180));
+
+  let i = 0;
+  globalData.nodes.forEach((n) => {
+    if (n.id === centerNode.id) {
+      n.shifted = true;
+    } else {
+      n.shifted = false;
+      n.pos = n.lastPos;
+    }
+    if (linked.includes(n.id)) {
+      n.shifted = true;
+      const xzradius = ((i - (linkCount / 2)) * ((radius * 2) / linkCount));
+      n.pos = new THREE.Vector3(
+        centerData.pos.x + (Math.cos(theta) * xzradius),
+        centerData.pos.y + (Math.sin(phi * (i / 2)) * radius),
+        centerData.pos.z + (Math.sin(theta) * xzradius),
+      );
+      i += 1;
+    }
+  });
+
+  updateNetwork();
+}
+
+// camera.rotation.onRotationChange((r) => {
+//   console.log(r);
+// });
+
 // Request animation frame loop function
 function animate() {
   const time = performance.now() * 0.01;
@@ -345,6 +400,8 @@ function animate() {
 
   transitionElements();
 
+  // console.log(camera.rotation.y * (180 / Math.PI));
+
   if (!worldState.isTransitioning) {
     highlightIntersected();
     //
@@ -353,7 +410,7 @@ function animate() {
         timer += Math.PI / 60;
         cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
       } else {
-        // console.log('do transition now');
+        makeLinkedAdjacent(intersected.userData);
       }
     }
   } else {
@@ -413,6 +470,7 @@ function drawNetwork() {
     const node = new THREE.Group();
     node.userData.name = d.name;
     node.userData.id = d.id;
+    node.shifted = false;
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterials.basic);
     sphere.userData.type = 'sphere';
@@ -541,7 +599,7 @@ export function setupScene(data, state) {
   formatData();
 }
 
-export function updateScene(state) {
+export function updateSceneFromState(state) {
   flourishState = state;
 
   scene.remove(scene.getObjectByName('horizon', true));

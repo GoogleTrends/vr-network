@@ -4,10 +4,10 @@ export function generateCurveGeometry(start, end, userHeight) {
   const lineGeometry = new THREE.Geometry();
   const startVector = new THREE.Vector3(start.x, start.y, start.z);
 
-  const variance = 1.0;
+  const variance = 0.25; // 1.0;
   const middleVector = new THREE.Vector3(
     startVector.x + ((end.x - startVector.x) / 2) + (Math.random() * variance),
-    startVector.y + ((end.y - startVector.y) / 2) + (userHeight / 3) + (Math.random() * variance),
+    startVector.y + ((end.y - startVector.y) / 2) + (userHeight / 4) + (Math.random() * variance),
     startVector.z + ((end.z - startVector.z) / 2) + (Math.random() * variance),
   );
 

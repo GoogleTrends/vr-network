@@ -1,4 +1,4 @@
-import { setupScene, updateScene } from './main';
+import { setupScene, updateSceneFromState } from './main';
 
 export const data = {};
 
@@ -30,7 +30,7 @@ export const state = {
 // Tip: to make your template work nicely in the story editor, ensure that all user
 // interface controls such as buttons and sliders update the state and then call update.
 export function update() {
-  updateScene(state);
+  updateSceneFromState(state);
   // console.log(data);
   // if (state.radius <= 0) throw new Error('Radius must be positive');
   // const circles = svg.selectAll('circle').data(data.circles);
