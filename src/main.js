@@ -359,9 +359,9 @@ function makeLinkedAdjacent(centerNode) {
     Math.sin(angle) * (stageSize / 4),
   );
 
-  const linkCount = Math.max(1, (linked.length - 1));
+  const linkCount = linked.length;
   const phi = (Math.PI * 2) / linkCount;
-  const radius = (stageSize / 10) + (linkCount / 9);
+  const radius = (stageSize / 10);
   const theta = angle + (90 * (Math.PI / 180));
 
   let i = 0;
@@ -374,10 +374,10 @@ function makeLinkedAdjacent(centerNode) {
     }
     if (linked.includes(n.id)) {
       n.shifted = true;
-      const xzradius = ((i - (linkCount / 2)) * ((radius * 2) / linkCount));
+      const xzradius = Math.cos(i * (Math.PI / (linkCount / 2))) * radius;
       n.pos = new THREE.Vector3(
         centerData.pos.x + (Math.cos(theta) * xzradius),
-        centerData.pos.y + (Math.sin(phi * (i / 2)) * radius),
+        centerData.pos.y + (Math.sin(phi * i) * radius),
         centerData.pos.z + (Math.sin(theta) * xzradius),
       );
       i += 1;

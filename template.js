@@ -46795,7 +46795,7 @@ function generateCurveGeometry(start, end, userHeight) {
   var lineGeometry = new Geometry();
   var startVector = new Vector3(start.x, start.y, start.z);
 
-  var variance = 0.25; // 1.0;
+  var variance = 0.0; // 0.25; // 1.0;
   var middleVector = new Vector3(startVector.x + (end.x - startVector.x) / 2 + Math.random() * variance, startVector.y + (end.y - startVector.y) / 2 + userHeight / 4 + Math.random() * variance, startVector.z + (end.z - startVector.z) / 2 + Math.random() * variance);
 
   var endVector = new Vector3(end.x, end.y, end.z);
@@ -47523,9 +47523,9 @@ function makeLinkedAdjacent(centerNode) {
   var angle = Math.atan2(centerData.pos.z, centerData.pos.x);
   centerData.pos = new Vector3(Math.cos(angle) * (stageSize / 4), centerData.pos.y + (controls.userHeight - centerData.pos.y) / 2, Math.sin(angle) * (stageSize / 4));
 
-  var linkCount = Math.max(1, linked.length - 1);
+  var linkCount = linked.length;
   var phi = Math.PI * 2 / linkCount;
-  var radius = stageSize / 10 + linkCount / 9;
+  var radius = stageSize / 10;
   var theta = angle + 90 * (Math.PI / 180);
 
   var i = 0;
@@ -47538,8 +47538,8 @@ function makeLinkedAdjacent(centerNode) {
     }
     if (linked.includes(n.id)) {
       n.shifted = true;
-      var xzradius = (i - linkCount / 2) * (radius * 2 / linkCount);
-      n.pos = new Vector3(centerData.pos.x + Math.cos(theta) * xzradius, centerData.pos.y + Math.sin(phi * (i / 2)) * radius, centerData.pos.z + Math.sin(theta) * xzradius);
+      var xzradius = Math.cos(i * (Math.PI / (linkCount / 2))) * radius;
+      n.pos = new Vector3(centerData.pos.x + Math.cos(theta) * xzradius, centerData.pos.y + Math.sin(phi * i) * radius, centerData.pos.z + Math.sin(theta) * xzradius);
       i += 1;
     }
   });
