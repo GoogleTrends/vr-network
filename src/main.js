@@ -25,6 +25,7 @@ const worldState = {
 const sceneObjects = {
   nodes: new THREE.Group(),
   links: new THREE.Group(),
+  stars: new THREE.Group(),
 };
 const linkScale = {
   min: 0.5,
@@ -61,7 +62,8 @@ let intersected;
 //   globalData.nodes.sort((a, b) => a.rank > b.rank);
 
 //   globalData.nodes = globalData.nodes.map((n, i) => {
-//   n.shifted = false;
+//     n.shifted = false;
+//     n.status = '';
 //     n.pos = new THREE.Vector3(
 //       Math.cos(((Math.PI * 2) / perRow) * i) * (stageSize / 2),
 //       (controls.userHeight / 2) + Math.floor(i / perRow),
@@ -83,6 +85,21 @@ function updateNetwork() {
     if (!nd.shifted) {
       nd.lastPos = nd.pos;
     }
+    //
+    n.children.forEach((c) => {
+      if (c.userData.type !== 'text') {
+        if (nd.status === 'center') {
+          c.currentMaterial = sphereMaterials.adjacent;
+          c.material = sphereMaterials.highlight;
+        } else if (nd.status === 'adjacent') {
+          c.material = sphereMaterials.adjacent;
+        } else {
+          c.material = sphereMaterials.basic;
+        }
+      }
+    });
+    //
+    n.userData.status = nd.status;
     n.userData.nextPos = nd.pos;
   });
   sceneObjects.links.children.forEach((l) => {
@@ -118,6 +135,7 @@ function layoutByForce() {
     const offset = new THREE.Vector3(-stageSize, -controls.userHeight, -stageSize);
     globalData.nodes = simulation.nodes().map((n) => {
       n.shifted = false;
+      n.status = '';
       n.pos = new THREE.Vector3(
         scaleValue(n.x, dimensionMap.x, { min: 0, max: stageSize }),
         scaleValue(n.y, dimensionMap.y, { min: 0, max: controls.userHeight * 2.5 }),
@@ -140,6 +158,7 @@ function layoutByForce() {
 function layoutByRandom() {
   globalData.nodes = globalData.nodes.map((n) => {
     n.shifted = false;
+    n.status = '';
     n.pos = new THREE.Vector3(
       (0.5 - Math.random()) * (stageSize),
       (controls.userHeight / 2) + (Math.random() * controls.userHeight),
@@ -188,6 +207,7 @@ function enableNoSleep() {
 }
 
 function toggleVREnabled() {
+  enableNoSleep();
   worldState.vrEnabled = !worldState.vrEnabled;
   if (worldState.vrEnabled) {
     document.querySelector('#vrbutton').classList.add('enabled');
@@ -282,7 +302,13 @@ function highlightIntersected() {
         &&
         o.object.userData.type !== 'text'
       ) {
-        foundCurrent = true;
+        //
+        const scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
+        intersected.scale.set(scaleBy, scaleBy, scaleBy);
+        //
+        if (intersected.userData.status !== 'center') {
+          foundCurrent = true;
+        }
       }
     });
     //
@@ -324,7 +350,16 @@ function highlightIntersected() {
       intersected.scale.set(scaleBy, scaleBy, scaleBy);
       intersected.children.forEach((c) => {
         if (c.userData.type !== 'text') {
-          c.currentMaterial = c.material;
+          // c.currentMaterial = c.material;
+          if (
+            intersected.userData.status === 'adjacent'
+            ||
+            intersected.userData.status === 'center'
+          ) {
+            c.currentMaterial = sphereMaterials.adjacent;
+          } else {
+            c.currentMaterial = sphereMaterials.basic;
+          }
           c.material = sphereMaterials.highlight;
         }
       });
@@ -354,9 +389,9 @@ function makeLinkedAdjacent(centerNode) {
   const [centerData] = globalData.nodes.filter(n => n.id === centerNode.id);
   const angle = Math.atan2(centerData.pos.z, centerData.pos.x);
   centerData.pos = new THREE.Vector3(
-    Math.cos(angle) * (stageSize / 4),
+    Math.cos(angle) * (stageSize / 3),
     centerData.pos.y + ((controls.userHeight - centerData.pos.y) / 2),
-    Math.sin(angle) * (stageSize / 4),
+    Math.sin(angle) * (stageSize / 3),
   );
 
   const linkCount = linked.length;
@@ -368,12 +403,15 @@ function makeLinkedAdjacent(centerNode) {
   globalData.nodes.forEach((n) => {
     if (n.id === centerNode.id) {
       n.shifted = true;
+      n.status = 'center';
     } else {
       n.shifted = false;
+      n.status = '';
       n.pos = n.lastPos;
     }
     if (linked.includes(n.id)) {
       n.shifted = true;
+      n.status = 'adjacent';
       const xzradius = Math.cos(i * (Math.PI / (linkCount / 2))) * radius;
       n.pos = new THREE.Vector3(
         centerData.pos.x + (Math.cos(theta) * xzradius),
@@ -471,11 +509,12 @@ function drawNetwork() {
     node.userData.name = d.name;
     node.userData.id = d.id;
     node.shifted = false;
+    node.status = '';
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterials.basic);
     sphere.userData.type = 'sphere';
     node.add(sphere);
-    const text = generateTextureCanvas(`${d.rank}: ${d.name}`, 64, 1024, 256);
+    const text = generateTextureCanvas(`${d.rank}: ${d.name}`, 60, 1024, 256); // 64
     text.scale.set(0.001, 0.001, 0.001);
     text.position.set(0, 0, 0.15);
     text.userData.type = 'text';
@@ -541,6 +580,22 @@ export function setupScene(data, state) {
     flourishState.horizonExponent,
   ));
   scene.add(generateFloor(stageSize, controls.userHeight));
+
+  // generateStars
+  const starGeometry = new THREE.SphereGeometry(0.005, 12);
+  const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  let s = 0;
+  while (s < 1000) {
+    const star = new THREE.Mesh(starGeometry, starMaterial);
+    star.position.set(
+      (Math.random() - 0.5) * stageSize * 2,
+      2 + (Math.random() * (stageSize / 2)),
+      (Math.random() - 0.5) * stageSize * 2,
+    );
+    sceneObjects.stars.add(star);
+    s += 1;
+  }
+  scene.add(sceneObjects.stars);
 
   const basicCursor = new THREE.Mesh(
     new THREE.RingGeometry(0.02, 0.03, 24),

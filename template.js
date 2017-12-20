@@ -46895,9 +46895,17 @@ function generateFloor(stageSize, userHeight) {
 }
 
 var basic = new MeshBasicMaterial({
+  color: 0x999999,
+  flatShading: true,
+  opacity: 0.35,
+  transparent: true,
+  depthTest: false
+});
+
+var adjacent = new MeshBasicMaterial({
   color: 0xffffff,
   flatShading: true,
-  opacity: 0.5,
+  opacity: 0.75,
   transparent: true,
   depthTest: false
 });
@@ -47207,7 +47215,8 @@ var worldState = {
 };
 var sceneObjects = {
   nodes: new Group(),
-  links: new Group()
+  links: new Group(),
+  stars: new Group()
 };
 var linkScale = {
   min: 0.5,
@@ -47244,7 +47253,8 @@ var intersected = void 0;
 //   globalData.nodes.sort((a, b) => a.rank > b.rank);
 
 //   globalData.nodes = globalData.nodes.map((n, i) => {
-//   n.shifted = false;
+//     n.shifted = false;
+//     n.status = '';
 //     n.pos = new THREE.Vector3(
 //       Math.cos(((Math.PI * 2) / perRow) * i) * (stageSize / 2),
 //       (controls.userHeight / 2) + Math.floor(i / perRow),
@@ -47271,6 +47281,21 @@ function updateNetwork() {
     if (!nd.shifted) {
       nd.lastPos = nd.pos;
     }
+    //
+    n.children.forEach(function (c) {
+      if (c.userData.type !== 'text') {
+        if (nd.status === 'center') {
+          c.currentMaterial = adjacent;
+          c.material = highlight;
+        } else if (nd.status === 'adjacent') {
+          c.material = adjacent;
+        } else {
+          c.material = basic;
+        }
+      }
+    });
+    //
+    n.userData.status = nd.status;
     n.userData.nextPos = nd.pos;
   });
   sceneObjects.links.children.forEach(function (l) {
@@ -47311,6 +47336,7 @@ function layoutByForce() {
     var offset = new Vector3(-stageSize, -controls.userHeight, -stageSize);
     globalData.nodes = simulation.nodes().map(function (n) {
       n.shifted = false;
+      n.status = '';
       n.pos = new Vector3(scaleValue(n.x, dimensionMap.x, { min: 0, max: stageSize }), scaleValue(n.y, dimensionMap.y, { min: 0, max: controls.userHeight * 2.5 }), scaleValue(n.z, dimensionMap.z, { min: 0, max: stageSize })).add(offset);
       return n;
     });
@@ -47332,6 +47358,7 @@ function layoutByForce() {
 function layoutByRandom() {
   globalData.nodes = globalData.nodes.map(function (n) {
     n.shifted = false;
+    n.status = '';
     n.pos = new Vector3((0.5 - Math.random()) * stageSize, controls.userHeight / 2 + Math.random() * controls.userHeight, (0.5 - Math.random()) * stageSize);
     return n;
   });
@@ -47380,6 +47407,7 @@ function enableNoSleep() {
 }
 
 function toggleVREnabled() {
+  enableNoSleep();
   worldState.vrEnabled = !worldState.vrEnabled;
   if (worldState.vrEnabled) {
     document.querySelector('#vrbutton').classList.add('enabled');
@@ -47449,7 +47477,13 @@ function highlightIntersected() {
     var foundCurrent = false;
     intersects.forEach(function (o) {
       if (o.object.parent === intersected && o.object.userData.type !== 'text') {
-        foundCurrent = true;
+        //
+        var scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
+        intersected.scale.set(scaleBy, scaleBy, scaleBy);
+        //
+        if (intersected.userData.status !== 'center') {
+          foundCurrent = true;
+        }
       }
     });
     //
@@ -47483,7 +47517,12 @@ function highlightIntersected() {
       intersected.scale.set(scaleBy, scaleBy, scaleBy);
       intersected.children.forEach(function (c) {
         if (c.userData.type !== 'text') {
-          c.currentMaterial = c.material;
+          // c.currentMaterial = c.material;
+          if (intersected.userData.status === 'adjacent' || intersected.userData.status === 'center') {
+            c.currentMaterial = adjacent;
+          } else {
+            c.currentMaterial = basic;
+          }
           c.material = highlight;
         }
       });
@@ -47521,7 +47560,7 @@ function makeLinkedAdjacent(centerNode) {
       centerData = _globalData$nodes$fil4[0];
 
   var angle = Math.atan2(centerData.pos.z, centerData.pos.x);
-  centerData.pos = new Vector3(Math.cos(angle) * (stageSize / 4), centerData.pos.y + (controls.userHeight - centerData.pos.y) / 2, Math.sin(angle) * (stageSize / 4));
+  centerData.pos = new Vector3(Math.cos(angle) * (stageSize / 3), centerData.pos.y + (controls.userHeight - centerData.pos.y) / 2, Math.sin(angle) * (stageSize / 3));
 
   var linkCount = linked.length;
   var phi = Math.PI * 2 / linkCount;
@@ -47532,12 +47571,15 @@ function makeLinkedAdjacent(centerNode) {
   globalData.nodes.forEach(function (n) {
     if (n.id === centerNode.id) {
       n.shifted = true;
+      n.status = 'center';
     } else {
       n.shifted = false;
+      n.status = '';
       n.pos = n.lastPos;
     }
     if (linked.includes(n.id)) {
       n.shifted = true;
+      n.status = 'adjacent';
       var xzradius = Math.cos(i * (Math.PI / (linkCount / 2))) * radius;
       n.pos = new Vector3(centerData.pos.x + Math.cos(theta) * xzradius, centerData.pos.y + Math.sin(phi * i) * radius, centerData.pos.z + Math.sin(theta) * xzradius);
       i += 1;
@@ -47632,11 +47674,12 @@ function drawNetwork() {
     node.userData.name = d.name;
     node.userData.id = d.id;
     node.shifted = false;
+    node.status = '';
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
     var sphere = new Mesh(sphereGeometry, basic);
     sphere.userData.type = 'sphere';
     node.add(sphere);
-    var text = generateTextureCanvas(d.rank + ': ' + d.name, 64, 1024, 256);
+    var text = generateTextureCanvas(d.rank + ': ' + d.name, 60, 1024, 256); // 64
     text.scale.set(0.001, 0.001, 0.001);
     text.position.set(0, 0, 0.15);
     text.userData.type = 'text';
@@ -47704,6 +47747,18 @@ function setupScene(data, state) {
 
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
   scene.add(generateFloor(stageSize, controls.userHeight));
+
+  // generateStars
+  var starGeometry = new SphereGeometry(0.005, 12);
+  var starMaterial = new MeshBasicMaterial({ color: 0xffffff });
+  var s = 0;
+  while (s < 1000) {
+    var star = new Mesh(starGeometry, starMaterial);
+    star.position.set((Math.random() - 0.5) * stageSize * 2, 2 + Math.random() * (stageSize / 2), (Math.random() - 0.5) * stageSize * 2);
+    sceneObjects.stars.add(star);
+    s += 1;
+  }
+  scene.add(sceneObjects.stars);
 
   var basicCursor = new Mesh(new RingGeometry(0.02, 0.03, 24), new MeshBasicMaterial({
     color: 0xffffff,
