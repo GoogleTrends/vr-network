@@ -43,4 +43,20 @@ canvas {
   opacity: 0.75;
 }
 
+/**/
+#centerline {
+  display: none;
+  position: absolute;
+  width: 1px;
+  height: 100%;
+  margin: 0 50%;
+  background: white;
+  content: '';
+  z-index: 1;
+}
+
+#centerline.enabled {
+  display: block;
+}
+
 /*# sourceMappingURL=style.css.map */

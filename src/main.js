@@ -48,6 +48,7 @@ let camera;
 let renderer;
 let raycaster;
 let intersected;
+let shootingstar = null;
 
 // const worldState = {
 //   vrEnabled: false,
@@ -88,6 +89,11 @@ function updateNetwork() {
     //
     n.children.forEach((c) => {
       if (c.userData.type !== 'text') {
+        //
+        // Dispose existing geometry
+        c.material.dispose();
+        c.material = null;
+        //
         if (nd.status === 'center') {
           c.currentMaterial = sphereMaterials.adjacent;
           c.material = sphereMaterials.highlight;
@@ -211,8 +217,10 @@ function toggleVREnabled() {
   worldState.vrEnabled = !worldState.vrEnabled;
   if (worldState.vrEnabled) {
     document.querySelector('#vrbutton').classList.add('enabled');
+    document.querySelector('#centerline').classList.add('enabled');
   } else {
     document.querySelector('#vrbutton').classList.remove('enabled');
+    document.querySelector('#centerline').classList.remove('enabled');
   }
   renderer.setSize(window.innerWidth, window.innerHeight);
   effect.setSize(window.innerWidth, window.innerHeight);
@@ -249,6 +257,11 @@ function transitionElements() {
         ||
         (l.userData.tpos.distanceTo(l.userData.nextTPos) > 0.01)
       ) {
+        //
+        // Dispose existing geometry
+        l.geometry.dispose();
+        l.geometry = null;
+        //
         l.material.visible = true;
         l.userData.spos = new THREE.Vector3(
           l.userData.nextSPos.x,
@@ -282,6 +295,11 @@ function resetIntersected() {
   intersected.scale.set(1, 1, 1);
   intersected.children.forEach((c) => {
     if (c.userData.type !== 'text') {
+      //
+      // Dispose existing geometry
+      c.material.dispose();
+      c.material = null;
+      //
       c.material = c.currentMaterial;
     }
   });
@@ -338,6 +356,11 @@ function highlightIntersected() {
       timer = 0;
       intersected = nextIntersected.parent;
       sceneObjects.links.children.forEach((l) => {
+        //
+        // Dispose existing geometry
+        l.material.dispose();
+        l.material = null;
+        //
         if (l.userData.source === intersected.userData.id) {
           l.material = lineMaterials.highlightOut;
         } else if (l.userData.target === intersected.userData.id) {
@@ -360,6 +383,11 @@ function highlightIntersected() {
           } else {
             c.currentMaterial = sphereMaterials.basic;
           }
+          //
+          // Dispose existing geometry
+          c.material.dispose();
+          c.material = null;
+          //
           c.material = sphereMaterials.highlight;
         }
       });
@@ -369,10 +397,20 @@ function highlightIntersected() {
       timer = 0;
     } else if (!foundCurrent && timer !== null) {
       timer = null;
+      //
+      // Dispose existing geometry
+      cursor.children[3].geometry.dispose();
+      cursor.children[3].geometry = null;
+      //
       cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
     }
   } else {
     timer = null;
+    //
+    // Dispose existing geometry
+    cursor.children[3].geometry.dispose();
+    cursor.children[3].geometry = null;
+    //
     cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
 }
@@ -425,27 +463,40 @@ function makeLinkedAdjacent(centerNode) {
   updateNetwork();
 }
 
-// camera.rotation.onRotationChange((r) => {
-//   console.log(r);
-// });
+function updateStars(time) {
+  if (shootingstar) {
+    const tpos = new THREE.Vector3(
+      shootingstar.position.x,
+      shootingstar.position.y,
+      shootingstar.position.z,
+    ).lerp(shootingstar.userData.nextPos, 0.1);
+    shootingstar.position.set(tpos.x, tpos.y, tpos.z);
+    if (shootingstar.position.distanceTo(shootingstar.userData.nextPos) < 0.01) {
+      shootingstar = null;
+    }
+  } else if (Math.floor(time) % 1000 === 0) {
+    const index = Math.floor(Math.random() * sceneObjects.stars.children.length);
+    shootingstar = sceneObjects.stars.children[index];
+    shootingstar.userData.nextPos = new THREE.Vector3(
+      (Math.random() - 0.5) * stageSize * 2,
+      2 + (Math.random() * (stageSize / 2)),
+      (Math.random() - 0.5) * stageSize * 2,
+    );
+  }
+}
 
-// Request animation frame loop function
-function animate() {
-  const time = performance.now() * 0.01;
-  lineMaterials.basic.uniforms.time.value = time;
-  lineMaterials.highlightOut.uniforms.time.value = time;
-  lineMaterials.highlightIn.uniforms.time.value = time;
-
-  transitionElements();
-
-  // console.log(camera.rotation.y * (180 / Math.PI));
-
+function updateCursor() {
   if (!worldState.isTransitioning) {
     highlightIntersected();
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
         timer += Math.PI / 60;
+        //
+        // Dispose existing geometry
+        cursor.children[3].geometry.dispose();
+        cursor.children[3].geometry = null;
+        //
         cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
       } else {
         makeLinkedAdjacent(intersected.userData);
@@ -453,8 +504,29 @@ function animate() {
     }
   } else {
     timer = null;
+    //
+    // Dispose existing geometry
+    cursor.children[3].geometry.dispose();
+    cursor.children[3].geometry = null;
+    //
     cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
+}
+
+// Request animation frame loop function
+function animate() {
+  const time = performance.now() * 0.01;
+  // lineMaterials.basic.uniforms.time.value = time;
+  lineMaterials.highlightOut.uniforms.time.value = time;
+  lineMaterials.highlightIn.uniforms.time.value = time;
+
+  transitionElements();
+
+  // console.log(camera.rotation.y * (180 / Math.PI));
+
+  updateStars(time);
+
+  updateCursor();
 
   // if (vrButton.isPresenting()) { // } // Only update controls if we're presenting.
   controls.update();

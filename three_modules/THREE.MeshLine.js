@@ -244,7 +244,7 @@ MeshLine.prototype.advance = function(position) {
 
 };
 
-function MeshLineMaterial( parameters ) {
+export function MeshLineMaterial( parameters ) {
 
   var vertexShaderSource = [
     'precision highp float;',

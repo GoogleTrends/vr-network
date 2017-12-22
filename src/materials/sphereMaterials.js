@@ -23,3 +23,15 @@ export const highlight = new THREE.MeshBasicMaterial({
   transparent: true,
   depthTest: false,
 });
+
+// const sphereMaterial = (color, opacity) => {
+//   return new THREE.MeshBasicMaterial({
+//     color: new THREE.Color(color),
+//     flatShading: true,
+//     opacity: opacity,
+//     transparent: true,
+//     depthTest: false,
+//   });
+// }
+
+// export default sphereMaterial;

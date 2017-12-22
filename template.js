@@ -46918,40 +46918,59 @@ var highlight = new MeshBasicMaterial({
   depthTest: false
 });
 
+// const sphereMaterial = (color, opacity) => {
+//   return new THREE.MeshBasicMaterial({
+//     color: new THREE.Color(color),
+//     flatShading: true,
+//     opacity: opacity,
+//     transparent: true,
+//     depthTest: false,
+//   });
+// }
+
+// export default sphereMaterial;
+
 var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  gl_Position = finalPosition;\n}\n";
 
 var animLineFragment = "precision mediump float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 250.0 - time);\n  color.a = (yCurve + xCurve) * color.a;\n  gl_FragColor = color;\n}\n";
 
 var linkWidth = 0.5;
 
-var basic$1 = new RawShaderMaterial({
-  uniforms: {
-    lineWidth: { type: 'f', value: linkWidth / 100 },
-    map: { type: 't', value: null },
-    useMap: { type: 'f', value: 0 },
-    alphaMap: { type: 't', value: null },
-    useAlphaMap: { type: 'f', value: 0 },
-    color: { type: 'c', value: new Color(0xffffff) },
-    opacity: { type: 'f', value: 0.1 },
-    resolution: { type: 'v2', value: new Vector2(1, 1) },
-    sizeAttenuation: { type: 'f', value: 1 },
-    near: { type: 'f', value: 1 },
-    far: { type: 'f', value: 1 },
-    dashArray: { type: 'v2', value: [] },
-    useDash: { type: 'f', value: 0 },
-    visibility: { type: 'f', value: 1 },
-    alphaTest: { type: 'f', value: 0 },
-    repeat: { type: 'v2', value: new Vector2(1, 1) },
-    time: { type: 'f', value: 1 }
-  },
-  vertexShader: animLineVertex, // vertexShaderSource.join('\r\n'),
-  fragmentShader: animLineFragment, // fragmentShaderSource.join('\r\n'),
+// export const basic = new THREE.RawShaderMaterial({
+//   uniforms: {
+//     lineWidth: { type: 'f', value: (linkWidth / 100) },
+//     map: { type: 't', value: null },
+//     useMap: { type: 'f', value: 0 },
+//     alphaMap: { type: 't', value: null },
+//     useAlphaMap: { type: 'f', value: 0 },
+//     color: { type: 'c', value: new THREE.Color(0xffffff) },
+//     opacity: { type: 'f', value: 0.1 },
+//     resolution: { type: 'v2', value: new THREE.Vector2(1, 1) },
+//     sizeAttenuation: { type: 'f', value: 1 },
+//     near: { type: 'f', value: 1 },
+//     far: { type: 'f', value: 1 },
+//     dashArray: { type: 'v2', value: [] },
+//     useDash: { type: 'f', value: 0 },
+//     visibility: { type: 'f', value: 1 },
+//     alphaTest: { type: 'f', value: 0 },
+//     repeat: { type: 'v2', value: new THREE.Vector2(1, 1) },
+//     time: { type: 'f', value: 1 },
+//   },
+//   vertexShader: animLineVertex, // vertexShaderSource.join('\r\n'),
+//   fragmentShader: animLineFragment, // fragmentShaderSource.join('\r\n'),
+//   transparent: true,
+// });
+
+var basic$1 = new MeshLineMaterial({
+  lineWidth: linkWidth / 100,
+  color: new Color(0xffffff),
+  opacity: 0.05,
   transparent: true
 });
 
 var highlightOut = new RawShaderMaterial({
   uniforms: {
-    lineWidth: { type: 'f', value: linkWidth * 5 / 100 },
+    lineWidth: { type: 'f', value: linkWidth * 4 / 100 },
     map: { type: 't', value: null },
     useMap: { type: 'f', value: 0 },
     alphaMap: { type: 't', value: null },
@@ -46976,7 +46995,7 @@ var highlightOut = new RawShaderMaterial({
 
 var highlightIn = new RawShaderMaterial({
   uniforms: {
-    lineWidth: { type: 'f', value: linkWidth * 5 / 100 },
+    lineWidth: { type: 'f', value: linkWidth * 4 / 100 },
     map: { type: 't', value: null },
     useMap: { type: 'f', value: 0 },
     alphaMap: { type: 't', value: null },
@@ -47239,6 +47258,7 @@ var camera = void 0;
 var renderer = void 0;
 var raycaster = void 0;
 var intersected = void 0;
+var shootingstar = null;
 
 // const worldState = {
 //   vrEnabled: false,
@@ -47284,6 +47304,11 @@ function updateNetwork() {
     //
     n.children.forEach(function (c) {
       if (c.userData.type !== 'text') {
+        //
+        // Dispose existing geometry
+        c.material.dispose();
+        c.material = null;
+        //
         if (nd.status === 'center') {
           c.currentMaterial = adjacent;
           c.material = highlight;
@@ -47411,8 +47436,10 @@ function toggleVREnabled() {
   worldState.vrEnabled = !worldState.vrEnabled;
   if (worldState.vrEnabled) {
     document.querySelector('#vrbutton').classList.add('enabled');
+    document.querySelector('#centerline').classList.add('enabled');
   } else {
     document.querySelector('#vrbutton').classList.remove('enabled');
+    document.querySelector('#centerline').classList.remove('enabled');
   }
   renderer.setSize(window.innerWidth, window.innerHeight);
   effect.setSize(window.innerWidth, window.innerHeight);
@@ -47441,6 +47468,11 @@ function transitionElements() {
     sceneObjects.links.children.forEach(function (l) {
       l.material.visible = true;
       if (l.userData.spos.distanceTo(l.userData.nextSPos) > 0.01 || l.userData.tpos.distanceTo(l.userData.nextTPos) > 0.01) {
+        //
+        // Dispose existing geometry
+        l.geometry.dispose();
+        l.geometry = null;
+        //
         l.material.visible = true;
         l.userData.spos = new Vector3(l.userData.nextSPos.x, l.userData.nextSPos.y, l.userData.nextSPos.z);
         l.userData.tpos = new Vector3(l.userData.nextTPos.x, l.userData.nextTPos.y, l.userData.nextTPos.z);
@@ -47461,6 +47493,11 @@ function resetIntersected() {
   intersected.scale.set(1, 1, 1);
   intersected.children.forEach(function (c) {
     if (c.userData.type !== 'text') {
+      //
+      // Dispose existing geometry
+      c.material.dispose();
+      c.material = null;
+      //
       c.material = c.currentMaterial;
     }
   });
@@ -47505,6 +47542,11 @@ function highlightIntersected() {
       timer = 0;
       intersected = nextIntersected.parent;
       sceneObjects.links.children.forEach(function (l) {
+        //
+        // Dispose existing geometry
+        l.material.dispose();
+        l.material = null;
+        //
         if (l.userData.source === intersected.userData.id) {
           l.material = highlightOut;
         } else if (l.userData.target === intersected.userData.id) {
@@ -47523,6 +47565,11 @@ function highlightIntersected() {
           } else {
             c.currentMaterial = basic;
           }
+          //
+          // Dispose existing geometry
+          c.material.dispose();
+          c.material = null;
+          //
           c.material = highlight;
         }
       });
@@ -47532,10 +47579,20 @@ function highlightIntersected() {
       timer = 0;
     } else if (!foundCurrent && timer !== null) {
       timer = null;
+      //
+      // Dispose existing geometry
+      cursor.children[3].geometry.dispose();
+      cursor.children[3].geometry = null;
+      //
       cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
     }
   } else {
     timer = null;
+    //
+    // Dispose existing geometry
+    cursor.children[3].geometry.dispose();
+    cursor.children[3].geometry = null;
+    //
     cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
 }
@@ -47589,27 +47646,32 @@ function makeLinkedAdjacent(centerNode) {
   updateNetwork();
 }
 
-// camera.rotation.onRotationChange((r) => {
-//   console.log(r);
-// });
+function updateStars(time) {
+  if (shootingstar) {
+    var tpos = new Vector3(shootingstar.position.x, shootingstar.position.y, shootingstar.position.z).lerp(shootingstar.userData.nextPos, 0.1);
+    shootingstar.position.set(tpos.x, tpos.y, tpos.z);
+    if (shootingstar.position.distanceTo(shootingstar.userData.nextPos) < 0.01) {
+      shootingstar = null;
+    }
+  } else if (Math.floor(time) % 1000 === 0) {
+    var index = Math.floor(Math.random() * sceneObjects.stars.children.length);
+    shootingstar = sceneObjects.stars.children[index];
+    shootingstar.userData.nextPos = new Vector3((Math.random() - 0.5) * stageSize * 2, 2 + Math.random() * (stageSize / 2), (Math.random() - 0.5) * stageSize * 2);
+  }
+}
 
-// Request animation frame loop function
-function animate() {
-  var time = performance.now() * 0.01;
-  basic$1.uniforms.time.value = time;
-  highlightOut.uniforms.time.value = time;
-  highlightIn.uniforms.time.value = time;
-
-  transitionElements();
-
-  // console.log(camera.rotation.y * (180 / Math.PI));
-
+function updateCursor() {
   if (!worldState.isTransitioning) {
     highlightIntersected();
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
         timer += Math.PI / 60;
+        //
+        // Dispose existing geometry
+        cursor.children[3].geometry.dispose();
+        cursor.children[3].geometry = null;
+        //
         cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
       } else {
         makeLinkedAdjacent(intersected.userData);
@@ -47617,8 +47679,29 @@ function animate() {
     }
   } else {
     timer = null;
+    //
+    // Dispose existing geometry
+    cursor.children[3].geometry.dispose();
+    cursor.children[3].geometry = null;
+    //
     cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
+}
+
+// Request animation frame loop function
+function animate() {
+  var time = performance.now() * 0.01;
+  // lineMaterials.basic.uniforms.time.value = time;
+  highlightOut.uniforms.time.value = time;
+  highlightIn.uniforms.time.value = time;
+
+  transitionElements();
+
+  // console.log(camera.rotation.y * (180 / Math.PI));
+
+  updateStars(time);
+
+  updateCursor();
 
   // if (vrButton.isPresenting()) { // } // Only update controls if we're presenting.
   controls.update();
@@ -47819,8 +47902,13 @@ var data = {};
 var state = {
   horizonTopColor: '#000000',
   horizonBottomColor: '#ff7700',
-  horizonExponent: 0.05
-  // opacity: 0.5,
+  horizonExponent: 0.05,
+  unselectedNodeColor: '#999999',
+  unselectedNodeOpacity: 0.35,
+  adjacentNodeColor: '#ffffff',
+  adjacentNodeOpacity: 0.75,
+  highlightedNodeColor: '#fff000',
+  highlightedNodeOpacity: 1.0
 };
 
 // let w;

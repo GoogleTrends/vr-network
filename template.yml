@@ -1,7 +1,7 @@
 # The 'id' should be a string that uniquely identifies your template
 id: 'vr-network'
-name: Starter Data Circles
-description: A starter/example Flourish template
+name: VR Network
+description: VR Network
 author: James Proctor
 
 # This template is compatible with SDK version 2
@@ -42,6 +42,40 @@ settings:
     min: 0
     max: 1
     step: 0.01
+  # - Nodes
+  # - property: unselectedNodeColor
+  #   name: Unselected Node Color
+  #   description: The color of unselected nodes
+  #   type: color
+  # - property: unselectedNodeOpacity
+  #   name: Unselected Node Opacity
+  #   description: The opacity of unselected nodes
+  #   type: number
+  #   min: 0
+  #   max: 1
+  #   step: 0.05
+  # - property: adjacentNodeColor
+  #   name: Adjacent Node Color
+  #   description: The color of adjacent nodes
+  #   type: color
+  # - property: adjacentNodeOpacity
+  #   name: Adjacent Node Opacity
+  #   description: The opacity of adjacent nodes
+  #   type: number
+  #   min: 0
+  #   max: 1
+  #   step: 0.05
+  # - property: highlightedNodeColor
+  #   name: Highlighted Node Color
+  #   description: The color of highlighted node
+  #   type: color
+  # - property: highlightedNodeOpacity
+  #   name: Highlighted Node Opacity
+  #   description: The opacity of highlighted node
+  #   type: number
+  #   min: 0
+  #   max: 1
+  #   step: 0.05
 
 data:
   - dataset: nodes
