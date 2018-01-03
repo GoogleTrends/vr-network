@@ -30,8 +30,8 @@ const sceneObjects = {
   links: new THREE.Group(),
   stars: new THREE.Group(),
   legend: new THREE.Group(),
-  buttons: new THREE.Group(),
   cursor: new THREE.Group(),
+  buttons: new THREE.Group(),
 };
 const linkScale = {
   min: 0.5,
@@ -57,35 +57,6 @@ let intersected;
 let lineMaterials;
 let shootingstar = null;
 
-// const worldState = {
-//   vrEnabled: false,
-//   layoutMode: 1,
-//   isTransitioning: false,
-// };
-
-// function layoutByColumns() {
-//   const perRow = 10;
-
-//   // globalData.nodes.sort((a, b) => a.linkCount < b.linkCount);
-//   globalData.nodes.sort((a, b) => a.rank > b.rank);
-
-//   globalData.nodes = globalData.nodes.map((n, i) => {
-//     n.shifted = false;
-//     n.status = '';
-//     n.pos = new THREE.Vector3(
-//       Math.cos(((Math.PI * 2) / perRow) * i) * (stageSize / 2),
-//       (controls.userHeight / 2) + Math.floor(i / perRow),
-//       Math.sin(((Math.PI * 2) / perRow) * i) * (stageSize / 2),
-//     );
-//     return n;
-//   });
-
-//   globalData.links = globalData.links.map((l) => {
-//     l.spos = globalData.nodes.filter(n => l.sourceId === n.id)[0].pos;
-//     l.tpos = globalData.nodes.filter(n => l.targetId === n.id)[0].pos;
-//     return l;
-//   });
-// }
 
 function updateNetwork() {
   sceneObjects.nodes.children.forEach((n) => {
@@ -120,15 +91,41 @@ function updateNetwork() {
     l.userData.nextTPos = globalData.nodes.filter(n => l.userData.target === n.id)[0].pos;
   });
   //
-  // worldState.isReseting = false;
   sceneObjects.buttons.children.forEach((b) => {
     b.visible = true;
   });
   //
 }
 
+function layoutByRank() {
+  const rowCount = 3;
+  const perRow = Math.ceil(globalData.nodes.length / rowCount);
+
+  globalData.nodes.sort((a, b) => parseInt(a.rank, 10) > parseInt(b.rank, 10));
+
+  globalData.nodes = globalData.nodes.map((n, i) => {
+    n.shifted = false;
+    n.status = '';
+    n.pos = new THREE.Vector3(
+      Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
+      (controls.userHeight / (rowCount * 2)) + (i / perRow),
+      Math.sin(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
+    );
+    return n;
+  });
+
+  globalData.links = globalData.links.map((l) => {
+    l.spos = globalData.nodes.filter(n => l.sourceId === n.id)[0].pos;
+    l.tpos = globalData.nodes.filter(n => l.targetId === n.id)[0].pos;
+    return l;
+  });
+
+  initData = cloneDeep(globalData);
+
+  updateNetwork();
+}
+
 function scaleValue(value, domain, range) {
-  // return (((value - domain.min) * range.max) / domain.max) + range.min;
   return (((value - domain.min) / (domain.max - domain.min)) * (range.max - range.min)) + range.min;
 }
 
@@ -194,8 +191,8 @@ function layoutByForce() {
           n.x,
           dimensionMap.x,
           {
-            min: 0, // stageSize / 4,
-            max: stageSize, // (stageSize / 4) * 3,
+            min: 0,
+            max: stageSize,
           },
           stageSize / 10,
         ),
@@ -211,8 +208,8 @@ function layoutByForce() {
           n.z,
           dimensionMap.z,
           {
-            min: 0, // stageSize / 4,
-            max: stageSize, // (stageSize / 4) * 3,
+            min: 0,
+            max: stageSize,
           },
           stageSize / 10,
         ),
@@ -244,17 +241,22 @@ function layoutByRandom() {
     );
     return n;
   });
+
   globalData.links = globalData.links.map((l) => {
     l.spos = globalData.nodes.filter(n => l.sourceId === n.id)[0].pos;
     l.tpos = globalData.nodes.filter(n => l.targetId === n.id)[0].pos;
     return l;
   });
+
+  initData = cloneDeep(globalData);
+
+  updateNetwork();
 }
 
 // function layoutNetwork() {
 //   switch (worldState.layoutMode) {
 //     case 0:
-//       layoutByColumns();
+//       layoutByRank();
 //       updateNetwork();
 //       break;
 //     case 1:
@@ -305,6 +307,7 @@ function toggleVREnabled() {
   effect.setSize(window.innerWidth, window.innerHeight);
 }
 
+// let sample = 0;
 function transitionElements() {
   let countTransitioning = 0;
   sceneObjects.nodes.children.forEach((n) => {
@@ -316,6 +319,15 @@ function transitionElements() {
       ).lerp(n.userData.nextPos, 0.1);
       n.position.set(tpos.x, tpos.y, tpos.z);
       countTransitioning += 1;
+    }
+    // if (sample < 2) {
+    //   console.log(n);
+    // }
+    // sample++;
+    if (Math.abs(n.scale.x - n.userData.nextScale) > 0.01) {
+      const tscale = THREE.Math.lerp(n.scale.x, n.userData.nextScale, 0.1);
+      // console.log(tscale);
+      n.scale.set(tscale, tscale, tscale);
     }
     n.quaternion.copy(camera.quaternion);
   });
@@ -372,7 +384,7 @@ function transitionElements() {
 
 function resetIntersected() {
   if (intersected.userData.type === 'node') {
-    intersected.scale.set(1, 1, 1);
+    intersected.userData.nextScale = 1;
     intersected.children.forEach((c) => {
       if (c.userData.type !== 'text') {
         //
@@ -385,17 +397,6 @@ function resetIntersected() {
     });
   }
 }
-
-// function checkButtons() {
-//   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
-//   const intersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
-//   if (intersects.length > 0) {
-//     intersected = intersects[0].parent;
-//     if (timer === null) {
-//       timer = 0;
-//     }
-//   }
-// }
 
 function highlightIntersected() {
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
@@ -416,9 +417,10 @@ function highlightIntersected() {
         o.object.userData.type !== 'text'
       ) {
         //
-        if (intersected.userData.type === 'circle') {
+        if (intersected.userData.type === 'node') {
           const scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
-          intersected.scale.set(scaleBy, scaleBy, scaleBy);
+          intersected.userData.nextScale = scaleBy;
+          // intersected.scale.set(scaleBy, scaleBy, scaleBy);
         }
         //
         if (intersected.userData.status !== 'center') {
@@ -471,7 +473,8 @@ function highlightIntersected() {
           }
         });
         const scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
-        intersected.scale.set(scaleBy, scaleBy, scaleBy);
+        intersected.userData.nextScale = scaleBy;
+        // intersected.scale.set(scaleBy, scaleBy, scaleBy);
         intersected.children.forEach((c) => {
           if (c.userData.type !== 'text') {
             // c.currentMaterial = c.material;
@@ -562,11 +565,23 @@ function makeLinkedAdjacent(centerNode) {
         i += 1;
       }
     });
+
+    updateNetwork();
   } else {
-    intersected.visible = false;
-    globalData = cloneDeep(initData);
+    // console.log(intersected);
+    sceneObjects.buttons.children.forEach((b) => {
+      b.visible = false;
+    });
+    // intersected.visible = false;
+    if (centerNode.name === 'Rank') {
+      layoutByRank();
+    } else if (centerNode.name === 'Simulation') {
+      layoutByForce();
+    } else {
+      globalData = cloneDeep(initData);
+    }
   }
-  updateNetwork();
+  // updateNetwork();
 }
 
 function updateStars(time) {
@@ -719,7 +734,8 @@ function drawNetwork() {
 
   updateNetwork();
 
-  layoutByForce();
+  // layoutByForce();
+  layoutByRank();
 }
 
 function formatData() {
@@ -788,6 +804,12 @@ function generateLegend(state) {
   outText.rotation.set((Math.PI / 180) * -45, 0, 0);
   sceneObjects.legend.add(outText);
 
+  const buttonLabel = generateTextureCanvas('Layout By', 36, 1024, 256); // 64
+  buttonLabel.scale.set(0.001, 0.001, 0.001);
+  buttonLabel.position.set(0, 0, -0.8);
+  buttonLabel.rotation.set((Math.PI / 180) * -45, 0, 0);
+  sceneObjects.legend.add(buttonLabel);
+
   sceneObjects.legend.name = 'legend';
 
   return sceneObjects.legend;
@@ -847,6 +869,31 @@ function generateCursor(state) {
   return sceneObjects.cursor;
 }
 
+function generateButton(name, color, xoffset) {
+  const button = new THREE.Group();
+  button.userData.name = name;
+  button.userData.type = 'button';
+  button.scale.set(0.001, 0.001, 0.001);
+  button.position.set(xoffset, 0, -0.65);
+  button.rotation.set((Math.PI / 180) * -45, 0, 0);
+  const text = generateTextureCanvas(name, 36, 256, 256); // 64
+  text.userData.type = 'text';
+  button.add(text);
+  const circle = new THREE.Mesh(
+    new THREE.CircleGeometry(125, 24),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(color) }),
+  );
+  circle.userData.type = 'button';
+  button.add(circle);
+  return button;
+}
+
+function generateButtons() {
+  sceneObjects.buttons.add(generateButton('Rank', 0x3333aa, -0.20));
+  sceneObjects.buttons.add(generateButton('Simulation', 0x33aa33, 0.20));
+  return sceneObjects.buttons;
+}
+
 export function setupScene(data, state) {
   globalData = data;
   flourishState = state;
@@ -884,23 +931,7 @@ export function setupScene(data, state) {
   //
 
   //
-  // buttons
-  const resetButton = new THREE.Group();
-  resetButton.userData.type = 'button';
-  resetButton.scale.set(0.001, 0.001, 0.001);
-  resetButton.position.set(0, 0, -0.75);
-  resetButton.rotation.set((Math.PI / 180) * -45, 0, 0);
-  const resetText = generateTextureCanvas('Reset', 36, 256, 256); // 64
-  resetText.userData.type = 'text';
-  resetButton.add(resetText);
-  const circle = new THREE.Mesh(
-    new THREE.CircleGeometry(75, 24),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 }),
-  );
-  circle.userData.type = 'button';
-  resetButton.add(circle);
-  sceneObjects.buttons.add(resetButton);
-  scene.add(sceneObjects.buttons);
+  scene.add(generateButtons());
   //
 
   camera.add(generateCursor(state));
