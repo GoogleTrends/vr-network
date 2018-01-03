@@ -1,6 +1,8 @@
 /* global window, document, navigator, performance */
 
 import * as THREE from 'three';
+import cloneDeep from 'lodash.clonedeep';
+
 import MeshLine from '../three_modules/THREE.MeshLine';
 import StereoEffect from '../three_modules/StereoEffect';
 import VRControls from '../three_modules/VRControls';
@@ -14,18 +16,22 @@ import { generateCurveGeometry } from './generateCurveGeometry';
 import { generateHorizon } from './generateHorizon';
 import { generateFloor } from './generateFloor';
 
+import { updateLineMaterials } from './materials/lineMaterials';
 import * as sphereMaterials from './materials/sphereMaterials';
-import * as lineMaterials from './materials/lineMaterials';
+
 
 const worldState = {
   vrEnabled: false,
   layoutMode: 1,
   isTransitioning: false,
+  // isReseting: true,
 };
 const sceneObjects = {
   nodes: new THREE.Group(),
   links: new THREE.Group(),
   stars: new THREE.Group(),
+  legend: new THREE.Group(),
+  buttons: new THREE.Group(),
 };
 const linkScale = {
   min: 0.5,
@@ -37,6 +43,7 @@ const noSleep = new NoSleep();
 const stageSize = 10;
 
 let globalData = {};
+let initData = {};
 let flourishState = {};
 let timer = null;
 
@@ -48,6 +55,7 @@ let camera;
 let renderer;
 let raycaster;
 let intersected;
+let lineMaterials;
 let shootingstar = null;
 
 // const worldState = {
@@ -112,10 +120,49 @@ function updateNetwork() {
     l.userData.nextSPos = globalData.nodes.filter(n => l.userData.source === n.id)[0].pos;
     l.userData.nextTPos = globalData.nodes.filter(n => l.userData.target === n.id)[0].pos;
   });
+  //
+  // worldState.isReseting = false;
+  sceneObjects.buttons.children.forEach((b) => {
+    b.visible = true;
+  });
+  //
 }
 
 function scaleValue(value, domain, range) {
-  return (((value - domain.min) * range.max) / domain.max) + range.min;
+  // return (((value - domain.min) * range.max) / domain.max) + range.min;
+  return (((value - domain.min) / (domain.max - domain.min)) * (range.max - range.min)) + range.min;
+}
+
+function scaleValueWithGap(value, domain, range, gap) {
+  let scaledValue = value;
+  const halfDomain = domain.min + ((domain.max - domain.min) / 2);
+  const halfRange = range.min + ((range.max - range.min) / 2);
+  if (value < halfDomain) {
+    scaledValue = scaleValue(
+      value,
+      {
+        min: domain.min,
+        max: halfDomain,
+      },
+      {
+        min: range.min,
+        max: halfRange - (gap / 2),
+      },
+    );
+  } else {
+    scaledValue = scaleValue(
+      value,
+      {
+        min: halfDomain,
+        max: domain.max,
+      },
+      {
+        min: halfRange + (gap / 2),
+        max: range.max,
+      },
+    );
+  }
+  return scaledValue;
 }
 
 function layoutByForce() {
@@ -138,14 +185,47 @@ function layoutByForce() {
       };
     });
 
-    const offset = new THREE.Vector3(-stageSize, -controls.userHeight, -stageSize);
+    const offset = new THREE.Vector3(-stageSize / 2, -controls.userHeight, -stageSize / 2);
+
     globalData.nodes = simulation.nodes().map((n) => {
       n.shifted = false;
       n.status = '';
+      // n.pos = new THREE.Vector3(
+      //   scaleValue(n.x, dimensionMap.x, { min: 0, max: stageSize }),
+      //   scaleValue(n.y, dimensionMap.y, { min: 0, max: controls.userHeight * 2.5 }),
+      //   scaleValue(n.z, dimensionMap.z, { min: 0, max: stageSize }),
+      // )
+      // console.log(camera.position);
+      // console.log(dimensionMap.x);
+      // console.log({min:0, max:stageSize});
+      //
       n.pos = new THREE.Vector3(
-        scaleValue(n.x, dimensionMap.x, { min: 0, max: stageSize }),
-        scaleValue(n.y, dimensionMap.y, { min: 0, max: controls.userHeight * 2.5 }),
-        scaleValue(n.z, dimensionMap.z, { min: 0, max: stageSize }),
+        scaleValueWithGap(
+          n.x,
+          dimensionMap.x,
+          {
+            min: 0, // stageSize / 4,
+            max: stageSize, // (stageSize / 4) * 3,
+          },
+          stageSize / 10,
+        ),
+        scaleValue(
+          n.y,
+          dimensionMap.y,
+          {
+            min: controls.userHeight * 0.75,
+            max: controls.userHeight * 3.0,
+          },
+        ),
+        scaleValueWithGap(
+          n.z,
+          dimensionMap.z,
+          {
+            min: 0, // stageSize / 4,
+            max: stageSize, // (stageSize / 4) * 3,
+          },
+          stageSize / 10,
+        ),
       )
         .add(offset);
       return n;
@@ -156,6 +236,8 @@ function layoutByForce() {
       l.tpos = globalData.nodes.filter(n => l.targetId === n.id)[0].pos;
       return l;
     });
+
+    initData = cloneDeep(globalData);
 
     updateNetwork();
   });
@@ -214,11 +296,18 @@ function enableNoSleep() {
 
 function toggleVREnabled() {
   enableNoSleep();
+  // TODO: remove stereo from desktop when done w/ development
   worldState.vrEnabled = !worldState.vrEnabled;
   if (worldState.vrEnabled) {
+    if (vrDisplay.capabilities.canPresent) {
+      vrDisplay.requestPresent([{ source: document.body }]);
+    }
     document.querySelector('#vrbutton').classList.add('enabled');
     document.querySelector('#centerline').classList.add('enabled');
   } else {
+    if (vrDisplay.capabilities.canPresent) {
+      vrDisplay.exitPresent();
+    }
     document.querySelector('#vrbutton').classList.remove('enabled');
     document.querySelector('#centerline').classList.remove('enabled');
   }
@@ -292,22 +381,38 @@ function transitionElements() {
 }
 
 function resetIntersected() {
-  intersected.scale.set(1, 1, 1);
-  intersected.children.forEach((c) => {
-    if (c.userData.type !== 'text') {
-      //
-      // Dispose existing geometry
-      c.material.dispose();
-      c.material = null;
-      //
-      c.material = c.currentMaterial;
-    }
-  });
+  if (intersected.userData.type === 'node') {
+    intersected.scale.set(1, 1, 1);
+    intersected.children.forEach((c) => {
+      if (c.userData.type !== 'text') {
+        //
+        // Dispose existing geometry
+        c.material.dispose();
+        c.material = null;
+        //
+        c.material = c.currentMaterial;
+      }
+    });
+  }
 }
+
+// function checkButtons() {
+//   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+//   const intersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
+//   if (intersects.length > 0) {
+//     intersected = intersects[0].parent;
+//     if (timer === null) {
+//       timer = 0;
+//     }
+//   }
+// }
 
 function highlightIntersected() {
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
-  const intersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
+  const nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
+  const buttonIntersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
+  const intersects = [...new Set([...nodeIntersects, ...buttonIntersects])];
+  //
   if (intersects.length > 0) {
     let searching = true;
     let index = 0;
@@ -321,8 +426,10 @@ function highlightIntersected() {
         o.object.userData.type !== 'text'
       ) {
         //
-        const scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
-        intersected.scale.set(scaleBy, scaleBy, scaleBy);
+        if (intersected.userData.type === 'circle') {
+          const scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
+          intersected.scale.set(scaleBy, scaleBy, scaleBy);
+        }
         //
         if (intersected.userData.status !== 'center') {
           foundCurrent = true;
@@ -355,42 +462,47 @@ function highlightIntersected() {
       }
       timer = 0;
       intersected = nextIntersected.parent;
-      sceneObjects.links.children.forEach((l) => {
-        //
-        // Dispose existing geometry
-        l.material.dispose();
-        l.material = null;
-        //
-        if (l.userData.source === intersected.userData.id) {
-          l.material = lineMaterials.highlightOut;
-        } else if (l.userData.target === intersected.userData.id) {
-          l.material = lineMaterials.highlightIn;
-        } else {
-          l.material = lineMaterials.basic;
-        }
-      });
-      const scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
-      intersected.scale.set(scaleBy, scaleBy, scaleBy);
-      intersected.children.forEach((c) => {
-        if (c.userData.type !== 'text') {
-          // c.currentMaterial = c.material;
-          if (
-            intersected.userData.status === 'adjacent'
-            ||
-            intersected.userData.status === 'center'
-          ) {
-            c.currentMaterial = sphereMaterials.adjacent;
-          } else {
-            c.currentMaterial = sphereMaterials.basic;
-          }
+      if (intersected.userData.type === 'node') {
+        sceneObjects.links.children.forEach((l) => {
           //
           // Dispose existing geometry
-          c.material.dispose();
-          c.material = null;
+          l.material.dispose();
+          l.material = null;
           //
-          c.material = sphereMaterials.highlight;
-        }
-      });
+          if (l.userData.source === intersected.userData.id) {
+            l.material = lineMaterials.highlightOut;
+            l.userData.status = 'out';
+          } else if (l.userData.target === intersected.userData.id) {
+            l.material = lineMaterials.highlightIn;
+            l.userData.status = 'in';
+          } else {
+            l.material = lineMaterials.basic;
+            l.userData.status = '';
+          }
+        });
+        const scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
+        intersected.scale.set(scaleBy, scaleBy, scaleBy);
+        intersected.children.forEach((c) => {
+          if (c.userData.type !== 'text') {
+            // c.currentMaterial = c.material;
+            if (
+              intersected.userData.status === 'adjacent'
+              ||
+              intersected.userData.status === 'center'
+            ) {
+              c.currentMaterial = sphereMaterials.adjacent;
+            } else {
+              c.currentMaterial = sphereMaterials.basic;
+            }
+            //
+            // Dispose existing geometry
+            c.material.dispose();
+            c.material = null;
+            //
+            c.material = sphereMaterials.highlight;
+          }
+        });
+      }
     }
     //
     if (foundCurrent && timer === null) {
@@ -416,50 +528,54 @@ function highlightIntersected() {
 }
 
 function makeLinkedAdjacent(centerNode) {
-  const sourceLinks = globalData.links
-    .filter(l => (l.sourceId === centerNode.id))
-    .map(l => l.targetId);
-  const targetLinks = globalData.links
-    .filter(l => (l.targetId === centerNode.id))
-    .map(l => l.sourceId);
-  const linked = [...new Set([...sourceLinks, ...targetLinks])];
+  if (centerNode.type === 'node') {
+    const sourceLinks = globalData.links
+      .filter(l => (l.sourceId === centerNode.id))
+      .map(l => l.targetId);
+    const targetLinks = globalData.links
+      .filter(l => (l.targetId === centerNode.id))
+      .map(l => l.sourceId);
+    const linked = [...new Set([...sourceLinks, ...targetLinks])];
 
-  const [centerData] = globalData.nodes.filter(n => n.id === centerNode.id);
-  const angle = Math.atan2(centerData.pos.z, centerData.pos.x);
-  centerData.pos = new THREE.Vector3(
-    Math.cos(angle) * (stageSize / 3),
-    centerData.pos.y + ((controls.userHeight - centerData.pos.y) / 2),
-    Math.sin(angle) * (stageSize / 3),
-  );
+    const [centerData] = globalData.nodes.filter(n => n.id === centerNode.id);
+    const angle = Math.atan2(centerData.pos.z, centerData.pos.x);
+    centerData.pos = new THREE.Vector3(
+      Math.cos(angle) * (stageSize / 3),
+      centerData.pos.y + ((controls.userHeight - centerData.pos.y) / 2),
+      Math.sin(angle) * (stageSize / 3),
+    );
 
-  const linkCount = linked.length;
-  const phi = (Math.PI * 2) / linkCount;
-  const radius = (stageSize / 10);
-  const theta = angle + (90 * (Math.PI / 180));
+    const linkCount = linked.length;
+    const phi = (Math.PI * 2) / linkCount;
+    const radius = (stageSize / 10);
+    const theta = angle + (90 * (Math.PI / 180));
 
-  let i = 0;
-  globalData.nodes.forEach((n) => {
-    if (n.id === centerNode.id) {
-      n.shifted = true;
-      n.status = 'center';
-    } else {
-      n.shifted = false;
-      n.status = '';
-      n.pos = n.lastPos;
-    }
-    if (linked.includes(n.id)) {
-      n.shifted = true;
-      n.status = 'adjacent';
-      const xzradius = Math.cos(i * (Math.PI / (linkCount / 2))) * radius;
-      n.pos = new THREE.Vector3(
-        centerData.pos.x + (Math.cos(theta) * xzradius),
-        centerData.pos.y + (Math.sin(phi * i) * radius),
-        centerData.pos.z + (Math.sin(theta) * xzradius),
-      );
-      i += 1;
-    }
-  });
-
+    let i = 0;
+    globalData.nodes.forEach((n) => {
+      if (n.id === centerNode.id) {
+        n.shifted = true;
+        n.status = 'center';
+      } else {
+        n.shifted = false;
+        n.status = '';
+        n.pos = n.lastPos;
+      }
+      if (linked.includes(n.id)) {
+        n.shifted = true;
+        n.status = 'adjacent';
+        const xzradius = Math.cos(i * (Math.PI / (linkCount / 2))) * radius;
+        n.pos = new THREE.Vector3(
+          centerData.pos.x + (Math.cos(theta) * xzradius),
+          centerData.pos.y + (Math.sin(phi * i) * radius),
+          centerData.pos.z + (Math.sin(theta) * xzradius),
+        );
+        i += 1;
+      }
+    });
+  } else {
+    intersected.visible = false;
+    globalData = cloneDeep(initData);
+  }
   updateNetwork();
 }
 
@@ -488,10 +604,11 @@ function updateStars(time) {
 function updateCursor() {
   if (!worldState.isTransitioning) {
     highlightIntersected();
+    // checkButtons();
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
-        timer += Math.PI / 60;
+        timer += Math.PI / 30;
         //
         // Dispose existing geometry
         cursor.children[3].geometry.dispose();
@@ -578,6 +695,7 @@ function drawNetwork() {
   const sphereGeometry = new THREE.SphereGeometry(0.1, 18, 18);
   globalData.nodes.forEach((d) => {
     const node = new THREE.Group();
+    node.userData.type = 'node';
     node.userData.name = d.name;
     node.userData.id = d.id;
     node.shifted = false;
@@ -622,9 +740,69 @@ function formatData() {
 //   });
 // }
 
+function generateStars() {
+  const starGeometry = new THREE.SphereGeometry(0.005, 12);
+  const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  let s = 0;
+  while (s < 1000) {
+    const star = new THREE.Mesh(starGeometry, starMaterial);
+    star.position.set(
+      (Math.random() - 0.5) * stageSize * 2,
+      2 + (Math.random() * (stageSize / 2)),
+      (Math.random() - 0.5) * stageSize * 2,
+    );
+    sceneObjects.stars.add(star);
+    s += 1;
+  }
+  // scene.add(sceneObjects.stars);
+  return sceneObjects.stars;
+}
+
+function generateLegend() {
+  // const legend = new THREE.Group();
+
+  const inLineGeometry = generateCurveGeometry(
+    new THREE.Vector3(-0.5, 0, -1.05),
+    new THREE.Vector3(0.5, 0, -1.05),
+    controls.userHeight,
+  );
+  const inLine = new MeshLine();
+  inLine.setGeometry(inLineGeometry);
+  const inLineMesh = new THREE.Mesh(inLine.geometry, lineMaterials.highlightIn);
+  inLineMesh.userData.type = 'in';
+  sceneObjects.legend.add(inLineMesh);
+
+  const inText = generateTextureCanvas('Also Searched For', 36, 1024, 256); // 64
+  inText.scale.set(0.001, 0.001, 0.001);
+  inText.position.set(0, 0, -1.1);
+  inText.rotation.set((Math.PI / 180) * -45, 0, 0);
+  sceneObjects.legend.add(inText);
+
+  const outLineGeometry = generateCurveGeometry(
+    new THREE.Vector3(0.5, 0, -0.9),
+    new THREE.Vector3(-0.5, 0, -0.9),
+    controls.userHeight,
+  );
+  const outLine = new MeshLine();
+  outLine.setGeometry(outLineGeometry);
+  const outLineMesh = new THREE.Mesh(outLine.geometry, lineMaterials.highlightOut);
+  outLineMesh.userData.type = 'out';
+  sceneObjects.legend.add(outLineMesh);
+
+  const outText = generateTextureCanvas('Related Searches', 36, 1024, 256); // 64
+  outText.scale.set(0.001, 0.001, 0.001);
+  outText.position.set(0, 0, -0.95);
+  outText.rotation.set((Math.PI / 180) * -45, 0, 0);
+  sceneObjects.legend.add(outText);
+
+  // return legend;
+  return sceneObjects.legend;
+}
+
 export function setupScene(data, state) {
   globalData = data;
   flourishState = state;
+  lineMaterials = updateLineMaterials(flourishState);
 
   // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
   renderer = new THREE.WebGLRenderer({
@@ -643,31 +821,39 @@ export function setupScene(data, state) {
   controls.standing = true;
   camera.position.y = controls.userHeight;
 
-  const ctx = renderer.context; // Quiet shader complaint log: GL_ARB_gpu_shader5
-  ctx.getShaderInfoLog = () => '';
+  const ctx = renderer.context;
+  ctx.getShaderInfoLog = () => ''; // Quiet shader complaint log: GL_ARB_gpu_shader5
 
+  // Generate Non-network Scene Elements
   scene.add(generateHorizon(
     flourishState.horizonTopColor,
     flourishState.horizonBottomColor,
     flourishState.horizonExponent,
   ));
   scene.add(generateFloor(stageSize, controls.userHeight));
+  scene.add(generateStars());
+  scene.add(generateLegend());
+  //
 
-  // generateStars
-  const starGeometry = new THREE.SphereGeometry(0.005, 12);
-  const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  let s = 0;
-  while (s < 1000) {
-    const star = new THREE.Mesh(starGeometry, starMaterial);
-    star.position.set(
-      (Math.random() - 0.5) * stageSize * 2,
-      2 + (Math.random() * (stageSize / 2)),
-      (Math.random() - 0.5) * stageSize * 2,
-    );
-    sceneObjects.stars.add(star);
-    s += 1;
-  }
-  scene.add(sceneObjects.stars);
+  //
+  // buttons
+  const resetButton = new THREE.Group();
+  resetButton.userData.type = 'button';
+  resetButton.scale.set(0.001, 0.001, 0.001);
+  resetButton.position.set(0, 0, -0.75);
+  resetButton.rotation.set((Math.PI / 180) * -45, 0, 0);
+  const resetText = generateTextureCanvas('Reset', 36, 256, 256); // 64
+  resetText.userData.type = 'text';
+  resetButton.add(resetText);
+  const circle = new THREE.Mesh(
+    new THREE.CircleGeometry(75, 24),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 }),
+  );
+  circle.userData.type = 'button';
+  resetButton.add(circle);
+  sceneObjects.buttons.add(resetButton);
+  scene.add(sceneObjects.buttons);
+  //
 
   const basicCursor = new THREE.Mesh(
     new THREE.RingGeometry(0.02, 0.03, 24),
@@ -728,7 +914,25 @@ export function setupScene(data, state) {
 
 export function updateSceneFromState(state) {
   flourishState = state;
-
+  //
+  lineMaterials = updateLineMaterials(flourishState);
+  sceneObjects.legend.children.forEach((l) => {
+    if (l.userData.type === 'out') {
+      l.material = lineMaterials.highlightOut;
+    } else if (l.userData.type === 'in') {
+      l.material = lineMaterials.highlightIn;
+    }
+  });
+  sceneObjects.links.children.forEach((l) => {
+    if (l.userData.status === 'out') {
+      l.material = lineMaterials.highlightOut;
+    } else if (l.userData.status === 'in') {
+      l.material = lineMaterials.highlightIn;
+    } else {
+      l.material = lineMaterials.basic;
+    }
+  });
+  //
   scene.remove(scene.getObjectByName('horizon', true));
   scene.add(generateHorizon(
     flourishState.horizonTopColor,

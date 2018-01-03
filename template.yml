@@ -26,6 +26,27 @@ settings:
   # • "boolean" >> gives a checkbox
   # • "color" >> gives a color picker
 
+  - Links
+  - property: unselectedColor
+    name: Unselected Color
+    description: The color of unselected links
+    type: color
+  - property: unselectedOpacity
+    name: Unselected Opacity
+    description: The opacity of unselected links
+    type: number
+    min: 0
+    max: 1
+    step: 0.01
+  - property: inboundColor
+    name: Inbound Color
+    description: The color of links to shows also searched for
+    type: color
+  - property: outboundColor
+    name: Outbound Color
+    description: The color of links to related searches
+    type: color
+
   - Horizon # Headings can be used to break up the settings into collapsible sections
   - property: horizonTopColor # Refers to a property in the template's state object
     name: Top Color # Display name for the settings panel
@@ -42,6 +63,9 @@ settings:
     min: 0
     max: 1
     step: 0.01
+
+
+
   # - Nodes
   # - property: unselectedNodeColor
   #   name: Unselected Node Color

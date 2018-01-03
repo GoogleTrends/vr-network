@@ -8,7 +8,7 @@ export function generateFloor(stageSize, userHeight) {
   const textureLoader = new THREE.TextureLoader();
   const texture = textureLoader.load(`${Flourish.static_prefix}/GoogleTrendsLogo.svg`);
 
-  const geometry = new THREE.PlaneGeometry(1024, 256);
+  const geometry = new THREE.PlaneGeometry(512, 128);
   const material = new THREE.MeshBasicMaterial({ map: texture });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(0, 0, -12);

@@ -8,12 +8,16 @@ export const state = {
   horizonTopColor: '#000000',
   horizonBottomColor: '#ff7700',
   horizonExponent: 0.05,
-  unselectedNodeColor: '#999999',
-  unselectedNodeOpacity: 0.35,
-  adjacentNodeColor: '#ffffff',
-  adjacentNodeOpacity: 0.75,
-  highlightedNodeColor: '#fff000',
-  highlightedNodeOpacity: 1.0,
+  unselectedColor: '#ffffff',
+  unselectedOpacity: 0.05,
+  inboundColor: '#90f9ff',
+  outboundColor: '#f990ff',
+  // unselectedNodeColor: '#999999',
+  // unselectedNodeOpacity: 0.35,
+  // adjacentNodeColor: '#ffffff',
+  // adjacentNodeOpacity: 0.75,
+  // highlightedNodeColor: '#fff000',
+  // highlightedNodeOpacity: 1.0,
 };
 
 // let w;
