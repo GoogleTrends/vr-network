@@ -24,7 +24,6 @@ const worldState = {
   vrEnabled: false,
   layoutMode: 1,
   isTransitioning: false,
-  // isReseting: true,
 };
 const sceneObjects = {
   nodes: new THREE.Group(),
@@ -32,13 +31,13 @@ const sceneObjects = {
   stars: new THREE.Group(),
   legend: new THREE.Group(),
   buttons: new THREE.Group(),
+  cursor: new THREE.Group(),
 };
 const linkScale = {
   min: 0.5,
   max: 5,
 };
 
-const cursor = new THREE.Group();
 const noSleep = new NoSleep();
 const stageSize = 10;
 
@@ -190,15 +189,6 @@ function layoutByForce() {
     globalData.nodes = simulation.nodes().map((n) => {
       n.shifted = false;
       n.status = '';
-      // n.pos = new THREE.Vector3(
-      //   scaleValue(n.x, dimensionMap.x, { min: 0, max: stageSize }),
-      //   scaleValue(n.y, dimensionMap.y, { min: 0, max: controls.userHeight * 2.5 }),
-      //   scaleValue(n.z, dimensionMap.z, { min: 0, max: stageSize }),
-      // )
-      // console.log(camera.position);
-      // console.log(dimensionMap.x);
-      // console.log({min:0, max:stageSize});
-      //
       n.pos = new THREE.Vector3(
         scaleValueWithGap(
           n.x,
@@ -511,19 +501,19 @@ function highlightIntersected() {
       timer = null;
       //
       // Dispose existing geometry
-      cursor.children[3].geometry.dispose();
-      cursor.children[3].geometry = null;
+      sceneObjects.cursor.children[3].geometry.dispose();
+      sceneObjects.cursor.children[3].geometry = null;
       //
-      cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
+      sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
     }
   } else {
     timer = null;
     //
     // Dispose existing geometry
-    cursor.children[3].geometry.dispose();
-    cursor.children[3].geometry = null;
+    sceneObjects.cursor.children[3].geometry.dispose();
+    sceneObjects.cursor.children[3].geometry = null;
     //
-    cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
+    sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
 }
 
@@ -611,10 +601,17 @@ function updateCursor() {
         timer += Math.PI / 30;
         //
         // Dispose existing geometry
-        cursor.children[3].geometry.dispose();
-        cursor.children[3].geometry = null;
+        sceneObjects.cursor.children[3].geometry.dispose();
+        sceneObjects.cursor.children[3].geometry = null;
         //
-        cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
+        sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(
+          0.02,
+          0.03,
+          24,
+          8,
+          -timer,
+          timer,
+        );
       } else {
         makeLinkedAdjacent(intersected.userData);
       }
@@ -623,10 +620,17 @@ function updateCursor() {
     timer = null;
     //
     // Dispose existing geometry
-    cursor.children[3].geometry.dispose();
-    cursor.children[3].geometry = null;
+    sceneObjects.cursor.children[3].geometry.dispose();
+    sceneObjects.cursor.children[3].geometry = null;
     //
-    cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
+    sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(
+      0.02,
+      0.03,
+      24,
+      8,
+      0,
+      0,
+    );
   }
 }
 
@@ -638,8 +642,6 @@ function animate() {
   lineMaterials.highlightIn.uniforms.time.value = time;
 
   transitionElements();
-
-  // console.log(camera.rotation.y * (180 / Math.PI));
 
   updateStars(time);
 
@@ -734,12 +736,6 @@ function formatData() {
   drawNetwork();
 }
 
-// function formatState(state) {
-//   state.forEach((s) => {
-//     console.log(s);
-//   });
-// }
-
 function generateStars() {
   const starGeometry = new THREE.SphereGeometry(0.005, 12);
   const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -754,13 +750,10 @@ function generateStars() {
     sceneObjects.stars.add(star);
     s += 1;
   }
-  // scene.add(sceneObjects.stars);
   return sceneObjects.stars;
 }
 
-function generateLegend() {
-  // const legend = new THREE.Group();
-
+function generateLegend(state) {
   const inLineGeometry = generateCurveGeometry(
     new THREE.Vector3(-0.5, 0, -1.05),
     new THREE.Vector3(0.5, 0, -1.05),
@@ -772,7 +765,7 @@ function generateLegend() {
   inLineMesh.userData.type = 'in';
   sceneObjects.legend.add(inLineMesh);
 
-  const inText = generateTextureCanvas('Also Searched For', 36, 1024, 256); // 64
+  const inText = generateTextureCanvas(state.legendInboundLabel, 36, 1024, 256); // 64
   inText.scale.set(0.001, 0.001, 0.001);
   inText.position.set(0, 0, -1.1);
   inText.rotation.set((Math.PI / 180) * -45, 0, 0);
@@ -789,20 +782,75 @@ function generateLegend() {
   outLineMesh.userData.type = 'out';
   sceneObjects.legend.add(outLineMesh);
 
-  const outText = generateTextureCanvas('Related Searches', 36, 1024, 256); // 64
+  const outText = generateTextureCanvas(state.legendOutboundLabel, 36, 1024, 256); // 64
   outText.scale.set(0.001, 0.001, 0.001);
   outText.position.set(0, 0, -0.95);
   outText.rotation.set((Math.PI / 180) * -45, 0, 0);
   sceneObjects.legend.add(outText);
 
-  // return legend;
+  sceneObjects.legend.name = 'legend';
+
   return sceneObjects.legend;
+}
+
+function generateCursor(state) {
+  const basicCursor = new THREE.Mesh(
+    new THREE.RingGeometry(0.02, 0.03, 24),
+    new THREE.MeshBasicMaterial({
+      color: new THREE.Color(state.cursorInnerColor),
+      opacity: state.cursorOpacity,
+      transparent: true,
+      depthTest: false,
+    }),
+  );
+  basicCursor.name = 'inner';
+  sceneObjects.cursor.add(basicCursor);
+
+  const innerCursor = new THREE.Mesh(
+    new THREE.RingGeometry(0.018, 0.02, 24),
+    new THREE.MeshBasicMaterial({
+      color: new THREE.Color(state.cursorOuterColor),
+      opacity: state.cursorOpacity,
+      transparent: true,
+      depthTest: false,
+    }),
+  );
+  innerCursor.name = 'outer';
+  sceneObjects.cursor.add(innerCursor);
+
+  const outerCursor = new THREE.Mesh(
+    new THREE.RingGeometry(0.03, 0.032, 24),
+    new THREE.MeshBasicMaterial({
+      color: new THREE.Color(state.cursorOuterColor),
+      opacity: state.cursorOpacity,
+      transparent: true,
+      depthTest: false,
+    }),
+  );
+  outerCursor.name = 'outer';
+  sceneObjects.cursor.add(outerCursor);
+
+  const highlightCursor = new THREE.Mesh(
+    new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0),
+    new THREE.MeshBasicMaterial({
+      color: new THREE.Color(state.cursorActiveColor),
+      opacity: 1.0,
+      transparent: true,
+      depthTest: false,
+    }),
+  );
+  highlightCursor.name = 'active';
+  sceneObjects.cursor.add(highlightCursor);
+
+  sceneObjects.cursor.position.z = -1;
+  sceneObjects.cursor.name = 'cursor';
+  return sceneObjects.cursor;
 }
 
 export function setupScene(data, state) {
   globalData = data;
   flourishState = state;
-  lineMaterials = updateLineMaterials(flourishState);
+  lineMaterials = updateLineMaterials(state);
 
   // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
   renderer = new THREE.WebGLRenderer({
@@ -832,7 +880,7 @@ export function setupScene(data, state) {
   ));
   scene.add(generateFloor(stageSize, controls.userHeight));
   scene.add(generateStars());
-  scene.add(generateLegend());
+  scene.add(generateLegend(state));
   //
 
   //
@@ -855,45 +903,7 @@ export function setupScene(data, state) {
   scene.add(sceneObjects.buttons);
   //
 
-  const basicCursor = new THREE.Mesh(
-    new THREE.RingGeometry(0.02, 0.03, 24),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      opacity: 0.5,
-      transparent: true,
-    }),
-  );
-  const innerCursor = new THREE.Mesh(
-    new THREE.RingGeometry(0.018, 0.02, 24),
-    new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      opacity: 0.5,
-      transparent: true,
-    }),
-  );
-  const outerCursor = new THREE.Mesh(
-    new THREE.RingGeometry(0.03, 0.032, 24),
-    new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      opacity: 0.5,
-      transparent: true,
-    }),
-  );
-  const highlightCursor = new THREE.Mesh(
-    new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0),
-    new THREE.MeshBasicMaterial({
-      color: 0xff7700,
-      opacity: 1.0,
-      transparent: true,
-    }),
-  );
-  cursor.add(basicCursor);
-  cursor.add(innerCursor);
-  cursor.add(outerCursor);
-  cursor.add(highlightCursor);
-  cursor.position.z = -1;
-
-  camera.add(cursor);
+  camera.add(generateCursor(state));
   scene.add(camera);
 
   raycaster = new THREE.Raycaster();
@@ -915,14 +925,16 @@ export function setupScene(data, state) {
 export function updateSceneFromState(state) {
   flourishState = state;
   //
+  scene.remove(scene.getObjectByName('cursor', true));
+  sceneObjects.cursor = new THREE.Group();
+  camera.add(generateCursor(state));
+  //
   lineMaterials = updateLineMaterials(flourishState);
-  sceneObjects.legend.children.forEach((l) => {
-    if (l.userData.type === 'out') {
-      l.material = lineMaterials.highlightOut;
-    } else if (l.userData.type === 'in') {
-      l.material = lineMaterials.highlightIn;
-    }
-  });
+  //
+  scene.remove(scene.getObjectByName('legend', true));
+  sceneObjects.legend = new THREE.Group();
+  scene.add(generateLegend(state));
+  //
   sceneObjects.links.children.forEach((l) => {
     if (l.userData.status === 'out') {
       l.material = lineMaterials.highlightOut;

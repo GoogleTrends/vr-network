@@ -48656,8 +48656,8 @@ function updateLineMaterials(state) {
 
   lineMaterials.basic = new MeshLineMaterial({
     lineWidth: linkWidth / 100,
-    color: new Color(state.unselectedColor),
-    opacity: state.unselectedOpacity,
+    color: new Color(state.linkUnselectedColor),
+    opacity: state.linkUnselectedOpacity,
     transparent: true
   });
 
@@ -48668,7 +48668,7 @@ function updateLineMaterials(state) {
       useMap: { type: 'f', value: 0 },
       alphaMap: { type: 't', value: null },
       useAlphaMap: { type: 'f', value: 0 },
-      color: { type: 'c', value: new Color(state.outboundColor) },
+      color: { type: 'c', value: new Color(state.linkOutboundColor) },
       opacity: { type: 'f', value: 0.5 },
       resolution: { type: 'v2', value: new Vector2(1, 1) },
       sizeAttenuation: { type: 'f', value: 1 },
@@ -48681,8 +48681,8 @@ function updateLineMaterials(state) {
       repeat: { type: 'v2', value: new Vector2(1, 1) },
       time: { type: 'f', value: 1 }
     },
-    vertexShader: animLineVertex, // vertexShaderSource.join('\r\n'),
-    fragmentShader: animLineFragment, // fragmentShaderSource.join('\r\n'),
+    vertexShader: animLineVertex,
+    fragmentShader: animLineFragment,
     transparent: true
   });
 
@@ -48693,7 +48693,7 @@ function updateLineMaterials(state) {
       useMap: { type: 'f', value: 0 },
       alphaMap: { type: 't', value: null },
       useAlphaMap: { type: 'f', value: 0 },
-      color: { type: 'c', value: new Color(state.inboundColor) },
+      color: { type: 'c', value: new Color(state.linkInboundColor) },
       opacity: { type: 'f', value: 0.5 },
       resolution: { type: 'v2', value: new Vector2(1, 1) },
       sizeAttenuation: { type: 'f', value: 1 },
@@ -48706,8 +48706,8 @@ function updateLineMaterials(state) {
       repeat: { type: 'v2', value: new Vector2(1, 1) },
       time: { type: 'f', value: 1 }
     },
-    vertexShader: animLineVertex, // vertexShaderSource.join('\r\n'),
-    fragmentShader: animLineFragment, // fragmentShaderSource.join('\r\n'),
+    vertexShader: animLineVertex,
+    fragmentShader: animLineFragment,
     transparent: true
   });
 
@@ -48963,21 +48963,20 @@ var worldState = {
   vrEnabled: false,
   layoutMode: 1,
   isTransitioning: false
-  // isReseting: true,
 };
 var sceneObjects = {
   nodes: new Group(),
   links: new Group(),
   stars: new Group(),
   legend: new Group(),
-  buttons: new Group()
+  buttons: new Group(),
+  cursor: new Group()
 };
 var linkScale = {
   min: 0.5,
   max: 5
 };
 
-var cursor = new Group();
 var noSleep = new NoSleep$1();
 var stageSize = 10;
 
@@ -49131,15 +49130,6 @@ function layoutByForce() {
     globalData.nodes = simulation.nodes().map(function (n) {
       n.shifted = false;
       n.status = '';
-      // n.pos = new THREE.Vector3(
-      //   scaleValue(n.x, dimensionMap.x, { min: 0, max: stageSize }),
-      //   scaleValue(n.y, dimensionMap.y, { min: 0, max: controls.userHeight * 2.5 }),
-      //   scaleValue(n.z, dimensionMap.z, { min: 0, max: stageSize }),
-      // )
-      // console.log(camera.position);
-      // console.log(dimensionMap.x);
-      // console.log({min:0, max:stageSize});
-      //
       n.pos = new Vector3(scaleValueWithGap(n.x, dimensionMap.x, {
         min: 0, // stageSize / 4,
         max: stageSize // (stageSize / 4) * 3,
@@ -49400,19 +49390,19 @@ function highlightIntersected() {
       timer = null;
       //
       // Dispose existing geometry
-      cursor.children[3].geometry.dispose();
-      cursor.children[3].geometry = null;
+      sceneObjects.cursor.children[3].geometry.dispose();
+      sceneObjects.cursor.children[3].geometry = null;
       //
-      cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
+      sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
     }
   } else {
     timer = null;
     //
     // Dispose existing geometry
-    cursor.children[3].geometry.dispose();
-    cursor.children[3].geometry = null;
+    sceneObjects.cursor.children[3].geometry.dispose();
+    sceneObjects.cursor.children[3].geometry = null;
     //
-    cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
+    sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
 }
 
@@ -49493,10 +49483,10 @@ function updateCursor() {
         timer += Math.PI / 30;
         //
         // Dispose existing geometry
-        cursor.children[3].geometry.dispose();
-        cursor.children[3].geometry = null;
+        sceneObjects.cursor.children[3].geometry.dispose();
+        sceneObjects.cursor.children[3].geometry = null;
         //
-        cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
+        sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
       } else {
         makeLinkedAdjacent(intersected.userData);
       }
@@ -49505,10 +49495,10 @@ function updateCursor() {
     timer = null;
     //
     // Dispose existing geometry
-    cursor.children[3].geometry.dispose();
-    cursor.children[3].geometry = null;
+    sceneObjects.cursor.children[3].geometry.dispose();
+    sceneObjects.cursor.children[3].geometry = null;
     //
-    cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
+    sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
 }
 
@@ -49520,8 +49510,6 @@ function animate() {
   lineMaterials.highlightIn.uniforms.time.value = time;
 
   transitionElements();
-
-  // console.log(camera.rotation.y * (180 / Math.PI));
 
   updateStars(time);
 
@@ -49621,12 +49609,6 @@ function formatData() {
   drawNetwork();
 }
 
-// function formatState(state) {
-//   state.forEach((s) => {
-//     console.log(s);
-//   });
-// }
-
 function generateStars() {
   var starGeometry = new SphereGeometry(0.005, 12);
   var starMaterial = new MeshBasicMaterial({ color: 0xffffff });
@@ -49637,13 +49619,10 @@ function generateStars() {
     sceneObjects.stars.add(star);
     s += 1;
   }
-  // scene.add(sceneObjects.stars);
   return sceneObjects.stars;
 }
 
-function generateLegend() {
-  // const legend = new THREE.Group();
-
+function generateLegend(state) {
   var inLineGeometry = generateCurveGeometry(new Vector3(-0.5, 0, -1.05), new Vector3(0.5, 0, -1.05), controls.userHeight);
   var inLine = new MeshLine();
   inLine.setGeometry(inLineGeometry);
@@ -49651,7 +49630,7 @@ function generateLegend() {
   inLineMesh.userData.type = 'in';
   sceneObjects.legend.add(inLineMesh);
 
-  var inText = generateTextureCanvas('Also Searched For', 36, 1024, 256); // 64
+  var inText = generateTextureCanvas(state.legendInboundLabel, 36, 1024, 256); // 64
   inText.scale.set(0.001, 0.001, 0.001);
   inText.position.set(0, 0, -1.1);
   inText.rotation.set(Math.PI / 180 * -45, 0, 0);
@@ -49664,20 +49643,63 @@ function generateLegend() {
   outLineMesh.userData.type = 'out';
   sceneObjects.legend.add(outLineMesh);
 
-  var outText = generateTextureCanvas('Related Searches', 36, 1024, 256); // 64
+  var outText = generateTextureCanvas(state.legendOutboundLabel, 36, 1024, 256); // 64
   outText.scale.set(0.001, 0.001, 0.001);
   outText.position.set(0, 0, -0.95);
   outText.rotation.set(Math.PI / 180 * -45, 0, 0);
   sceneObjects.legend.add(outText);
 
-  // return legend;
+  sceneObjects.legend.name = 'legend';
+
   return sceneObjects.legend;
+}
+
+function generateCursor(state) {
+  var basicCursor = new Mesh(new RingGeometry(0.02, 0.03, 24), new MeshBasicMaterial({
+    color: new Color(state.cursorInnerColor),
+    opacity: state.cursorOpacity,
+    transparent: true,
+    depthTest: false
+  }));
+  basicCursor.name = 'inner';
+  sceneObjects.cursor.add(basicCursor);
+
+  var innerCursor = new Mesh(new RingGeometry(0.018, 0.02, 24), new MeshBasicMaterial({
+    color: new Color(state.cursorOuterColor),
+    opacity: state.cursorOpacity,
+    transparent: true,
+    depthTest: false
+  }));
+  innerCursor.name = 'outer';
+  sceneObjects.cursor.add(innerCursor);
+
+  var outerCursor = new Mesh(new RingGeometry(0.03, 0.032, 24), new MeshBasicMaterial({
+    color: new Color(state.cursorOuterColor),
+    opacity: state.cursorOpacity,
+    transparent: true,
+    depthTest: false
+  }));
+  outerCursor.name = 'outer';
+  sceneObjects.cursor.add(outerCursor);
+
+  var highlightCursor = new Mesh(new RingGeometry(0.02, 0.03, 24, 8, 0, 0), new MeshBasicMaterial({
+    color: new Color(state.cursorActiveColor),
+    opacity: 1.0,
+    transparent: true,
+    depthTest: false
+  }));
+  highlightCursor.name = 'active';
+  sceneObjects.cursor.add(highlightCursor);
+
+  sceneObjects.cursor.position.z = -1;
+  sceneObjects.cursor.name = 'cursor';
+  return sceneObjects.cursor;
 }
 
 function setupScene(data, state) {
   globalData = data;
   flourishState = state;
-  lineMaterials = updateLineMaterials(flourishState);
+  lineMaterials = updateLineMaterials(state);
 
   // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
   renderer = new WebGLRenderer({
@@ -49705,7 +49727,7 @@ function setupScene(data, state) {
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
   scene.add(generateFloor(stageSize, controls.userHeight));
   scene.add(generateStars());
-  scene.add(generateLegend());
+  scene.add(generateLegend(state));
   //
 
   //
@@ -49725,33 +49747,7 @@ function setupScene(data, state) {
   scene.add(sceneObjects.buttons);
   //
 
-  var basicCursor = new Mesh(new RingGeometry(0.02, 0.03, 24), new MeshBasicMaterial({
-    color: 0xffffff,
-    opacity: 0.5,
-    transparent: true
-  }));
-  var innerCursor = new Mesh(new RingGeometry(0.018, 0.02, 24), new MeshBasicMaterial({
-    color: 0x000000,
-    opacity: 0.5,
-    transparent: true
-  }));
-  var outerCursor = new Mesh(new RingGeometry(0.03, 0.032, 24), new MeshBasicMaterial({
-    color: 0x000000,
-    opacity: 0.5,
-    transparent: true
-  }));
-  var highlightCursor = new Mesh(new RingGeometry(0.02, 0.03, 24, 8, 0, 0), new MeshBasicMaterial({
-    color: 0xff7700,
-    opacity: 1.0,
-    transparent: true
-  }));
-  cursor.add(basicCursor);
-  cursor.add(innerCursor);
-  cursor.add(outerCursor);
-  cursor.add(highlightCursor);
-  cursor.position.z = -1;
-
-  camera.add(cursor);
+  camera.add(generateCursor(state));
   scene.add(camera);
 
   raycaster = new Raycaster();
@@ -49773,14 +49769,16 @@ function setupScene(data, state) {
 function updateSceneFromState(state) {
   flourishState = state;
   //
+  scene.remove(scene.getObjectByName('cursor', true));
+  sceneObjects.cursor = new Group();
+  camera.add(generateCursor(state));
+  //
   lineMaterials = updateLineMaterials(flourishState);
-  sceneObjects.legend.children.forEach(function (l) {
-    if (l.userData.type === 'out') {
-      l.material = lineMaterials.highlightOut;
-    } else if (l.userData.type === 'in') {
-      l.material = lineMaterials.highlightIn;
-    }
-  });
+  //
+  scene.remove(scene.getObjectByName('legend', true));
+  sceneObjects.legend = new Group();
+  scene.add(generateLegend(state));
+  //
   sceneObjects.links.children.forEach(function (l) {
     if (l.userData.status === 'out') {
       l.material = lineMaterials.highlightOut;
@@ -49803,16 +49801,16 @@ var state = {
   horizonTopColor: '#000000',
   horizonBottomColor: '#ff7700',
   horizonExponent: 0.05,
-  unselectedColor: '#ffffff',
-  unselectedOpacity: 0.05,
-  inboundColor: '#90f9ff',
-  outboundColor: '#f990ff'
-  // unselectedNodeColor: '#999999',
-  // unselectedNodeOpacity: 0.35,
-  // adjacentNodeColor: '#ffffff',
-  // adjacentNodeOpacity: 0.75,
-  // highlightedNodeColor: '#fff000',
-  // highlightedNodeOpacity: 1.0,
+  linkUnselectedColor: '#ffffff',
+  linkUnselectedOpacity: 0.05,
+  linkInboundColor: '#90f9ff',
+  linkOutboundColor: '#f990ff',
+  legendInboundLabel: 'Also Searched For',
+  legendOutboundLabel: 'Related Searches',
+  cursorInnerColor: '#ffffff',
+  cursorOuterColor: '#000000',
+  cursorActiveColor: '#ff7700',
+  cursorOpacity: 0.5
 };
 
 // let w;

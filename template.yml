@@ -27,25 +27,56 @@ settings:
   # • "color" >> gives a color picker
 
   - Links
-  - property: unselectedColor
+  - property: linkUnselectedColor
     name: Unselected Color
     description: The color of unselected links
     type: color
-  - property: unselectedOpacity
+  - property: linkUnselectedOpacity
     name: Unselected Opacity
     description: The opacity of unselected links
     type: number
     min: 0
     max: 1
     step: 0.01
-  - property: inboundColor
+  - property: linkInboundColor
     name: Inbound Color
     description: The color of links to shows also searched for
     type: color
-  - property: outboundColor
+  - property: linkOutboundColor
     name: Outbound Color
     description: The color of links to related searches
     type: color
+
+  - Cursor 
+  - property: cursorInnerColor
+    name: Inner Color
+    description: The inside ring of the Cursor
+    type: color
+  - property: cursorOuterColor
+    name: Outer Color
+    description: The outside rings of the Cursor
+    type: color
+  - property: cursorActiveColor
+    name: Active Color
+    description: The color that indicates the cursor is selecting an element
+    type: color
+  - property: cursorOpacity
+    name: Opacity
+    description: The opacity of the cursor
+    type: number
+    min: 0
+    max: 1
+    step: 0.1
+
+  - Legend
+  - property: legendInboundLabel
+    name: Inbound Label
+    description: Legend Label for inbound links
+    type: string
+  - property: legendOutboundLabel
+    name: Outbound Label
+    description: Legend Label for outbound links
+    type: string
 
   - Horizon # Headings can be used to break up the settings into collapsible sections
   - property: horizonTopColor # Refers to a property in the template's state object

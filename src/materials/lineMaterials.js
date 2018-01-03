@@ -11,8 +11,8 @@ export function updateLineMaterials(state) {
 
   lineMaterials.basic = new MeshLineMaterial({
     lineWidth: (linkWidth / 100),
-    color: new THREE.Color(state.unselectedColor),
-    opacity: state.unselectedOpacity,
+    color: new THREE.Color(state.linkUnselectedColor),
+    opacity: state.linkUnselectedOpacity,
     transparent: true,
   });
 
@@ -23,7 +23,7 @@ export function updateLineMaterials(state) {
       useMap: { type: 'f', value: 0 },
       alphaMap: { type: 't', value: null },
       useAlphaMap: { type: 'f', value: 0 },
-      color: { type: 'c', value: new THREE.Color(state.outboundColor) },
+      color: { type: 'c', value: new THREE.Color(state.linkOutboundColor) },
       opacity: { type: 'f', value: 0.5 },
       resolution: { type: 'v2', value: new THREE.Vector2(1, 1) },
       sizeAttenuation: { type: 'f', value: 1 },
@@ -36,8 +36,8 @@ export function updateLineMaterials(state) {
       repeat: { type: 'v2', value: new THREE.Vector2(1, 1) },
       time: { type: 'f', value: 1 },
     },
-    vertexShader: animLineVertex, // vertexShaderSource.join('\r\n'),
-    fragmentShader: animLineFragment, // fragmentShaderSource.join('\r\n'),
+    vertexShader: animLineVertex,
+    fragmentShader: animLineFragment,
     transparent: true,
   });
 
@@ -48,7 +48,7 @@ export function updateLineMaterials(state) {
       useMap: { type: 'f', value: 0 },
       alphaMap: { type: 't', value: null },
       useAlphaMap: { type: 'f', value: 0 },
-      color: { type: 'c', value: new THREE.Color(state.inboundColor) },
+      color: { type: 'c', value: new THREE.Color(state.linkInboundColor) },
       opacity: { type: 'f', value: 0.5 },
       resolution: { type: 'v2', value: new THREE.Vector2(1, 1) },
       sizeAttenuation: { type: 'f', value: 1 },
@@ -61,8 +61,8 @@ export function updateLineMaterials(state) {
       repeat: { type: 'v2', value: new THREE.Vector2(1, 1) },
       time: { type: 'f', value: 1 },
     },
-    vertexShader: animLineVertex, // vertexShaderSource.join('\r\n'),
-    fragmentShader: animLineFragment, // fragmentShaderSource.join('\r\n'),
+    vertexShader: animLineVertex,
+    fragmentShader: animLineFragment,
     transparent: true,
   });
 
