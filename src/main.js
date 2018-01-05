@@ -46,6 +46,7 @@ let globalData = {};
 let initData = {};
 let flourishState = {};
 let timer = null;
+let time = 0;
 
 let vrDisplay;
 let scene;
@@ -362,7 +363,6 @@ function transitionElements() {
     });
   } else {
     sceneObjects.links.children.forEach((l) => {
-      l.material.visible = true;
       if (
         (l.userData.spos.distanceTo(l.userData.nextSPos) > 0.01)
         ||
@@ -373,7 +373,6 @@ function transitionElements() {
         l.geometry.dispose();
         l.geometry = null;
         //
-        l.material.visible = true;
         l.userData.spos = new THREE.Vector3(
           l.userData.nextSPos.x,
           l.userData.nextSPos.y,
@@ -397,6 +396,11 @@ function transitionElements() {
         const lineMesh = new THREE.Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
         l.geometry.attributes.position.needsUpdate = true;
+        if (l.userData.status === 'out') {
+          l.material.visible = true;
+        } else if (l.userData.status === 'in') {
+          l.material.visible = true;
+        }
       }
     });
   }
@@ -500,12 +504,15 @@ function highlightIntersected() {
           //
           if (l.userData.source === intersected.userData.id) {
             l.material = lineMaterials.highlightOut;
+            l.material.visible = true;
             l.userData.status = 'out';
           } else if (l.userData.target === intersected.userData.id) {
             l.material = lineMaterials.highlightIn;
+            l.material.visible = true;
             l.userData.status = 'in';
           } else {
             l.material = lineMaterials.basic;
+            l.material.visible = false;
             l.userData.status = '';
           }
         });
@@ -725,8 +732,14 @@ function updateCursor() {
 }
 
 // Request animation frame loop function
+
 function animate() {
-  const time = performance.now() * 0.01;
+  // const time = performance.now() * 0.01;
+  time += 0.1;
+  if (time > 99.99) {
+    time = 0;
+  }  
+
   // lineMaterials.basic.uniforms.time.value = time;
   lineMaterials.highlightOut.uniforms.time.value = time;
   lineMaterials.highlightIn.uniforms.time.value = time;
@@ -1024,6 +1037,7 @@ export function setupScene(data, state) {
   globalData = data;
   flourishState = state;
   lineMaterials = updateLineMaterials(state);
+  lineMaterials.basic.visible = false;
 
   // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
   renderer = new THREE.WebGLRenderer({
@@ -1096,6 +1110,7 @@ export function updateSceneFromState(state) {
   camera.add(generateCursor(state));
   //
   lineMaterials = updateLineMaterials(flourishState);
+  lineMaterials.basic.visible = false;
   //
   scene.remove(scene.getObjectByName('legend', true));
   scene.add(generateLegend(state));

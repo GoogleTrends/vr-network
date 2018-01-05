@@ -48758,18 +48758,6 @@ var highlight = new MeshPhongMaterial({
   depthTest: true
 });
 
-// const sphereMaterial = (color, opacity) => {
-//   return new THREE.MeshBasicMaterial({
-//     color: new THREE.Color(color),
-//     flatShading: true,
-//     opacity: opacity,
-//     transparent: true,
-//     depthTest: false,
-//   });
-// }
-
-// export default sphereMaterial;
-
 var asyncGenerator = function () {
   function AwaitValue(value) {
     this.value = value;
@@ -49005,6 +48993,7 @@ var globalData = {};
 var initData = {};
 var flourishState = {};
 var timer = null;
+var time = 0;
 
 var vrDisplay = void 0;
 var scene = void 0;
@@ -49305,14 +49294,12 @@ function transitionElements() {
     });
   } else {
     sceneObjects.links.children.forEach(function (l) {
-      l.material.visible = true;
       if (l.userData.spos.distanceTo(l.userData.nextSPos) > 0.01 || l.userData.tpos.distanceTo(l.userData.nextTPos) > 0.01) {
         //
         // Dispose existing geometry
         l.geometry.dispose();
         l.geometry = null;
         //
-        l.material.visible = true;
         l.userData.spos = new Vector3(l.userData.nextSPos.x, l.userData.nextSPos.y, l.userData.nextSPos.z);
         l.userData.tpos = new Vector3(l.userData.nextTPos.x, l.userData.nextTPos.y, l.userData.nextTPos.z);
         var lineGeometry = generateCurveGeometry(l.userData.spos, l.userData.tpos, controls.userHeight);
@@ -49323,6 +49310,11 @@ function transitionElements() {
         var lineMesh = new Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
         l.geometry.attributes.position.needsUpdate = true;
+        if (l.userData.status === 'out') {
+          l.material.visible = true;
+        } else if (l.userData.status === 'in') {
+          l.material.visible = true;
+        }
       }
     });
   }
@@ -49398,12 +49390,15 @@ function highlightIntersected() {
           //
           if (l.userData.source === intersected.userData.id) {
             l.material = lineMaterials.highlightOut;
+            l.material.visible = true;
             l.userData.status = 'out';
           } else if (l.userData.target === intersected.userData.id) {
             l.material = lineMaterials.highlightIn;
+            l.material.visible = true;
             l.userData.status = 'in';
           } else {
             l.material = lineMaterials.basic;
+            l.material.visible = false;
             l.userData.status = '';
           }
         });
@@ -49598,8 +49593,14 @@ function updateCursor() {
 }
 
 // Request animation frame loop function
+
 function animate() {
-  var time = performance.now() * 0.01;
+  // const time = performance.now() * 0.01;
+  time += 0.1;
+  if (time > 99.99) {
+    time = 0;
+  }
+
   // lineMaterials.basic.uniforms.time.value = time;
   lineMaterials.highlightOut.uniforms.time.value = time;
   lineMaterials.highlightIn.uniforms.time.value = time;
@@ -49878,6 +49879,7 @@ function setupScene(data, state) {
   globalData = data;
   flourishState = state;
   lineMaterials = updateLineMaterials(state);
+  lineMaterials.basic.visible = false;
 
   // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
   renderer = new WebGLRenderer({
@@ -49948,6 +49950,7 @@ function updateSceneFromState(state) {
   camera.add(generateCursor(state));
   //
   lineMaterials = updateLineMaterials(flourishState);
+  lineMaterials.basic.visible = false;
   //
   scene.remove(scene.getObjectByName('legend', true));
   scene.add(generateLegend(state));

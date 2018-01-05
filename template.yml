@@ -27,17 +27,17 @@ settings:
   # • "color" >> gives a color picker
 
   - Links
-  - property: linkUnselectedColor
-    name: Unselected Color
-    description: The color of unselected links
-    type: color
-  - property: linkUnselectedOpacity
-    name: Unselected Opacity
-    description: The opacity of unselected links
-    type: number
-    min: 0
-    max: 1
-    step: 0.01
+  # - property: linkUnselectedColor
+  #   name: Unselected Color
+  #   description: The color of unselected links
+  #   type: color
+  # - property: linkUnselectedOpacity
+  #   name: Unselected Opacity
+  #   description: The opacity of unselected links
+  #   type: number
+  #   min: 0
+  #   max: 1
+  #   step: 0.01
   - property: linkInboundColor
     name: Inbound Color
     description: The color of links to shows also searched for
