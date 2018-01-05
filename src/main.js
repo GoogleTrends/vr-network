@@ -46,7 +46,7 @@ let globalData = {};
 let initData = {};
 let flourishState = {};
 let timer = null;
-let time = 0;
+let shadertime = 0;
 
 let vrDisplay;
 let scene;
@@ -734,15 +734,15 @@ function updateCursor() {
 // Request animation frame loop function
 
 function animate() {
-  // const time = performance.now() * 0.01;
-  time += 0.1;
-  if (time > 99.99) {
-    time = 0;
-  }  
+  const time = performance.now() * 0.01;
+  shadertime += 0.1;
+  if (shadertime > 99.99) {
+    shadertime = 0;
+  }
 
   // lineMaterials.basic.uniforms.time.value = time;
-  lineMaterials.highlightOut.uniforms.time.value = time;
-  lineMaterials.highlightIn.uniforms.time.value = time;
+  lineMaterials.highlightOut.uniforms.time.value = shadertime;
+  lineMaterials.highlightIn.uniforms.time.value = shadertime;
 
   updating.material.opacity = Math.abs(Math.cos(time / 5.0));
 
