@@ -9,7 +9,7 @@ export const state = {
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,
   linkUnselectedColor: '#ffffff',
-  linkUnselectedOpacity: 0.02,
+  linkUnselectedOpacity: 0.01,
   linkInboundColor: '#FDD835',
   linkOutboundColor: '#F44336',
   legendInboundLabel: 'Also Searched For',

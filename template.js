@@ -48525,8 +48525,7 @@ function generateTextureCanvas(text, textSize, width, height) {
   // context.fillRect(0, 0, width, height);
 
   context.strokeStyle = 'rgb(0, 0, 0)';
-  // context.lineWidth = 5;
-  context.lineWidth = 10;
+  context.lineWidth = 7;
   context.strokeText(text, width / 2 - textWidth / 2, height / 2 + textSize / 2.25);
 
   context.fillStyle = 'rgb(255, 255, 255)';
@@ -49033,7 +49032,7 @@ function updateNetwork() {
     }
     //
     n.children.forEach(function (c) {
-      if (c.userData.type !== 'text') {
+      if (c.userData.type === 'sphere') {
         //
         // Dispose existing geometry
         c.material.dispose();
@@ -49050,8 +49049,21 @@ function updateNetwork() {
           c.material = basic;
           c.children[0].material.visible = false;
         }
+      } else if (c.name === 'name') {
+        // c.position.set(
+        c.position.set(nd.nameOffset.x, nd.nameOffset.y, 0.15);
       }
     });
+    //
+    // console.log(n);
+    // console.log(nd.id);
+    // console.log(n.getObjectByName(''));
+    // console.log(n.children.getObjectByName(`name-${nd.id}`, true));
+    // .position.set(
+    //   nd.nameOffset,
+    //   0,
+    //   0.15,
+    // );
     //
     n.userData.status = nd.status;
     n.userData.nextPos = nd.pos;
@@ -49320,7 +49332,7 @@ function resetIntersected() {
   if (intersected.userData.type === 'node') {
     intersected.userData.nextScale = 1;
     intersected.children.forEach(function (c) {
-      if (c.userData.type !== 'text') {
+      if (c.userData.type === 'sphere') {
         //
         // Dispose existing geometry
         c.material.dispose();
@@ -49345,7 +49357,7 @@ function highlightIntersected() {
     //
     var foundCurrent = false;
     intersects.forEach(function (o) {
-      if (o.object.parent === intersected && o.object.userData.type !== 'text') {
+      if (o.object.parent === intersected && (intersects[index].distance > stageSize / 2 && intersects[index].object.userData.type === 'text' || o.object.userData.type === 'sphere' || o.object.userData.type === 'button')) {
         //
         if (intersected.userData.type === 'node') {
           var scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
@@ -49360,10 +49372,7 @@ function highlightIntersected() {
     });
     //
     while (searching) {
-      if (intersects[index].object.parent !== intersected &&
-      // intersects[index].distance > (stageSize / 2)
-      // ||
-      intersects[index].object.userData.type !== 'text') {
+      if (intersects[index].object.parent !== intersected && (intersects[index].distance > stageSize / 2 && intersects[index].object.userData.type === 'text' || intersects[index].object.userData.type === 'sphere' || intersects[index].object.userData.type === 'button')) {
         nextIntersected = intersects[index].object;
         searching = false;
       }
@@ -49402,7 +49411,7 @@ function highlightIntersected() {
         intersected.userData.nextScale = scaleBy;
         // intersected.scale.set(scaleBy, scaleBy, scaleBy);
         intersected.children.forEach(function (c) {
-          if (c.userData.type !== 'text') {
+          if (c.userData.type === 'sphere') {
             // c.currentMaterial = c.material;
             if (intersected.userData.status === 'center') {
               c.currentMaterial = selected;
@@ -49471,29 +49480,58 @@ function makeLinkedAdjacent(centerNode) {
         centerData = _globalData$nodes$fil4[0];
 
     var angle = Math.atan2(centerData.pos.z, centerData.pos.x);
-    centerData.pos = new Vector3(Math.cos(angle) * (stageSize / 3), centerData.pos.y + (controls.userHeight - centerData.pos.y) / 2, Math.sin(angle) * (stageSize / 3));
+    centerData.pos = new Vector3(Math.cos(angle) * (stageSize / 5), centerData.pos.y + (controls.userHeight - centerData.pos.y) / 2, Math.sin(angle) * (stageSize / 5));
 
     var linkCount = linked.length;
     var phi = Math.PI * 2 / linkCount;
-    var radius = stageSize / 10;
+    // const radius = (stageSize / 10) + (linkCount / 10);
+    var radius = 0.5 + linkCount / 25;
     var theta = angle + 90 * (Math.PI / 180);
 
     var i = 0;
     globalData.nodes.forEach(function (n) {
+      n.nameOffset.x = 0;
+      n.nameOffset.y = -0.1;
       if (n.id === centerNode.id) {
         n.shifted = true;
         n.status = 'center';
-      } else {
-        n.shifted = false;
-        n.status = '';
-        n.pos = n.lastPos;
-      }
-      if (linked.includes(n.id)) {
+      } else if (linked.includes(n.id)) {
         n.shifted = true;
         n.status = 'adjacent';
         var xzradius = Math.cos(i * (Math.PI / (linkCount / 2))) * radius;
         n.pos = new Vector3(centerData.pos.x + Math.cos(theta) * xzradius, centerData.pos.y + Math.sin(phi * i) * radius, centerData.pos.z + Math.sin(theta) * xzradius);
         i += 1;
+        //
+        n.nameOffset.x = xzradius * 0.1;
+        n.nameOffset.y = Math.sin(phi * i) * 0.1;
+        if (n.nameOffset.y < 0.1 && n.nameOffset.y >= 0) {
+          n.nameOffset.y = 0.1;
+        } else if (n.nameOffset.y > -0.1 && n.nameOffset.y < 0) {
+          n.nameOffset.y = -0.1;
+        }
+        // if (n.nameOffset.y < 0.65 && n.nameOffset.y > -0.65) {
+        //   n.nameOffset.y *= 2.0;
+        // }
+        // if (n.nameOffset.y === 0) {
+        //   n.nameOffset.y = -0.1;
+        // }
+
+        // console.log(n);
+        // n.getObjectByName(`name-${n.id}`, true).position.set(
+        //   Math.cos(theta),
+        //   0,
+        //   0.15,
+        // );
+        //
+        // } else if (n.id !== centerNode.id) {
+      } else {
+        n.shifted = false;
+        n.status = '';
+        n.pos = n.lastPos;
+        //
+        var oangle = Math.atan2(n.pos.z, n.pos.x);
+        n.pos = new Vector3(Math.cos(oangle) * (stageSize / 2), n.pos.y, Math.sin(oangle) * (stageSize / 2));
+        //
       }
     });
 
@@ -49633,7 +49671,6 @@ function drawNetwork() {
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
     var sphere = new Mesh(sphereGeometry, basic);
     sphere.userData.type = 'sphere';
-    //
 
     // Sprite Glow Effect
     var textureLoader = new TextureLoader();
@@ -49645,24 +49682,36 @@ function drawNetwork() {
       blending: AdditiveBlending
     });
     var sprite = new Sprite(spriteMaterial);
-    sprite.userData.type = 'text';
+    sprite.userData.type = 'glow';
     sprite.scale.set(0.4, 0.4, 0.4);
     sprite.material.visible = false;
     sphere.add(sprite);
     node.add(sphere);
     //
 
+    //
     var weight = '';
     if (d.rank <= 20) {
       weight = 'bold ';
     } else if (d.rank > 40) {
       weight = '300 ';
     }
-    var text = generateTextureCanvas(d.rank + ': ' + d.name, 66, 1024, 256, weight);
+    //
+    var rank = generateTextureCanvas('' + d.rank, 66, 1024, 256, weight);
+    rank.scale.set(0.001, 0.001, 0.001);
+    rank.position.set(0, 0, 0.15);
+    rank.userData.type = 'text';
+    node.add(rank);
+    //
+    var text = generateTextureCanvas('' + d.name, 66, 1024, 256, weight);
     text.scale.set(0.001, 0.001, 0.001);
-    text.position.set(0, 0, 0.15);
+    text.position.set(0, -0.1, 0.15);
     text.userData.type = 'text';
+    text.name = 'name';
+    // text.name = `name-${d.rank}`;
     node.add(text);
+    //
+
     sceneObjects.nodes.add(node);
   });
   scene.add(sceneObjects.nodes);
@@ -49682,6 +49731,7 @@ function formatData() {
     return l;
   });
   globalData.nodes = globalData.nodes.map(function (n) {
+    n.nameOffset = new Vector2(0, -0.1);
     n.linkCount = globalData.links.filter(function (l) {
       return l.sourceId === n.id || l.targetId === n.id;
     }).length;
@@ -49925,7 +49975,7 @@ var state = {
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,
   linkUnselectedColor: '#ffffff',
-  linkUnselectedOpacity: 0.02,
+  linkUnselectedOpacity: 0.01,
   linkInboundColor: '#FDD835',
   linkOutboundColor: '#F44336',
   legendInboundLabel: 'Also Searched For',
