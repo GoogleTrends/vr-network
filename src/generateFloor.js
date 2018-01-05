@@ -11,19 +11,23 @@ export function generateFloor(stageSize, userHeight) {
   const geometry = new THREE.PlaneGeometry(512, 128);
   const material = new THREE.MeshBasicMaterial({ map: texture });
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(0, 0, -12);
-
+  mesh.position.set(12, 0, 0);
   floor.add(mesh);
 
   const width = 1024;
   const height = 512;
-  const textSize = 24;
+  // const textSize = 24;
+  const textSize = 32;
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   canvas.width = width;
   canvas.height = height;
   context.clearRect(0, 0, width, height);
-  context.font = `${textSize}pt sans-serif`;
+
+  // context.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  // context.fillRect(0, 0, width, height);
+
+  context.font = `${textSize}pt Roboto Condensed`;
   context.fillStyle = 'rgb(255, 255, 255)';
 
   const descriptiveText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'.split(' ');
@@ -57,7 +61,8 @@ export function generateFloor(stageSize, userHeight) {
   floor.add(textMesh);
 
   floor.scale.set(0.25 / 12, 0.25 / 12, 0.25 / 12);
-  floor.position.set(0, -userHeight * 4.5, -stageSize * 1.25);
+  // floor.position.set(0, -userHeight * 4.5, -stageSize * 1.25);
+  floor.position.set(0, -userHeight * 4.5, -stageSize * 1.35);
   floor.rotation.set((Math.PI / 180) * -45, 0, 0);
 
   return floor;

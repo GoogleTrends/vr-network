@@ -20,6 +20,7 @@ uniform float sizeAttenuation;
 
 varying vec2 vUV;
 varying vec4 vColor;
+// varying float vLength;
 // varying float vCounters;
 
 vec2 fix( vec4 i, float aspect ) {
@@ -75,7 +76,7 @@ void main() {
   vec4 offset = vec4( normal * side, 0.0, 1.0 );
   finalPosition.xy += offset.xy;
 
-  // resultWidth = w;
+  // vLength = abs(distance(prevP, nextP));
 
   gl_Position = finalPosition;
 }

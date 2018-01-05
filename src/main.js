@@ -1,4 +1,4 @@
-/* global window, document, navigator, performance */
+/* global window, document, navigator, performance, Flourish */
 
 import * as THREE from 'three';
 import cloneDeep from 'lodash.clonedeep';
@@ -34,10 +34,11 @@ const sceneObjects = {
   buttons: new THREE.Group(),
 };
 const linkScale = {
-  min: 0.5,
+  min: 1,
   max: 5,
 };
 
+const light = new THREE.DirectionalLight(0xffffff);
 const noSleep = new NoSleep();
 const stageSize = 10;
 
@@ -55,6 +56,8 @@ let renderer;
 let raycaster;
 let intersected;
 let lineMaterials;
+
+let updating;
 let shootingstar = null;
 
 
@@ -73,12 +76,15 @@ function updateNetwork() {
         c.material = null;
         //
         if (nd.status === 'center') {
-          c.currentMaterial = sphereMaterials.adjacent;
+          c.currentMaterial = sphereMaterials.selected;
           c.material = sphereMaterials.highlight;
+          c.children[0].material.visible = true;
         } else if (nd.status === 'adjacent') {
           c.material = sphereMaterials.adjacent;
+          c.children[0].material.visible = false;
         } else {
           c.material = sphereMaterials.basic;
+          c.children[0].material.visible = false;
         }
       }
     });
@@ -91,6 +97,7 @@ function updateNetwork() {
     l.userData.nextTPos = globalData.nodes.filter(n => l.userData.target === n.id)[0].pos;
   });
   //
+  updating.material.visible = false;
   sceneObjects.buttons.children.forEach((b) => {
     b.visible = true;
   });
@@ -101,7 +108,7 @@ function layoutByRank() {
   const rowCount = 3;
   const perRow = Math.ceil(globalData.nodes.length / rowCount);
 
-  globalData.nodes.sort((a, b) => parseInt(a.rank, 10) > parseInt(b.rank, 10));
+  globalData.nodes.sort((a, b) => parseInt(a.rank, 10) - parseInt(b.rank, 10));
 
   globalData.nodes = globalData.nodes.map((n, i) => {
     n.shifted = false;
@@ -434,8 +441,8 @@ function highlightIntersected() {
         intersects[index].object.parent !== intersected
         &&
         (
-          intersects[index].distance > (stageSize / 2)
-            ||
+          // intersects[index].distance > (stageSize / 2)
+            // ||
           intersects[index].object.userData.type !== 'text'
         )
       ) {
@@ -449,6 +456,7 @@ function highlightIntersected() {
     }
     //
     if (nextIntersected !== null) {
+      light.target = nextIntersected;
       if (intersected) {
         resetIntersected();
       }
@@ -478,11 +486,9 @@ function highlightIntersected() {
         intersected.children.forEach((c) => {
           if (c.userData.type !== 'text') {
             // c.currentMaterial = c.material;
-            if (
-              intersected.userData.status === 'adjacent'
-              ||
-              intersected.userData.status === 'center'
-            ) {
+            if (intersected.userData.status === 'center') {
+              c.currentMaterial = sphereMaterials.selected;
+            } else if (intersected.userData.status === 'adjacent') {
               c.currentMaterial = sphereMaterials.adjacent;
             } else {
               c.currentMaterial = sphereMaterials.basic;
@@ -492,7 +498,13 @@ function highlightIntersected() {
             c.material.dispose();
             c.material = null;
             //
-            c.material = sphereMaterials.highlight;
+            if (foundCurrent) {
+              c.material = sphereMaterials.highlight;
+              c.children[0].material.visible = true;
+            } else {
+              c.material = sphereMaterials.selected;
+              c.children[0].material.visible = false;
+            }
           }
         });
       }
@@ -569,6 +581,7 @@ function makeLinkedAdjacent(centerNode) {
     updateNetwork();
   } else {
     // console.log(intersected);
+    updating.material.visible = true;
     sceneObjects.buttons.children.forEach((b) => {
       b.visible = false;
     });
@@ -656,6 +669,8 @@ function animate() {
   lineMaterials.highlightOut.uniforms.time.value = time;
   lineMaterials.highlightIn.uniforms.time.value = time;
 
+  updating.material.opacity = Math.abs(Math.cos(time / 5.0));
+
   transitionElements();
 
   updateStars(time);
@@ -720,8 +735,32 @@ function drawNetwork() {
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterials.basic);
     sphere.userData.type = 'sphere';
+    //
+
+    // Sprite Glow Effect
+    const textureLoader = new THREE.TextureLoader();
+    const spriteMaterial = new THREE.SpriteMaterial({
+      map: textureLoader.load(`${Flourish.static_prefix}/glow.png`),
+      color: 0xffA000,
+      transparent: true,
+      // depthTest: true,
+      blending: THREE.AdditiveBlending,
+    });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.userData.type = 'text';
+    sprite.scale.set(0.4, 0.4, 0.4);
+    sprite.material.visible = false;
+    sphere.add(sprite);
     node.add(sphere);
-    const text = generateTextureCanvas(`${d.rank}: ${d.name}`, 60, 1024, 256); // 64
+    //
+
+    let weight = '';
+    if (d.rank <= 20) {
+      weight = 'bold ';
+    } else if (d.rank > 40) {
+      weight = '300 ';
+    }
+    const text = generateTextureCanvas(`${d.rank}: ${d.name}`, 66, 1024, 256, weight);
     text.scale.set(0.001, 0.001, 0.001);
     text.position.set(0, 0, 0.15);
     text.userData.type = 'text';
@@ -770,9 +809,13 @@ function generateStars() {
 }
 
 function generateLegend(state) {
+  sceneObjects.legend = new THREE.Group();
+
   const inLineGeometry = generateCurveGeometry(
-    new THREE.Vector3(-0.5, 0, -1.05),
-    new THREE.Vector3(0.5, 0, -1.05),
+    // new THREE.Vector3(-0.5, 0, -1.05),
+    // new THREE.Vector3(0.5, 0, -1.05),
+    new THREE.Vector3(-0.5, 0, -1.0),
+    new THREE.Vector3(0.5, 0, -1.0),
     controls.userHeight,
   );
   const inLine = new MeshLine();
@@ -783,13 +826,16 @@ function generateLegend(state) {
 
   const inText = generateTextureCanvas(state.legendInboundLabel, 36, 1024, 256); // 64
   inText.scale.set(0.001, 0.001, 0.001);
-  inText.position.set(0, 0, -1.1);
+  // inText.position.set(0, 0, -1.1);
+  inText.position.set(0, 0, -1.05);
   inText.rotation.set((Math.PI / 180) * -45, 0, 0);
   sceneObjects.legend.add(inText);
 
   const outLineGeometry = generateCurveGeometry(
-    new THREE.Vector3(0.5, 0, -0.9),
-    new THREE.Vector3(-0.5, 0, -0.9),
+    // new THREE.Vector3(0.5, 0, -0.9),
+    // new THREE.Vector3(-0.5, 0, -0.9),
+    new THREE.Vector3(0.5, 0, -0.85),
+    new THREE.Vector3(-0.5, 0, -0.85),
     controls.userHeight,
   );
   const outLine = new MeshLine();
@@ -800,13 +846,15 @@ function generateLegend(state) {
 
   const outText = generateTextureCanvas(state.legendOutboundLabel, 36, 1024, 256); // 64
   outText.scale.set(0.001, 0.001, 0.001);
-  outText.position.set(0, 0, -0.95);
+  // outText.position.set(0, 0, -0.95);
+  outText.position.set(0, 0, -0.9);
   outText.rotation.set((Math.PI / 180) * -45, 0, 0);
   sceneObjects.legend.add(outText);
 
   const buttonLabel = generateTextureCanvas('Layout By', 36, 1024, 256); // 64
   buttonLabel.scale.set(0.001, 0.001, 0.001);
-  buttonLabel.position.set(0, 0, -0.8);
+  // buttonLabel.position.set(0, 0, -0.8);
+  buttonLabel.position.set(0, 0, -0.75);
   buttonLabel.rotation.set((Math.PI / 180) * -45, 0, 0);
   sceneObjects.legend.add(buttonLabel);
 
@@ -816,6 +864,8 @@ function generateLegend(state) {
 }
 
 function generateCursor(state) {
+  sceneObjects.cursor = new THREE.Group();
+
   const basicCursor = new THREE.Mesh(
     new THREE.RingGeometry(0.02, 0.03, 24),
     new THREE.MeshBasicMaterial({
@@ -874,13 +924,15 @@ function generateButton(name, color, xoffset) {
   button.userData.name = name;
   button.userData.type = 'button';
   button.scale.set(0.001, 0.001, 0.001);
-  button.position.set(xoffset, 0, -0.65);
+  // button.position.set(xoffset, 0, -0.65);
+  button.position.set(xoffset, 0, -0.6);
   button.rotation.set((Math.PI / 180) * -45, 0, 0);
-  const text = generateTextureCanvas(name, 36, 256, 256); // 64
+  const text = generateTextureCanvas(name, 44, 256, 256); // 64
   text.userData.type = 'text';
   button.add(text);
   const circle = new THREE.Mesh(
-    new THREE.CircleGeometry(125, 24),
+    // new THREE.CircleGeometry(125, 24),
+    new THREE.CircleGeometry(145, 24),
     new THREE.MeshBasicMaterial({ color: new THREE.Color(color) }),
   );
   circle.userData.type = 'button';
@@ -889,8 +941,8 @@ function generateButton(name, color, xoffset) {
 }
 
 function generateButtons() {
-  sceneObjects.buttons.add(generateButton('Rank', 0x3333aa, -0.20));
-  sceneObjects.buttons.add(generateButton('Simulation', 0x33aa33, 0.20));
+  sceneObjects.buttons.add(generateButton('Rank', 0xFDD835, -0.25)); // 0.20));
+  sceneObjects.buttons.add(generateButton('Simulation', 0xF44336, 0.25)); // 0.20));
   return sceneObjects.buttons;
 }
 
@@ -919,6 +971,10 @@ export function setupScene(data, state) {
   const ctx = renderer.context;
   ctx.getShaderInfoLog = () => ''; // Quiet shader complaint log: GL_ARB_gpu_shader5
 
+
+  // Light
+  scene.add(light);
+
   // Generate Non-network Scene Elements
   scene.add(generateHorizon(
     flourishState.horizonTopColor,
@@ -928,10 +984,16 @@ export function setupScene(data, state) {
   scene.add(generateFloor(stageSize, controls.userHeight));
   scene.add(generateStars());
   scene.add(generateLegend(state));
-  //
+  scene.add(generateButtons());
 
   //
-  scene.add(generateButtons());
+  updating = generateTextureCanvas('Updating...', 60, 1024, 256);
+  updating.name = 'updating';
+  updating.scale.set(0.001, 0.001, 0.001);
+  updating.position.set(0.015, 0, -0.6);
+  updating.rotation.set((Math.PI / 180) * -45, 0, 0);
+
+  scene.add(updating);
   //
 
   camera.add(generateCursor(state));
@@ -956,14 +1018,12 @@ export function setupScene(data, state) {
 export function updateSceneFromState(state) {
   flourishState = state;
   //
-  scene.remove(scene.getObjectByName('cursor', true));
-  sceneObjects.cursor = new THREE.Group();
+  camera.remove(camera.getObjectByName('cursor', true));
   camera.add(generateCursor(state));
   //
   lineMaterials = updateLineMaterials(flourishState);
   //
   scene.remove(scene.getObjectByName('legend', true));
-  sceneObjects.legend = new THREE.Group();
   scene.add(generateLegend(state));
   //
   sceneObjects.links.children.forEach((l) => {

@@ -1,27 +1,39 @@
 import * as THREE from 'three';
 
 export const basic = new THREE.MeshBasicMaterial({
-  color: 0x999999,
+  color: 0x262626,
+  // emissive: 0x262626,
   flatShading: true,
-  opacity: 0.35,
-  transparent: true,
-  depthTest: false,
+  // opacity: 0.35,
+  transparent: false,
+  depthTest: true,
 });
 
-export const adjacent = new THREE.MeshBasicMaterial({
-  color: 0xffffff,
-  flatShading: true,
-  opacity: 0.75,
-  transparent: true,
-  depthTest: false,
+export const adjacent = new THREE.MeshPhongMaterial({
+  color: 0x848484,
+  // emissive: 0x848484,
+  flatShading: false,
+  // opacity: 0.75,
+  transparent: false,
+  depthTest: true,
 });
 
-export const highlight = new THREE.MeshBasicMaterial({
-  color: 0xfff000,
-  flatShading: true,
-  opacity: 1.0,
-  transparent: true,
-  depthTest: false,
+export const selected = new THREE.MeshPhongMaterial({
+  color: 0xFF6F00,
+  emissive: 0xFF6F00,
+  flatShading: false,
+  // opacity: 1.0,
+  transparent: false,
+  depthTest: true,
+});
+
+export const highlight = new THREE.MeshPhongMaterial({
+  color: 0xFF6F00,
+  emissive: 0xFF6F00,
+  flatShading: false,
+  // opacity: 1.0,
+  transparent: false,
+  depthTest: true,
 });
 
 // const sphereMaterial = (color, opacity) => {

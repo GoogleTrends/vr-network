@@ -1,20 +1,22 @@
 /* global document */
 import * as THREE from 'three';
 
-export function generateTextureCanvas(text, textSize, width, height) {
+export function generateTextureCanvas(text, textSize, width, height, weight = '') {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   canvas.width = width;
   canvas.height = height;
   context.clearRect(0, 0, width, height);
-  context.font = `${textSize}pt sans-serif`;
+
+  context.font = `${weight}${textSize}pt Roboto Condensed`;
 
   const textWidth = context.measureText(text).width;
   // context.fillStyle = 'rgba(0, 0, 0, 0.2)';
   // context.fillRect(0, 0, width, height);
 
   context.strokeStyle = 'rgb(0, 0, 0)';
-  context.lineWidth = 5;
+  // context.lineWidth = 5;
+  context.lineWidth = 10;
   context.strokeText(text, (width / 2) - (textWidth / 2), (height / 2) + (textSize / 2.25));
 
   context.fillStyle = 'rgb(255, 255, 255)';

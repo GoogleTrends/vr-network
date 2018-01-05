@@ -48510,19 +48510,23 @@ var NoSleep$1 = unwrapExports(NoSleep);
 
 /* global document */
 function generateTextureCanvas(text, textSize, width, height) {
+  var weight = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+
   var canvas = document.createElement('canvas');
   var context = canvas.getContext('2d');
   canvas.width = width;
   canvas.height = height;
   context.clearRect(0, 0, width, height);
-  context.font = textSize + 'pt sans-serif';
+
+  context.font = '' + weight + textSize + 'pt Roboto Condensed';
 
   var textWidth = context.measureText(text).width;
   // context.fillStyle = 'rgba(0, 0, 0, 0.2)';
   // context.fillRect(0, 0, width, height);
 
   context.strokeStyle = 'rgb(0, 0, 0)';
-  context.lineWidth = 5;
+  // context.lineWidth = 5;
+  context.lineWidth = 10;
   context.strokeText(text, width / 2 - textWidth / 2, height / 2 + textSize / 2.25);
 
   context.fillStyle = 'rgb(255, 255, 255)';
@@ -48593,19 +48597,23 @@ function generateFloor(stageSize, userHeight) {
   var geometry = new PlaneGeometry(512, 128);
   var material = new MeshBasicMaterial({ map: texture });
   var mesh = new Mesh(geometry, material);
-  mesh.position.set(0, 0, -12);
-
+  mesh.position.set(12, 0, 0);
   floor.add(mesh);
 
   var width = 1024;
   var height = 512;
-  var textSize = 24;
+  // const textSize = 24;
+  var textSize = 32;
   var canvas = document.createElement('canvas');
   var context = canvas.getContext('2d');
   canvas.width = width;
   canvas.height = height;
   context.clearRect(0, 0, width, height);
-  context.font = textSize + 'pt sans-serif';
+
+  // context.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  // context.fillRect(0, 0, width, height);
+
+  context.font = textSize + 'pt Roboto Condensed';
   context.fillStyle = 'rgb(255, 255, 255)';
 
   var descriptiveText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'.split(' ');
@@ -48639,7 +48647,8 @@ function generateFloor(stageSize, userHeight) {
   floor.add(textMesh);
 
   floor.scale.set(0.25 / 12, 0.25 / 12, 0.25 / 12);
-  floor.position.set(0, -userHeight * 4.5, -stageSize * 1.25);
+  // floor.position.set(0, -userHeight * 4.5, -stageSize * 1.25);
+  floor.position.set(0, -userHeight * 4.5, -stageSize * 1.35);
   floor.rotation.set(Math.PI / 180 * -45, 0, 0);
 
   return floor;
@@ -48647,7 +48656,7 @@ function generateFloor(stageSize, userHeight) {
 
 var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  gl_Position = finalPosition;\n}\n";
 
-var animLineFragment = "precision mediump float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 250.0 - time);\n  color.a = (yCurve + xCurve) * color.a;\n  gl_FragColor = color;\n}\n";
+var animLineFragment = "precision mediump float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  vec2 dist = vUV - vec2(0.5);\n  float radius = 1.0;\n  float circle = 1.0 - smoothstep(\n    radius,\n    radius,\n    dot(dist, dist) * 4.0\n  );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 100.0 - time);\n  color.a = ((yCurve + xCurve) - circle) * color.a;\n  gl_FragColor = color;\n}\n";
 
 var linkWidth = 0.5;
 
@@ -48669,7 +48678,7 @@ function updateLineMaterials(state) {
       alphaMap: { type: 't', value: null },
       useAlphaMap: { type: 'f', value: 0 },
       color: { type: 'c', value: new Color(state.linkOutboundColor) },
-      opacity: { type: 'f', value: 0.5 },
+      opacity: { type: 'f', value: 1.0 },
       resolution: { type: 'v2', value: new Vector2(1, 1) },
       sizeAttenuation: { type: 'f', value: 1 },
       near: { type: 'f', value: 1 },
@@ -48694,7 +48703,7 @@ function updateLineMaterials(state) {
       alphaMap: { type: 't', value: null },
       useAlphaMap: { type: 'f', value: 0 },
       color: { type: 'c', value: new Color(state.linkInboundColor) },
-      opacity: { type: 'f', value: 0.5 },
+      opacity: { type: 'f', value: 1.0 },
       resolution: { type: 'v2', value: new Vector2(1, 1) },
       sizeAttenuation: { type: 'f', value: 1 },
       near: { type: 'f', value: 1 },
@@ -48715,27 +48724,39 @@ function updateLineMaterials(state) {
 }
 
 var basic = new MeshBasicMaterial({
-  color: 0x999999,
+  color: 0x262626,
+  // emissive: 0x262626,
   flatShading: true,
-  opacity: 0.35,
-  transparent: true,
-  depthTest: false
+  // opacity: 0.35,
+  transparent: false,
+  depthTest: true
 });
 
-var adjacent = new MeshBasicMaterial({
-  color: 0xffffff,
-  flatShading: true,
-  opacity: 0.75,
-  transparent: true,
-  depthTest: false
+var adjacent = new MeshPhongMaterial({
+  color: 0x848484,
+  // emissive: 0x848484,
+  flatShading: false,
+  // opacity: 0.75,
+  transparent: false,
+  depthTest: true
 });
 
-var highlight = new MeshBasicMaterial({
-  color: 0xfff000,
-  flatShading: true,
-  opacity: 1.0,
-  transparent: true,
-  depthTest: false
+var selected = new MeshPhongMaterial({
+  color: 0xFF6F00,
+  emissive: 0xFF6F00,
+  flatShading: false,
+  // opacity: 1.0,
+  transparent: false,
+  depthTest: true
+});
+
+var highlight = new MeshPhongMaterial({
+  color: 0xFF6F00,
+  emissive: 0xFF6F00,
+  flatShading: false,
+  // opacity: 1.0,
+  transparent: false,
+  depthTest: true
 });
 
 // const sphereMaterial = (color, opacity) => {
@@ -48957,7 +48978,7 @@ var toConsumableArray = function (arr) {
   }
 };
 
-/* global window, document, navigator, performance */
+/* global window, document, navigator, performance, Flourish */
 
 var worldState = {
   vrEnabled: false,
@@ -48973,10 +48994,11 @@ var sceneObjects = {
   buttons: new Group()
 };
 var linkScale = {
-  min: 0.5,
+  min: 1,
   max: 5
 };
 
+var light = new DirectionalLight(0xffffff);
 var noSleep = new NoSleep$1();
 var stageSize = 10;
 
@@ -48994,6 +49016,8 @@ var renderer = void 0;
 var raycaster = void 0;
 var intersected = void 0;
 var lineMaterials = void 0;
+
+var updating = void 0;
 var shootingstar = null;
 
 function updateNetwork() {
@@ -49016,12 +49040,15 @@ function updateNetwork() {
         c.material = null;
         //
         if (nd.status === 'center') {
-          c.currentMaterial = adjacent;
+          c.currentMaterial = selected;
           c.material = highlight;
+          c.children[0].material.visible = true;
         } else if (nd.status === 'adjacent') {
           c.material = adjacent;
+          c.children[0].material.visible = false;
         } else {
           c.material = basic;
+          c.children[0].material.visible = false;
         }
       }
     });
@@ -49038,6 +49065,7 @@ function updateNetwork() {
     })[0].pos;
   });
   //
+  updating.material.visible = false;
   sceneObjects.buttons.children.forEach(function (b) {
     b.visible = true;
   });
@@ -49049,7 +49077,7 @@ function layoutByRank() {
   var perRow = Math.ceil(globalData.nodes.length / rowCount);
 
   globalData.nodes.sort(function (a, b) {
-    return parseInt(a.rank, 10) > parseInt(b.rank, 10);
+    return parseInt(a.rank, 10) - parseInt(b.rank, 10);
   });
 
   globalData.nodes = globalData.nodes.map(function (n, i) {
@@ -49332,7 +49360,10 @@ function highlightIntersected() {
     });
     //
     while (searching) {
-      if (intersects[index].object.parent !== intersected && (intersects[index].distance > stageSize / 2 || intersects[index].object.userData.type !== 'text')) {
+      if (intersects[index].object.parent !== intersected &&
+      // intersects[index].distance > (stageSize / 2)
+      // ||
+      intersects[index].object.userData.type !== 'text') {
         nextIntersected = intersects[index].object;
         searching = false;
       }
@@ -49343,6 +49374,7 @@ function highlightIntersected() {
     }
     //
     if (nextIntersected !== null) {
+      light.target = nextIntersected;
       if (intersected) {
         resetIntersected();
       }
@@ -49372,7 +49404,9 @@ function highlightIntersected() {
         intersected.children.forEach(function (c) {
           if (c.userData.type !== 'text') {
             // c.currentMaterial = c.material;
-            if (intersected.userData.status === 'adjacent' || intersected.userData.status === 'center') {
+            if (intersected.userData.status === 'center') {
+              c.currentMaterial = selected;
+            } else if (intersected.userData.status === 'adjacent') {
               c.currentMaterial = adjacent;
             } else {
               c.currentMaterial = basic;
@@ -49382,7 +49416,13 @@ function highlightIntersected() {
             c.material.dispose();
             c.material = null;
             //
-            c.material = highlight;
+            if (foundCurrent) {
+              c.material = highlight;
+              c.children[0].material.visible = true;
+            } else {
+              c.material = selected;
+              c.children[0].material.visible = false;
+            }
           }
         });
       }
@@ -49460,6 +49500,7 @@ function makeLinkedAdjacent(centerNode) {
     updateNetwork();
   } else {
     // console.log(intersected);
+    updating.material.visible = true;
     sceneObjects.buttons.children.forEach(function (b) {
       b.visible = false;
     });
@@ -49524,6 +49565,8 @@ function animate() {
   // lineMaterials.basic.uniforms.time.value = time;
   lineMaterials.highlightOut.uniforms.time.value = time;
   lineMaterials.highlightIn.uniforms.time.value = time;
+
+  updating.material.opacity = Math.abs(Math.cos(time / 5.0));
 
   transitionElements();
 
@@ -49590,8 +49633,32 @@ function drawNetwork() {
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
     var sphere = new Mesh(sphereGeometry, basic);
     sphere.userData.type = 'sphere';
+    //
+
+    // Sprite Glow Effect
+    var textureLoader = new TextureLoader();
+    var spriteMaterial = new SpriteMaterial({
+      map: textureLoader.load(Flourish.static_prefix + '/glow.png'),
+      color: 0xffA000,
+      transparent: true,
+      // depthTest: true,
+      blending: AdditiveBlending
+    });
+    var sprite = new Sprite(spriteMaterial);
+    sprite.userData.type = 'text';
+    sprite.scale.set(0.4, 0.4, 0.4);
+    sprite.material.visible = false;
+    sphere.add(sprite);
     node.add(sphere);
-    var text = generateTextureCanvas(d.rank + ': ' + d.name, 60, 1024, 256); // 64
+    //
+
+    var weight = '';
+    if (d.rank <= 20) {
+      weight = 'bold ';
+    } else if (d.rank > 40) {
+      weight = '300 ';
+    }
+    var text = generateTextureCanvas(d.rank + ': ' + d.name, 66, 1024, 256, weight);
     text.scale.set(0.001, 0.001, 0.001);
     text.position.set(0, 0, 0.15);
     text.userData.type = 'text';
@@ -49640,7 +49707,12 @@ function generateStars() {
 }
 
 function generateLegend(state) {
-  var inLineGeometry = generateCurveGeometry(new Vector3(-0.5, 0, -1.05), new Vector3(0.5, 0, -1.05), controls.userHeight);
+  sceneObjects.legend = new Group();
+
+  var inLineGeometry = generateCurveGeometry(
+  // new THREE.Vector3(-0.5, 0, -1.05),
+  // new THREE.Vector3(0.5, 0, -1.05),
+  new Vector3(-0.5, 0, -1.0), new Vector3(0.5, 0, -1.0), controls.userHeight);
   var inLine = new MeshLine();
   inLine.setGeometry(inLineGeometry);
   var inLineMesh = new Mesh(inLine.geometry, lineMaterials.highlightIn);
@@ -49649,11 +49721,15 @@ function generateLegend(state) {
 
   var inText = generateTextureCanvas(state.legendInboundLabel, 36, 1024, 256); // 64
   inText.scale.set(0.001, 0.001, 0.001);
-  inText.position.set(0, 0, -1.1);
+  // inText.position.set(0, 0, -1.1);
+  inText.position.set(0, 0, -1.05);
   inText.rotation.set(Math.PI / 180 * -45, 0, 0);
   sceneObjects.legend.add(inText);
 
-  var outLineGeometry = generateCurveGeometry(new Vector3(0.5, 0, -0.9), new Vector3(-0.5, 0, -0.9), controls.userHeight);
+  var outLineGeometry = generateCurveGeometry(
+  // new THREE.Vector3(0.5, 0, -0.9),
+  // new THREE.Vector3(-0.5, 0, -0.9),
+  new Vector3(0.5, 0, -0.85), new Vector3(-0.5, 0, -0.85), controls.userHeight);
   var outLine = new MeshLine();
   outLine.setGeometry(outLineGeometry);
   var outLineMesh = new Mesh(outLine.geometry, lineMaterials.highlightOut);
@@ -49662,13 +49738,15 @@ function generateLegend(state) {
 
   var outText = generateTextureCanvas(state.legendOutboundLabel, 36, 1024, 256); // 64
   outText.scale.set(0.001, 0.001, 0.001);
-  outText.position.set(0, 0, -0.95);
+  // outText.position.set(0, 0, -0.95);
+  outText.position.set(0, 0, -0.9);
   outText.rotation.set(Math.PI / 180 * -45, 0, 0);
   sceneObjects.legend.add(outText);
 
   var buttonLabel = generateTextureCanvas('Layout By', 36, 1024, 256); // 64
   buttonLabel.scale.set(0.001, 0.001, 0.001);
-  buttonLabel.position.set(0, 0, -0.8);
+  // buttonLabel.position.set(0, 0, -0.8);
+  buttonLabel.position.set(0, 0, -0.75);
   buttonLabel.rotation.set(Math.PI / 180 * -45, 0, 0);
   sceneObjects.legend.add(buttonLabel);
 
@@ -49678,6 +49756,8 @@ function generateLegend(state) {
 }
 
 function generateCursor(state) {
+  sceneObjects.cursor = new Group();
+
   var basicCursor = new Mesh(new RingGeometry(0.02, 0.03, 24), new MeshBasicMaterial({
     color: new Color(state.cursorInnerColor),
     opacity: state.cursorOpacity,
@@ -49724,20 +49804,23 @@ function generateButton(name, color, xoffset) {
   button.userData.name = name;
   button.userData.type = 'button';
   button.scale.set(0.001, 0.001, 0.001);
-  button.position.set(xoffset, 0, -0.65);
+  // button.position.set(xoffset, 0, -0.65);
+  button.position.set(xoffset, 0, -0.6);
   button.rotation.set(Math.PI / 180 * -45, 0, 0);
-  var text = generateTextureCanvas(name, 36, 256, 256); // 64
+  var text = generateTextureCanvas(name, 44, 256, 256); // 64
   text.userData.type = 'text';
   button.add(text);
-  var circle = new Mesh(new CircleGeometry(125, 24), new MeshBasicMaterial({ color: new Color(color) }));
+  var circle = new Mesh(
+  // new THREE.CircleGeometry(125, 24),
+  new CircleGeometry(145, 24), new MeshBasicMaterial({ color: new Color(color) }));
   circle.userData.type = 'button';
   button.add(circle);
   return button;
 }
 
 function generateButtons() {
-  sceneObjects.buttons.add(generateButton('Rank', 0x3333aa, -0.20));
-  sceneObjects.buttons.add(generateButton('Simulation', 0x33aa33, 0.20));
+  sceneObjects.buttons.add(generateButton('Rank', 0xFDD835, -0.25)); // 0.20));
+  sceneObjects.buttons.add(generateButton('Simulation', 0xF44336, 0.25)); // 0.20));
   return sceneObjects.buttons;
 }
 
@@ -49768,15 +49851,25 @@ function setupScene(data, state) {
     return '';
   }; // Quiet shader complaint log: GL_ARB_gpu_shader5
 
+
+  // Light
+  scene.add(light);
+
   // Generate Non-network Scene Elements
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
   scene.add(generateFloor(stageSize, controls.userHeight));
   scene.add(generateStars());
   scene.add(generateLegend(state));
-  //
+  scene.add(generateButtons());
 
   //
-  scene.add(generateButtons());
+  updating = generateTextureCanvas('Updating...', 60, 1024, 256);
+  updating.name = 'updating';
+  updating.scale.set(0.001, 0.001, 0.001);
+  updating.position.set(0.015, 0, -0.6);
+  updating.rotation.set(Math.PI / 180 * -45, 0, 0);
+
+  scene.add(updating);
   //
 
   camera.add(generateCursor(state));
@@ -49801,14 +49894,12 @@ function setupScene(data, state) {
 function updateSceneFromState(state) {
   flourishState = state;
   //
-  scene.remove(scene.getObjectByName('cursor', true));
-  sceneObjects.cursor = new Group();
+  camera.remove(camera.getObjectByName('cursor', true));
   camera.add(generateCursor(state));
   //
   lineMaterials = updateLineMaterials(flourishState);
   //
   scene.remove(scene.getObjectByName('legend', true));
-  sceneObjects.legend = new Group();
   scene.add(generateLegend(state));
   //
   sceneObjects.links.children.forEach(function (l) {
@@ -49831,33 +49922,19 @@ var data = {};
 // of the state object available to the user as settings in settings.js.
 var state = {
   horizonTopColor: '#000000',
-  horizonBottomColor: '#ff7700',
-  horizonExponent: 0.05,
+  horizonBottomColor: '#11203B',
+  horizonExponent: 0.5,
   linkUnselectedColor: '#ffffff',
-  linkUnselectedOpacity: 0.05,
-  linkInboundColor: '#90f9ff',
-  linkOutboundColor: '#f990ff',
+  linkUnselectedOpacity: 0.02,
+  linkInboundColor: '#FDD835',
+  linkOutboundColor: '#F44336',
   legendInboundLabel: 'Also Searched For',
   legendOutboundLabel: 'Related Searches',
   cursorInnerColor: '#ffffff',
   cursorOuterColor: '#000000',
-  cursorActiveColor: '#ff7700',
+  cursorActiveColor: '#00A0FF',
   cursorOpacity: 0.5
 };
-
-// let w;
-// let h;
-// let svg;
-// const popup = Popup();
-
-// function setAttributes(selectionOrTransition) {
-//   selectionOrTransition
-//     .attr('fill', state.color)
-//     .attr('opacity', state.opacity)
-//     .attr('cx', d => d.x * w)
-//     .attr('cy', d => d.y * h)
-//     .attr('r', d => Math.sqrt(d.size));
-// }
 
 // The update function is called whenever the user changes a data table or settings
 // in the visualisation editor, or when changing slides in the story editor.
@@ -49865,35 +49942,11 @@ var state = {
 // interface controls such as buttons and sliders update the state and then call update.
 function update() {
   updateSceneFromState(state);
-  // console.log(data);
-  // if (state.radius <= 0) throw new Error('Radius must be positive');
-  // const circles = svg.selectAll('circle').data(data.circles);
-  // circles.enter()
-  //   .append('circle')
-  //   .on('click', (d) => {
-  //     popup.point(d.x * w, d.y * h).html(d.word).draw();
-  //     event.stopPropagation();
-  //   })
-  //   .call(setAttributes);
-  // circles.transition()
-  //   .call(setAttributes);
-  // circles.exit()
-  //   .remove();
 }
 
 // The draw function is called when the template first loads
 function draw() {
   setupScene(data, state);
-  // w = window.innerWidth;
-  // h = window.innerHeight;
-  // svg = select(document.body)
-  //   .append('svg')
-  //   .attr('width', w)
-  //   .attr('height', h)
-  //   .on('click', () => {
-  //     popup.hide();
-  //   });
-  // update();
 }
 
 exports.data = data;
