@@ -20,7 +20,7 @@ uniform float sizeAttenuation;
 
 varying vec2 vUV;
 varying vec4 vColor;
-// varying float vLength;
+// varying vec2 vResolution;
 // varying float vCounters;
 
 vec2 fix( vec4 i, float aspect ) {
@@ -35,6 +35,7 @@ vec2 fix( vec4 i, float aspect ) {
 void main() {
   float aspect = resolution.x / resolution.y;
   float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);
+  // float pixelWidthRatio = 1. / (resolution.y * projectionMatrix[0][0]);
 
   vColor = vec4( color, opacity );
   vUV = uv;
@@ -77,6 +78,7 @@ void main() {
   finalPosition.xy += offset.xy;
 
   // vLength = abs(distance(prevP, nextP));
+  // vResolution = resolution;
 
   gl_Position = finalPosition;
 }

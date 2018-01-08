@@ -5,7 +5,7 @@ uniform float time;
 
 varying vec2 vUV;
 varying vec4 vColor;
-// varying float vLength;
+// varying vec2 vResolution;
 
 void main() {
   vec4 color = vec4( vColor );
@@ -21,7 +21,10 @@ void main() {
 
   float yCurve = cos((vUV.y - 0.5) * 5.0);
   float xCurve = sin(vUV.x * 100.0 - time);
-
+  
+  // float xCurve = sin((vUV.x - time) * 1000.0);
+  // float xCurve = sin((vUV.x * (vLength * 100.0)) - time);
+  
   color.a = ((yCurve + xCurve) - circle) * color.a;
   gl_FragColor = color;
 }

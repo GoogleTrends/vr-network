@@ -48653,9 +48653,9 @@ function generateFloor(stageSize, userHeight) {
   return floor;
 }
 
-var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  gl_Position = finalPosition;\n}\n";
+var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvarying vec2 vResolution;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  vResolution = resolution;\n  gl_Position = finalPosition;\n}\n";
 
-var animLineFragment = "precision mediump float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  vec2 dist = vUV - vec2(0.5);\n  float radius = 1.0;\n  float circle = 1.0 - smoothstep(\n    radius,\n    radius,\n    dot(dist, dist) * 4.0\n  );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 100.0 - time);\n  color.a = ((yCurve + xCurve) - circle) * color.a;\n  gl_FragColor = color;\n}\n";
+var animLineFragment = "precision mediump float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  vec2 dist = vUV - vec2(0.5);\n  float radius = 1.0;\n  float circle = 1.0 - smoothstep(\n    radius,\n    radius,\n    dot(dist, dist) * 4.0\n  );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 100.0 - time);\n  \n  \n  color.a = ((yCurve + xCurve) - circle) * color.a;\n  gl_FragColor = color;\n}\n";
 
 var linkWidth = 0.5;
 
@@ -49307,6 +49307,7 @@ function transitionElements() {
         line.setGeometry(lineGeometry, function () {
           return scaleValue(l.userData.value, { min: 1, max: 100 }, linkScale);
         });
+        // console.log(line);
         var lineMesh = new Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
         l.geometry.attributes.position.needsUpdate = true;
@@ -49596,9 +49597,10 @@ function updateCursor() {
 
 function animate() {
   var time = performance.now() * 0.01;
+
   shadertime += 0.1;
-  if (shadertime > 99.99) {
-    shadertime = 0;
+  if (shadertime > 100) {
+    shadertime = 0.0;
   }
 
   // lineMaterials.basic.uniforms.time.value = time;

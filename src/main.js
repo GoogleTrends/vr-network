@@ -393,6 +393,7 @@ function transitionElements() {
           lineGeometry,
           () => scaleValue(l.userData.value, { min: 1, max: 100 }, linkScale),
         );
+        // console.log(line);
         const lineMesh = new THREE.Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
         l.geometry.attributes.position.needsUpdate = true;
@@ -735,9 +736,10 @@ function updateCursor() {
 
 function animate() {
   const time = performance.now() * 0.01;
+
   shadertime += 0.1;
-  if (shadertime > 99.99) {
-    shadertime = 0;
+  if (shadertime > 100) {
+    shadertime = 0.0;
   }
 
   // lineMaterials.basic.uniforms.time.value = time;
