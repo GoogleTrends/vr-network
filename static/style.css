@@ -11,8 +11,8 @@ body {
   margin: 0px;
   padding: 0;
   overflow: hidden;
-  font-family: Roboto Condensed;
-  font-weight: 300, 400, 700;
+  font-family: 'Roboto Condensed';
+  font-weight: 400;
 }
 
 canvas {
@@ -21,6 +21,7 @@ canvas {
 
 /*#ui*/
 #vrbutton {
+  font-weight: 300;
   position: absolute;
   bottom: 10px;
   right: 10px;
@@ -47,6 +48,7 @@ canvas {
 
 /**/
 #centerline {
+  font-weight: 700;
   display: none;
   position: absolute;
   width: 1px;
