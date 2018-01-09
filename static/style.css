@@ -11,7 +11,8 @@ body {
   margin: 0px;
   padding: 0;
   overflow: hidden;
-  font-family: Roboto Condensed:300,400,700;
+  font-family: Roboto Condensed;
+  font-weight: 300, 400, 700;
 }
 
 canvas {
