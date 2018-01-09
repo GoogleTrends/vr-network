@@ -48657,7 +48657,7 @@ var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 
 
 var animLineFragment = "precision highp float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  vec2 dist = vUV - vec2(0.5);\n  float radius = 1.0;\n  float circle = 1.0 - smoothstep(\n    radius,\n    radius,\n    dot(dist, dist) * 4.0\n  );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 100.0 - time);\n  \n  \n  color.a = ((yCurve + xCurve) - circle) * color.a;\n  gl_FragColor = color;\n}\n";
 
-var linkWidth = 1.0; // 0.5;
+var linkWidth = 1.0;
 
 function updateLineMaterials(state) {
   var lineMaterials = {};
@@ -48983,7 +48983,7 @@ var sceneObjects = {
 };
 var linkScale = {
   min: 1,
-  max: 5
+  max: 3
 };
 
 var light = new DirectionalLight(0xffffff);
@@ -49505,7 +49505,7 @@ function highlightIntersected() {
             c.material.dispose();
             c.material = null;
             //
-            if (foundCurrent) {
+            if (foundCurrent || intersected.userData.status === 'center') {
               c.material = highlight;
               c.children[0].material.visible = true;
             } else {

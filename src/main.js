@@ -36,7 +36,7 @@ const sceneObjects = {
 };
 const linkScale = {
   min: 1,
-  max: 5,
+  max: 3,
 };
 
 const light = new THREE.DirectionalLight(0xffffff);
@@ -622,7 +622,7 @@ function highlightIntersected() {
             c.material.dispose();
             c.material = null;
             //
-            if (foundCurrent) {
+            if (foundCurrent || intersected.userData.status === 'center') {
               c.material = sphereMaterials.highlight;
               c.children[0].material.visible = true;
             } else {
