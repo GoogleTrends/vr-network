@@ -11,7 +11,7 @@ body {
   margin: 0px;
   padding: 0;
   overflow: hidden;
-  font-family: 'Roboto Condensed';
+  font-family: 'Roboto Condensed', sans-serif !important;
   font-weight: 400;
 }
 

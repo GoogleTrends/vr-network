@@ -50091,7 +50091,12 @@ function draw() {
       families: ['Roboto Condensed:300,400,700']
     },
     active: function active() {
-      return setupScene(data, state);
+      console.log('fonts loaded');
+      setupScene(data, state);
+    },
+    inactive: function inactive() {
+      console.log('fonts failed to load');
+      setupScene(data, state);
     }
   });
 }

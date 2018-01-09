@@ -36,6 +36,13 @@ export function draw() {
     google: {
       families: ['Roboto Condensed:300,400,700'],
     },
-    active: () => setupScene(data, state),
+    active: () => {
+      console.log('fonts loaded');
+      setupScene(data, state);
+    },
+    inactive: () => {
+      console.log('fonts failed to load');
+      setupScene(data, state);
+    },
   });
 }
