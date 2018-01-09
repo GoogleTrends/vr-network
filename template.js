@@ -50054,6 +50054,8 @@ function updateSceneFromState(state) {
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
 }
 
+/* global WebFont */
+
 var data = {};
 
 // The current state of template. You can make some or all of the properties
@@ -50084,7 +50086,14 @@ function update() {
 
 // The draw function is called when the template first loads
 function draw() {
-  setupScene(data, state);
+  WebFont.load({
+    google: {
+      families: ['Roboto Condensed:300,400,700']
+    },
+    active: function active() {
+      return setupScene(data, state);
+    }
+  });
 }
 
 exports.data = data;

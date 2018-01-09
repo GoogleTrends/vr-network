@@ -1,3 +1,5 @@
+/* global WebFont */
+
 import { setupScene, updateSceneFromState } from './main';
 
 export const data = {};
@@ -30,5 +32,10 @@ export function update() {
 
 // The draw function is called when the template first loads
 export function draw() {
-  setupScene(data, state);
+  WebFont.load({
+    google: {
+      families: ['Roboto Condensed:300,400,700'],
+    },
+    active: () => setupScene(data, state),
+  });
 }
