@@ -24,6 +24,7 @@ const worldState = {
   vrEnabled: false,
   layoutMode: 1,
   isTransitioning: false,
+  labelsNeedUpdate: true,
 };
 const sceneObjects = {
   nodes: new THREE.Group(),
@@ -61,51 +62,93 @@ let lineMaterials;
 let updating;
 let shootingstar = null;
 
+// function precisionRound(number, precision) {
+//   const factor = 10 ** precision; // Math.pow(10, precision);
+//   return Math.round(number * factor) / factor;
+// }
 
 function updateNetwork() {
-  sceneObjects.nodes.children.forEach((n) => {
-    const [nd] = globalData.nodes.filter(d => d.id === n.userData.id);
-    if (!nd.shifted) {
-      nd.lastPos = nd.pos;
-    }
-    //
-    n.children.forEach((c) => {
-      if (c.userData.type === 'sphere') {
-        //
-        // Dispose existing geometry
-        c.material.dispose();
-        c.material = null;
-        //
-        if (nd.status === 'center') {
-          c.currentMaterial = sphereMaterials.selected;
-          c.material = sphereMaterials.highlight;
-          c.children[0].material.visible = true;
-        } else if (nd.status === 'adjacent') {
-          c.material = sphereMaterials.adjacent;
-          c.children[0].material.visible = false;
-        } else {
-          c.material = sphereMaterials.basic;
-          c.children[0].material.visible = false;
-        }
-      } else if (c.name === 'name') {
-        // c.position.set(
-        c.position.set(nd.nameOffset.x, nd.nameOffset.y, 0.15);
+  // const angles = [];
+  // const angles = {};
+
+  sceneObjects.nodes.children
+    // .sort((a, b) => {
+    //   const [na] = globalData.nodes.filter(d => d.id === a.userData.id);
+    //   const [nb] = globalData.nodes.filter(d => d.id === b.userData.id);
+    //   return (na.pos.distanceTo(camera.position) > nb.pos.distanceTo(camera.position));
+    // })
+    .forEach((n) => {
+      const [nd] = globalData.nodes.filter(d => d.id === n.userData.id);
+      if (!nd.shifted) {
+        nd.lastPos = nd.pos;
       }
+
+      // const xzangle = precisionRound(
+      //   Math.atan2(
+      //     precisionRound(camera.position.z - nd.pos.z, 1),
+      //     precisionRound(camera.position.x - nd.pos.x, 1),
+      //   ) * (180 / Math.PI),
+      //   0,
+      // );
+      // // const xyangle = precisionRound(
+      // //   Math.atan2(
+      // //     precisionRound(camera.position.y - nd.pos.y, 1),
+      // //     precisionRound(camera.position.x - nd.pos.x, 1),
+      // //   ) * (180 / Math.PI),
+      // //   0,
+      // // );
+      // const zyangle = precisionRound(
+      //   Math.atan2(
+      //     precisionRound(camera.position.y - nd.pos.y, 1),
+      //     precisionRound(camera.position.z - nd.pos.z, 1),
+      //   ) * (180 / Math.PI),
+      //   0,
+      // );
+      // const anglestring = `${xzangle}-${zyangle}`;
+      // // const anglestring = `${xzangle}-${xyangle}-${zyangle}`;
+      // const showText = !(anglestring in angles);
+      // if (!showText) {
+      //   console.log(anglestring);
+      //   console.log(angles[anglestring]);
+      //   console.log(nd.name);
+      //   console.log('-- -- --');
+      // }
+      // angles[anglestring] = nd.name;
+
+      n.children.forEach((c) => {
+        if (c.userData.type === 'sphere') {
+          //
+          // Dispose existing geometry
+          c.material.dispose();
+          c.material = null;
+          //
+          if (nd.status === 'center') {
+            c.currentMaterial = sphereMaterials.selected;
+            c.material = sphereMaterials.highlight;
+            c.children[0].material.visible = true;
+          } else if (nd.status === 'adjacent') {
+            c.material = sphereMaterials.adjacent;
+            c.children[0].material.visible = false;
+          } else {
+            c.material = sphereMaterials.basic;
+            c.children[0].material.visible = false;
+          }
+        } else if (c.name === 'name') {
+          // c.position.set(
+          c.position.set(nd.nameOffset.x, nd.nameOffset.y, 0.15);
+          c.material.visible = true;
+          // c.material.visible = showText;
+        // } else {
+          // c.material.visible = showText;
+        }
+      });
+      //
+      n.userData.status = nd.status;
+      n.userData.nextPos = nd.pos;
     });
-    //
-    // console.log(n);
-    // console.log(nd.id);
-    // console.log(n.getObjectByName(''));
-    // console.log(n.children.getObjectByName(`name-${nd.id}`, true));
-    // .position.set(
-    //   nd.nameOffset,
-    //   0,
-    //   0.15,
-    // );
-    //
-    n.userData.status = nd.status;
-    n.userData.nextPos = nd.pos;
-  });
+  //
+  // console.log(angles);
+  //
   sceneObjects.links.children.forEach((l) => {
     l.userData.nextSPos = globalData.nodes.filter(n => l.userData.source === n.id)[0].pos;
     l.userData.nextTPos = globalData.nodes.filter(n => l.userData.target === n.id)[0].pos;
@@ -328,7 +371,6 @@ function toggleVREnabled() {
   effect.setSize(window.innerWidth, window.innerHeight);
 }
 
-// let sample = 0;
 function transitionElements() {
   let countTransitioning = 0;
   sceneObjects.nodes.children.forEach((n) => {
@@ -341,22 +383,62 @@ function transitionElements() {
       n.position.set(tpos.x, tpos.y, tpos.z);
       countTransitioning += 1;
     }
-    // if (sample < 2) {
-    //   console.log(n);
-    // }
-    // sample++;
     if (Math.abs(n.scale.x - n.userData.nextScale) > 0.01) {
       const tscale = THREE.Math.lerp(n.scale.x, n.userData.nextScale, 0.1);
-      // console.log(tscale);
       n.scale.set(tscale, tscale, tscale);
     }
     n.quaternion.copy(camera.quaternion);
   });
   if (countTransitioning > 0) {
     worldState.isTransitioning = true;
+    worldState.labelsNeedUpdate = true;
   } else {
     worldState.isTransitioning = false;
   }
+  //
+  if (!worldState.isTransitioning && worldState.labelsNeedUpdate) {
+    const labelRaycaster = new THREE.Raycaster();
+    sceneObjects.nodes.children.forEach((n) => {
+      const direction = new THREE.Vector3()
+        .subVectors(
+          new THREE.Vector3(n.position.x, n.position.y, n.position.z),
+          camera.position,
+        ).normalize();
+
+      labelRaycaster.set(
+        camera.position,
+        direction,
+      );
+      const names = new Set();
+      const intersects = labelRaycaster.intersectObjects(sceneObjects.nodes.children, true)
+        .filter(c => c.object.userData.type === 'sphere')
+        .map((c) => {
+          c.object.parent.userData.distance = c.distance;
+          return c.object.parent;
+        }).filter((g) => {
+          if (names.has(g.userData.name)) {
+            return false;
+          }
+          names.add(g.userData.name);
+          return true;
+        });
+      if (intersects.length > 1) {
+        intersects
+          .sort((a, b) => a.userData.distance < b.userData.distance)
+          .forEach((g, i) => {
+            if (i < (intersects.length - 1)) {
+              g.children.forEach((c) => {
+                if (c.userData.type === 'text') {
+                  c.material.visible = false;
+                }
+              });
+            }
+          });
+      }
+    });
+    worldState.labelsNeedUpdate = false;
+  }
+  //
   if (worldState.isTransitioning) {
     sceneObjects.links.children.forEach((l) => {
       l.material.visible = false;
@@ -393,7 +475,6 @@ function transitionElements() {
           lineGeometry,
           () => scaleValue(l.userData.value, { min: 1, max: 100 }, linkScale),
         );
-        // console.log(line);
         const lineMesh = new THREE.Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
         l.geometry.attributes.position.needsUpdate = true;
@@ -464,10 +545,12 @@ function highlightIntersected() {
       }
     });
     //
+    // console.log(intersected);
+    //
     while (searching) {
       if (
-        intersects[index].object.parent !== intersected
-        &&
+        // intersects[index].object.parent !== intersected
+        // &&
         (
           (
             intersects[index].distance > (stageSize / 2)
@@ -480,10 +563,14 @@ function highlightIntersected() {
           intersects[index].object.userData.type === 'button'
         )
       ) {
-        nextIntersected = intersects[index].object;
+        if (intersects[index].object.parent !== intersected) {
+          nextIntersected = intersects[index].object;
+        }
         searching = false;
       }
       index += 1;
+      // MAGIC NUBMER: 3 is the number of children of a node group
+      // if (index > intersects.length - 1 || index > 3) {
       if (index > intersects.length - 1) {
         searching = false;
       }
@@ -542,6 +629,8 @@ function highlightIntersected() {
               c.material = sphereMaterials.selected;
               c.children[0].material.visible = false;
             }
+          } else {
+            c.material.visible = true;
           }
         });
       }
@@ -624,8 +713,6 @@ function makeLinkedAdjacent(centerNode) {
         // if (n.nameOffset.y === 0) {
         //   n.nameOffset.y = -0.1;
         // }
-
-        // console.log(n);
         // n.getObjectByName(`name-${n.id}`, true).position.set(
         //   Math.cos(theta),
         //   0,
@@ -650,7 +737,6 @@ function makeLinkedAdjacent(centerNode) {
 
     updateNetwork();
   } else {
-    // console.log(intersected);
     updating.material.visible = true;
     sceneObjects.buttons.children.forEach((b) => {
       b.visible = false;
@@ -819,7 +905,7 @@ function drawNetwork() {
       map: textureLoader.load(`${Flourish.static_prefix}/glow.png`),
       color: 0xffA000,
       transparent: true,
-      // depthTest: true,
+      // depthTest: false,
       blending: THREE.AdditiveBlending,
     });
     const sprite = new THREE.Sprite(spriteMaterial);
@@ -1030,8 +1116,8 @@ function generateButton(name, color, xoffset) {
 }
 
 function generateButtons() {
-  sceneObjects.buttons.add(generateButton('Rank', 0xFDD835, -0.25)); // 0.20));
-  sceneObjects.buttons.add(generateButton('Simulation', 0xF44336, 0.25)); // 0.20));
+  sceneObjects.buttons.add(generateButton('Rank', 0x00A0FF, -0.25)); // 0.20));
+  sceneObjects.buttons.add(generateButton('Simulation', 0x00A0FF, 0.25)); // 0.20));
   return sceneObjects.buttons;
 }
 

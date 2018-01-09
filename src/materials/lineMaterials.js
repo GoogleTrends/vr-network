@@ -4,7 +4,7 @@ import { MeshLineMaterial } from '../../three_modules/THREE.MeshLine';
 import animLineVertex from '../shaders/animLine.vert';
 import animLineFragment from '../shaders/animLine.frag';
 
-const linkWidth = 0.5;
+const linkWidth = 1.0; // 0.5;
 
 export function updateLineMaterials(state) {
   const lineMaterials = {};

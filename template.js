@@ -48653,11 +48653,11 @@ function generateFloor(stageSize, userHeight) {
   return floor;
 }
 
-var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvarying vec2 vResolution;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  vResolution = resolution;\n  gl_Position = finalPosition;\n}\n";
+var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  gl_Position = finalPosition;\n}\n";
 
-var animLineFragment = "precision mediump float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  vec2 dist = vUV - vec2(0.5);\n  float radius = 1.0;\n  float circle = 1.0 - smoothstep(\n    radius,\n    radius,\n    dot(dist, dist) * 4.0\n  );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 100.0 - time);\n  \n  \n  color.a = ((yCurve + xCurve) - circle) * color.a;\n  gl_FragColor = color;\n}\n";
+var animLineFragment = "precision highp float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  vec2 dist = vUV - vec2(0.5);\n  float radius = 1.0;\n  float circle = 1.0 - smoothstep(\n    radius,\n    radius,\n    dot(dist, dist) * 4.0\n  );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 100.0 - time);\n  \n  \n  color.a = ((yCurve + xCurve) - circle) * color.a;\n  gl_FragColor = color;\n}\n";
 
-var linkWidth = 0.5;
+var linkWidth = 1.0; // 0.5;
 
 function updateLineMaterials(state) {
   var lineMaterials = {};
@@ -48970,7 +48970,8 @@ var toConsumableArray = function (arr) {
 var worldState = {
   vrEnabled: false,
   layoutMode: 1,
-  isTransitioning: false
+  isTransitioning: false,
+  labelsNeedUpdate: true
 };
 var sceneObjects = {
   nodes: new Group(),
@@ -49008,8 +49009,22 @@ var lineMaterials = void 0;
 var updating = void 0;
 var shootingstar = null;
 
+// function precisionRound(number, precision) {
+//   const factor = 10 ** precision; // Math.pow(10, precision);
+//   return Math.round(number * factor) / factor;
+// }
+
 function updateNetwork() {
-  sceneObjects.nodes.children.forEach(function (n) {
+  // const angles = [];
+  // const angles = {};
+
+  sceneObjects.nodes.children
+  // .sort((a, b) => {
+  //   const [na] = globalData.nodes.filter(d => d.id === a.userData.id);
+  //   const [nb] = globalData.nodes.filter(d => d.id === b.userData.id);
+  //   return (na.pos.distanceTo(camera.position) > nb.pos.distanceTo(camera.position));
+  // })
+  .forEach(function (n) {
     var _globalData$nodes$fil = globalData.nodes.filter(function (d) {
       return d.id === n.userData.id;
     }),
@@ -49019,7 +49034,39 @@ function updateNetwork() {
     if (!nd.shifted) {
       nd.lastPos = nd.pos;
     }
-    //
+
+    // const xzangle = precisionRound(
+    //   Math.atan2(
+    //     precisionRound(camera.position.z - nd.pos.z, 1),
+    //     precisionRound(camera.position.x - nd.pos.x, 1),
+    //   ) * (180 / Math.PI),
+    //   0,
+    // );
+    // // const xyangle = precisionRound(
+    // //   Math.atan2(
+    // //     precisionRound(camera.position.y - nd.pos.y, 1),
+    // //     precisionRound(camera.position.x - nd.pos.x, 1),
+    // //   ) * (180 / Math.PI),
+    // //   0,
+    // // );
+    // const zyangle = precisionRound(
+    //   Math.atan2(
+    //     precisionRound(camera.position.y - nd.pos.y, 1),
+    //     precisionRound(camera.position.z - nd.pos.z, 1),
+    //   ) * (180 / Math.PI),
+    //   0,
+    // );
+    // const anglestring = `${xzangle}-${zyangle}`;
+    // // const anglestring = `${xzangle}-${xyangle}-${zyangle}`;
+    // const showText = !(anglestring in angles);
+    // if (!showText) {
+    //   console.log(anglestring);
+    //   console.log(angles[anglestring]);
+    //   console.log(nd.name);
+    //   console.log('-- -- --');
+    // }
+    // angles[anglestring] = nd.name;
+
     n.children.forEach(function (c) {
       if (c.userData.type === 'sphere') {
         //
@@ -49041,22 +49088,19 @@ function updateNetwork() {
       } else if (c.name === 'name') {
         // c.position.set(
         c.position.set(nd.nameOffset.x, nd.nameOffset.y, 0.15);
+        c.material.visible = true;
+        // c.material.visible = showText;
+        // } else {
+        // c.material.visible = showText;
       }
     });
-    //
-    // console.log(n);
-    // console.log(nd.id);
-    // console.log(n.getObjectByName(''));
-    // console.log(n.children.getObjectByName(`name-${nd.id}`, true));
-    // .position.set(
-    //   nd.nameOffset,
-    //   0,
-    //   0.15,
-    // );
     //
     n.userData.status = nd.status;
     n.userData.nextPos = nd.pos;
   });
+  //
+  // console.log(angles);
+  //
   sceneObjects.links.children.forEach(function (l) {
     l.userData.nextSPos = globalData.nodes.filter(function (n) {
       return l.userData.source === n.id;
@@ -49263,7 +49307,6 @@ function toggleVREnabled() {
   effect.setSize(window.innerWidth, window.innerHeight);
 }
 
-// let sample = 0;
 function transitionElements() {
   var countTransitioning = 0;
   sceneObjects.nodes.children.forEach(function (n) {
@@ -49272,22 +49315,55 @@ function transitionElements() {
       n.position.set(tpos.x, tpos.y, tpos.z);
       countTransitioning += 1;
     }
-    // if (sample < 2) {
-    //   console.log(n);
-    // }
-    // sample++;
     if (Math.abs(n.scale.x - n.userData.nextScale) > 0.01) {
       var tscale = _Math.lerp(n.scale.x, n.userData.nextScale, 0.1);
-      // console.log(tscale);
       n.scale.set(tscale, tscale, tscale);
     }
     n.quaternion.copy(camera.quaternion);
   });
   if (countTransitioning > 0) {
     worldState.isTransitioning = true;
+    worldState.labelsNeedUpdate = true;
   } else {
     worldState.isTransitioning = false;
   }
+  //
+  if (!worldState.isTransitioning && worldState.labelsNeedUpdate) {
+    var labelRaycaster = new Raycaster();
+    sceneObjects.nodes.children.forEach(function (n) {
+      var direction = new Vector3().subVectors(new Vector3(n.position.x, n.position.y, n.position.z), camera.position).normalize();
+
+      labelRaycaster.set(camera.position, direction);
+      var names = new Set();
+      var intersects = labelRaycaster.intersectObjects(sceneObjects.nodes.children, true).filter(function (c) {
+        return c.object.userData.type === 'sphere';
+      }).map(function (c) {
+        c.object.parent.userData.distance = c.distance;
+        return c.object.parent;
+      }).filter(function (g) {
+        if (names.has(g.userData.name)) {
+          return false;
+        }
+        names.add(g.userData.name);
+        return true;
+      });
+      if (intersects.length > 1) {
+        intersects.sort(function (a, b) {
+          return a.userData.distance < b.userData.distance;
+        }).forEach(function (g, i) {
+          if (i < intersects.length - 1) {
+            g.children.forEach(function (c) {
+              if (c.userData.type === 'text') {
+                c.material.visible = false;
+              }
+            });
+          }
+        });
+      }
+    });
+    worldState.labelsNeedUpdate = false;
+  }
+  //
   if (worldState.isTransitioning) {
     sceneObjects.links.children.forEach(function (l) {
       l.material.visible = false;
@@ -49307,7 +49383,6 @@ function transitionElements() {
         line.setGeometry(lineGeometry, function () {
           return scaleValue(l.userData.value, { min: 1, max: 100 }, linkScale);
         });
-        // console.log(line);
         var lineMesh = new Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
         l.geometry.attributes.position.needsUpdate = true;
@@ -49364,12 +49439,21 @@ function highlightIntersected() {
       }
     });
     //
+    // console.log(intersected);
+    //
     while (searching) {
-      if (intersects[index].object.parent !== intersected && (intersects[index].distance > stageSize / 2 && intersects[index].object.userData.type === 'text' || intersects[index].object.userData.type === 'sphere' || intersects[index].object.userData.type === 'button')) {
-        nextIntersected = intersects[index].object;
+      if (
+      // intersects[index].object.parent !== intersected
+      // &&
+      intersects[index].distance > stageSize / 2 && intersects[index].object.userData.type === 'text' || intersects[index].object.userData.type === 'sphere' || intersects[index].object.userData.type === 'button') {
+        if (intersects[index].object.parent !== intersected) {
+          nextIntersected = intersects[index].object;
+        }
         searching = false;
       }
       index += 1;
+      // MAGIC NUBMER: 3 is the number of children of a node group
+      // if (index > intersects.length - 1 || index > 3) {
       if (index > intersects.length - 1) {
         searching = false;
       }
@@ -49428,6 +49512,8 @@ function highlightIntersected() {
               c.material = selected;
               c.children[0].material.visible = false;
             }
+          } else {
+            c.material.visible = true;
           }
         });
       }
@@ -49511,8 +49597,6 @@ function makeLinkedAdjacent(centerNode) {
         // if (n.nameOffset.y === 0) {
         //   n.nameOffset.y = -0.1;
         // }
-
-        // console.log(n);
         // n.getObjectByName(`name-${n.id}`, true).position.set(
         //   Math.cos(theta),
         //   0,
@@ -49533,7 +49617,6 @@ function makeLinkedAdjacent(centerNode) {
 
     updateNetwork();
   } else {
-    // console.log(intersected);
     updating.material.visible = true;
     sceneObjects.buttons.children.forEach(function (b) {
       b.visible = false;
@@ -49681,7 +49764,7 @@ function drawNetwork() {
       map: textureLoader.load(Flourish.static_prefix + '/glow.png'),
       color: 0xffA000,
       transparent: true,
-      // depthTest: true,
+      // depthTest: false,
       blending: AdditiveBlending
     });
     var sprite = new Sprite(spriteMaterial);
@@ -49872,8 +49955,8 @@ function generateButton(name, color, xoffset) {
 }
 
 function generateButtons() {
-  sceneObjects.buttons.add(generateButton('Rank', 0xFDD835, -0.25)); // 0.20));
-  sceneObjects.buttons.add(generateButton('Simulation', 0xF44336, 0.25)); // 0.20));
+  sceneObjects.buttons.add(generateButton('Rank', 0x00A0FF, -0.25)); // 0.20));
+  sceneObjects.buttons.add(generateButton('Simulation', 0x00A0FF, 0.25)); // 0.20));
   return sceneObjects.buttons;
 }
 
