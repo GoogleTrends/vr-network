@@ -50086,19 +50086,20 @@ function update() {
 
 // The draw function is called when the template first loads
 function draw() {
-  WebFont.load({
-    google: {
-      families: ['Roboto Condensed:300,400,700']
-    },
-    active: function active() {
-      console.log('fonts loaded');
-      setupScene(data, state);
-    },
-    inactive: function inactive() {
-      console.log('fonts failed to load');
-      setupScene(data, state);
-    }
-  });
+  setupScene(data, state);
+  // WebFont.load({
+  //   google: {
+  //     families: ['Roboto Condensed:300,400,700'],
+  //   },
+  //   active: () => {
+  //     console.log('fonts loaded');
+  //     setupScene(data, state);
+  //   },
+  //   inactive: () => {
+  //     console.log('fonts failed to load');
+  //     setupScene(data, state);
+  //   },
+  // });
 }
 
 exports.data = data;
