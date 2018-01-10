@@ -6,16 +6,11 @@ function generateButton(name, color, yoffset) {
   button.userData.name = name;
   button.userData.type = 'button';
   button.scale.set(0.001, 0.001, 0.001);
-  // button.position.set(xoffset, 0, -0.65);
   button.position.set(-0.025, yoffset, 0);
-  // button.rotation.set((Math.PI / 180) * -45, 0, 0);
-  // button.rotation.set((Math.PI / 180) * -45, 0, 0);
   const text = generateTextureCanvas(name, 36, 1024, 256); // 64
   text.userData.type = 'text';
   button.add(text);
   const rect = new THREE.Mesh(
-    // new THREE.CircleGeometry(125, 24),
-    // new THREE.CircleGeometry(145, 24),
     new THREE.PlaneGeometry(600, 150),
     new THREE.MeshBasicMaterial({
       color: new THREE.Color(color),
@@ -30,12 +25,18 @@ function generateButton(name, color, yoffset) {
 }
 
 export function generateButtons(container) {
-  // container.add(generateButton('Layout in Spiral', 0x00A0FF, 0));
-  // container.add(generateButton('Layout in Grid', 0x00A0FF, -0.2));
-  container.add(generateButton('Layout by Rank', 0xFFFFFF, 0));
-  container.add(generateButton('Layout by Simulation', 0xFFFFFF, -0.2));
+  container.add(generateButton('Layout in Spiral', 0xFFFFFF, 0.1));
+  // container.add(generateButton('Layout by Rank', 0xFFFFFF, 0));
+  container.add(generateButton('Layout in Grid', 0xFFFFFF, -0.1));
+  container.add(generateButton('Layout by Simulation', 0xFFFFFF, -0.3));
+  //
+  const updating = generateTextureCanvas('Updating...', 60, 1024, 256);
+  updating.name = 'updating';
+  updating.scale.set(0.001, 0.001, 0.001);
+  updating.position.set(-0.025, -0.1, 0);
+  container.add(updating);
+  //
   container.position.set(1, 0.75, -1);
-  // container.rotation.set(0, (Math.PI / 180) * -45, 0);
   container.rotation.set((Math.PI / 180) * -45, 0, 0);
   return container;
 }

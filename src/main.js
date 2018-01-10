@@ -2,30 +2,24 @@
 
 import * as THREE from 'three';
 import cloneDeep from 'lodash.clonedeep';
-
 import MeshLine from '../three_modules/THREE.MeshLine';
 import StereoEffect from '../three_modules/StereoEffect';
 import VRControls from '../three_modules/VRControls';
-
 import d3Force from '../node_modules/d3-force-3d/build/d3-force-3d.min';
 import NoSleep from '../node_modules/nosleep.js/dist/NoSleep';
 import '../node_modules/webvr-polyfill/build/webvr-polyfill.min';
 
 import { generateTextureCanvas } from './generateTextureCanvas';
 import { generateCurveGeometry } from './generateCurveGeometry';
-
 import { generateHorizon } from './elements/horizon';
 import { generateFloor } from './elements/floor';
 import { generateButtons } from './elements/buttons';
-
 import { updateLineMaterials } from './materials/lineMaterials';
 import * as sphereMaterials from './materials/sphereMaterials';
-
 import * as legend from './elements/legend';
 import * as cursor from './elements/cursor';
 import * as scaleValue from './scaleValue';
 import * as stars from './elements/stars';
-
 
 const worldState = {
   vrEnabled: false,
@@ -44,7 +38,6 @@ const linkScale = {
   min: 1,
   max: 3,
 };
-
 const light = new THREE.DirectionalLight(0xffffff);
 const noSleep = new NoSleep();
 const stageSize = 10;
@@ -54,19 +47,16 @@ let initData = {};
 let flourishState = {};
 let timer = null;
 let shadertime = 0;
-
 let scene;
 let effect;
 let camera;
 let renderer;
 let controls;
-let updating;
 let vrDisplay;
 let raycaster;
 let intersected;
 let lineMaterials;
 let hoveredButton;
-
 
 function updateNetwork() {
   sceneObjects.nodes.children
@@ -102,9 +92,12 @@ function updateNetwork() {
     l.userData.nextSPos = globalData.nodes.filter(n => l.userData.source === n.id)[0].pos;
     l.userData.nextTPos = globalData.nodes.filter(n => l.userData.target === n.id)[0].pos;
   });
-  updating.material.visible = false;
   sceneObjects.buttons.children.forEach((b) => {
-    b.visible = true;
+    if (b.name === 'updating') {
+      b.visible = false;
+    } else {
+      b.visible = true;
+    }
   });
 }
 
@@ -119,7 +112,7 @@ function layoutByRank() {
     n.status = '';
     n.pos = new THREE.Vector3(
       Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
-      (controls.userHeight / (rowCount * 2)) + (i / perRow),
+      (controls.userHeight / (rowCount * 0.5)) + (i / perRow),
       Math.sin(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
     );
     return n;
@@ -134,6 +127,40 @@ function layoutByRank() {
   initData = cloneDeep(globalData);
 
   updateNetwork();
+}
+
+function layoutInGrid() {
+  // const rowCount = 12;
+  // const perRow = Math.ceil(globalData.nodes.length / rowCount);
+  const perRow = 10;
+
+  globalData.nodes.sort((a, b) => parseInt(a.rank, 10) - parseInt(b.rank, 10));
+
+  // let x = 0;
+  globalData.nodes = globalData.nodes.map((n, i) => {
+    n.shifted = false;
+    n.status = '';
+    n.pos = new THREE.Vector3(
+      // Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
+      
+      (-stageSize / 2) + (0.5 + (i % perRow)),
+      // (controls.userHeight / (rowCount * 0.5)) + 
+      1 + Math.floor(i / perRow),
+      -stageSize / 2,
+      // Math.sin(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
+    );
+    return n;
+  });
+
+  globalData.links = globalData.links.map((l) => {
+    l.spos = globalData.nodes.filter(n => l.sourceId === n.id)[0].pos;
+    l.tpos = globalData.nodes.filter(n => l.targetId === n.id)[0].pos;
+    return l;
+  });
+
+  initData = cloneDeep(globalData);
+
+  updateNetwork(); 
 }
 
 function layoutByForce() {
@@ -173,7 +200,7 @@ function layoutByForce() {
           n.y,
           dimensionMap.y,
           {
-            min: controls.userHeight * 0.75,
+            min: controls.userHeight * 1.5,
             max: controls.userHeight * 3.0,
           },
         ),
@@ -609,11 +636,19 @@ function makeLinkedAdjacent(centerNode) {
 
     updateNetwork();
   } else {
-    updating.material.visible = true;
     sceneObjects.buttons.children.forEach((b) => {
-      b.visible = false;
+      if (b.name === 'updating') {
+        b.visible = true;
+      } else {
+        b.visible = false;
+      }
     });
-    if (centerNode.name === 'Layout by Rank') {
+    
+    if (centerNode.name === 'Layout in Spiral') {
+      layoutByRank();
+    } else if (centerNode.name === 'Layout in Grid') {
+      layoutInGrid();
+    } else if (centerNode.name === 'Layout by Rank') {
       layoutByRank();
     } else if (centerNode.name === 'Layout by Simulation') {
       layoutByForce();
@@ -669,7 +704,7 @@ function animate() { // Request animation frame loop function
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
 
-  updating.material.opacity = Math.abs(Math.cos(time / 5.0));
+  scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
 
   transitionElements();
 
@@ -740,12 +775,14 @@ function drawNetwork() {
     const textureLoader = new THREE.TextureLoader();
     const spriteMaterial = new THREE.SpriteMaterial({
       map: textureLoader.load(`${Flourish.static_prefix}/glow.png`),
-      color: 0xffA000,
+      color: 0xFF6F00, // 0xffA000,
       transparent: true,
+      opacity: 0.75,
       blending: THREE.AdditiveBlending,
     });
     const sprite = new THREE.Sprite(spriteMaterial);
     sprite.userData.type = 'glow';
+    sprite.position.set(0, 0, 0.1);
     sprite.scale.set(0.4, 0.4, 0.4);
     sprite.material.visible = false;
     sphere.add(sprite);
@@ -782,7 +819,8 @@ function drawNetwork() {
 
   updateNetwork();
 
-  layoutByRank();
+  // layoutByRank();
+  layoutInGrid();
 }
 
 function formatData() {
@@ -841,15 +879,6 @@ export function setupScene(data, state) {
   scene.add(legend.generate(state, lineMaterials, controls.userHeight));
   scene.add(generateButtons(sceneObjects.buttons));
 
-  //
-  updating = generateTextureCanvas('Updating...', 60, 1024, 256);
-  updating.name = 'updating';
-  updating.scale.set(0.001, 0.001, 0.001);
-  updating.position.set(0.015, 0, -0.6);
-  updating.rotation.set((Math.PI / 180) * -45, 0, 0);
-  scene.add(updating);
-  //
-
   sceneObjects.cursor = cursor.generate(state);
   camera.add(sceneObjects.cursor);
   scene.add(camera);
@@ -867,7 +896,7 @@ export function setupScene(data, state) {
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
   document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  document.querySelector('#intro').addEventListener('click', hideIntro, true);
+  document.querySelector('#explore').addEventListener('click', hideIntro, true);
 
   formatData();
 }

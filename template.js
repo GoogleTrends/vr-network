@@ -48658,17 +48658,11 @@ function generateButton(name, color, yoffset) {
   button.userData.name = name;
   button.userData.type = 'button';
   button.scale.set(0.001, 0.001, 0.001);
-  // button.position.set(xoffset, 0, -0.65);
   button.position.set(-0.025, yoffset, 0);
-  // button.rotation.set((Math.PI / 180) * -45, 0, 0);
-  // button.rotation.set((Math.PI / 180) * -45, 0, 0);
   var text = generateTextureCanvas(name, 36, 1024, 256); // 64
   text.userData.type = 'text';
   button.add(text);
-  var rect = new Mesh(
-  // new THREE.CircleGeometry(125, 24),
-  // new THREE.CircleGeometry(145, 24),
-  new PlaneGeometry(600, 150), new MeshBasicMaterial({
+  var rect = new Mesh(new PlaneGeometry(600, 150), new MeshBasicMaterial({
     color: new Color(color),
     transparent: true,
     opacity: 0.1
@@ -48680,12 +48674,18 @@ function generateButton(name, color, yoffset) {
 }
 
 function generateButtons(container) {
-  // container.add(generateButton('Layout in Spiral', 0x00A0FF, 0));
-  // container.add(generateButton('Layout in Grid', 0x00A0FF, -0.2));
-  container.add(generateButton('Layout by Rank', 0xFFFFFF, 0));
-  container.add(generateButton('Layout by Simulation', 0xFFFFFF, -0.2));
+  container.add(generateButton('Layout in Spiral', 0xFFFFFF, 0.1));
+  // container.add(generateButton('Layout by Rank', 0xFFFFFF, 0));
+  container.add(generateButton('Layout in Grid', 0xFFFFFF, -0.1));
+  container.add(generateButton('Layout by Simulation', 0xFFFFFF, -0.3));
+  //
+  var updating = generateTextureCanvas('Updating...', 60, 1024, 256);
+  updating.name = 'updating';
+  updating.scale.set(0.001, 0.001, 0.001);
+  updating.position.set(-0.025, -0.1, 0);
+  container.add(updating);
+  //
   container.position.set(1, 0.75, -1);
-  // container.rotation.set(0, (Math.PI / 180) * -45, 0);
   container.rotation.set(Math.PI / 180 * -45, 0, 0);
   return container;
 }
@@ -49156,7 +49156,6 @@ var linkScale = {
   min: 1,
   max: 3
 };
-
 var light = new DirectionalLight(0xffffff);
 var noSleep = new NoSleep$1();
 var stageSize = 10;
@@ -49166,13 +49165,11 @@ var initData = {};
 var flourishState = {};
 var timer = null;
 var shadertime = 0;
-
 var scene = void 0;
 var effect = void 0;
 var camera = void 0;
 var renderer = void 0;
 var controls = void 0;
-var updating = void 0;
 var vrDisplay = void 0;
 var raycaster = void 0;
 var intersected = void 0;
@@ -49221,9 +49218,12 @@ function updateNetwork() {
       return l.userData.target === n.id;
     })[0].pos;
   });
-  updating.material.visible = false;
   sceneObjects.buttons.children.forEach(function (b) {
-    b.visible = true;
+    if (b.name === 'updating') {
+      b.visible = false;
+    } else {
+      b.visible = true;
+    }
   });
 }
 
@@ -49238,7 +49238,44 @@ function layoutByRank() {
   globalData.nodes = globalData.nodes.map(function (n, i) {
     n.shifted = false;
     n.status = '';
-    n.pos = new Vector3(Math.cos(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3), controls.userHeight / (rowCount * 2) + i / perRow, Math.sin(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3));
+    n.pos = new Vector3(Math.cos(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3), controls.userHeight / (rowCount * 0.5) + i / perRow, Math.sin(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3));
+    return n;
+  });
+
+  globalData.links = globalData.links.map(function (l) {
+    l.spos = globalData.nodes.filter(function (n) {
+      return l.sourceId === n.id;
+    })[0].pos;
+    l.tpos = globalData.nodes.filter(function (n) {
+      return l.targetId === n.id;
+    })[0].pos;
+    return l;
+  });
+
+  initData = lodash_clonedeep(globalData);
+
+  updateNetwork();
+}
+
+function layoutInGrid() {
+  // const rowCount = 12;
+  // const perRow = Math.ceil(globalData.nodes.length / rowCount);
+  var perRow = 10;
+
+  globalData.nodes.sort(function (a, b) {
+    return parseInt(a.rank, 10) - parseInt(b.rank, 10);
+  });
+
+  // let x = 0;
+  globalData.nodes = globalData.nodes.map(function (n, i) {
+    n.shifted = false;
+    n.status = '';
+    n.pos = new Vector3(
+    // Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
+
+    -stageSize / 2 + (0.5 + i % perRow),
+    // (controls.userHeight / (rowCount * 0.5)) + 
+    1 + Math.floor(i / perRow), -stageSize / 2);
     return n;
   });
 
@@ -49284,7 +49321,7 @@ function layoutByForce() {
         min: 0,
         max: stageSize
       }, stageSize / 10), toRange(n.y, dimensionMap.y, {
-        min: controls.userHeight * 0.75,
+        min: controls.userHeight * 1.5,
         max: controls.userHeight * 3.0
       }), toRangeWithGap(n.z, dimensionMap.z, {
         min: 0,
@@ -49659,11 +49696,19 @@ function makeLinkedAdjacent(centerNode) {
 
     updateNetwork();
   } else {
-    updating.material.visible = true;
     sceneObjects.buttons.children.forEach(function (b) {
-      b.visible = false;
+      if (b.name === 'updating') {
+        b.visible = true;
+      } else {
+        b.visible = false;
+      }
     });
-    if (centerNode.name === 'Layout by Rank') {
+
+    if (centerNode.name === 'Layout in Spiral') {
+      layoutByRank();
+    } else if (centerNode.name === 'Layout in Grid') {
+      layoutInGrid();
+    } else if (centerNode.name === 'Layout by Rank') {
       layoutByRank();
     } else if (centerNode.name === 'Layout by Simulation') {
       layoutByForce();
@@ -49706,7 +49751,7 @@ function animate() {
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
 
-  updating.material.opacity = Math.abs(Math.cos(time / 5.0));
+  scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
 
   transitionElements();
 
@@ -49778,12 +49823,14 @@ function drawNetwork() {
     var textureLoader = new TextureLoader();
     var spriteMaterial = new SpriteMaterial({
       map: textureLoader.load(Flourish.static_prefix + '/glow.png'),
-      color: 0xffA000,
+      color: 0xFF6F00, // 0xffA000,
       transparent: true,
+      opacity: 0.75,
       blending: AdditiveBlending
     });
     var sprite = new Sprite(spriteMaterial);
     sprite.userData.type = 'glow';
+    sprite.position.set(0, 0, 0.1);
     sprite.scale.set(0.4, 0.4, 0.4);
     sprite.material.visible = false;
     sphere.add(sprite);
@@ -49820,7 +49867,8 @@ function drawNetwork() {
 
   updateNetwork();
 
-  layoutByRank();
+  // layoutByRank();
+  layoutInGrid();
 }
 
 function formatData() {
@@ -49881,15 +49929,6 @@ function setupScene(data, state) {
   scene.add(generate(state, lineMaterials, controls.userHeight));
   scene.add(generateButtons(sceneObjects.buttons));
 
-  //
-  updating = generateTextureCanvas('Updating...', 60, 1024, 256);
-  updating.name = 'updating';
-  updating.scale.set(0.001, 0.001, 0.001);
-  updating.position.set(0.015, 0, -0.6);
-  updating.rotation.set(Math.PI / 180 * -45, 0, 0);
-  scene.add(updating);
-  //
-
   sceneObjects.cursor = generate$2(state);
   camera.add(sceneObjects.cursor);
   scene.add(camera);
@@ -49907,7 +49946,7 @@ function setupScene(data, state) {
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
   document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  document.querySelector('#intro').addEventListener('click', hideIntro, true);
+  document.querySelector('#explore').addEventListener('click', hideIntro, true);
 
   formatData();
 }
