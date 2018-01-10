@@ -245,18 +245,30 @@ function toggleVREnabled() {
   if (worldState.vrEnabled) {
     if (vrDisplay.capabilities.canPresent) {
       vrDisplay.requestPresent([{ source: document.body }]);
+      // worldState.vrEnabled = !worldState.vrEnabled;
     }
     document.querySelector('#vrbutton').classList.add('enabled');
     document.querySelector('#centerline').classList.add('enabled');
   } else {
     if (vrDisplay.capabilities.canPresent) {
       vrDisplay.exitPresent();
+      // worldState.vrEnabled = !worldState.vrEnabled;
     }
     document.querySelector('#vrbutton').classList.remove('enabled');
     document.querySelector('#centerline').classList.remove('enabled');
   }
   renderer.setSize(window.innerWidth, window.innerHeight);
   effect.setSize(window.innerWidth, window.innerHeight);
+}
+
+function hideIntro() {
+  document.querySelector('#intro').classList.add('hide');
+  toggleVREnabled();
+}
+
+function showIntro() {
+  document.querySelector('#intro').classList.remove('hide');
+  toggleVREnabled();
 }
 
 function transitionElements() {
@@ -854,6 +866,8 @@ export function setupScene(data, state) {
   window.addEventListener('touchstart', enableNoSleep, true);
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
+  document.querySelector('#inbutton').addEventListener('click', showIntro, true);
+  document.querySelector('#intro').addEventListener('click', hideIntro, true);
 
   formatData();
 }

@@ -20,11 +20,9 @@ canvas {
 }
 
 /*#ui*/
-#vrbutton {
+.button {
   font-weight: 300;
   position: absolute;
-  bottom: 10px;
-  right: 10px;
   width: 60px;
   height: 37px;
   padding: 0;
@@ -32,17 +30,35 @@ canvas {
   text-align: center;
   z-index: 1;
   cursor: pointer;
-  background-image: url(cardboard.png);
+  border-radius: 4px;
   background-size: cover;
   background-repeat: none;
   opacity: 0.5;
 }
 
-#vrbutton.enabled {
+#vrbutton {
+  bottom: 8px;
+  right: 8px;
+  background-image: url(cardboard.png);
+}
+
+#inbutton {
+  bottom: 8px;
+  left: 8px;
+  /**/
+  line-height: 37px;
+  background: #FFFFFF;
+  color: #000000;
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: 700;
+}
+
+.button.enabled {
   opacity: 1.0;
 }
 
-#vrbutton:hover, #vrbutton.enabled:hover {
+.button:hover, .button.enabled:hover {
   opacity: 0.75;
 }
 
@@ -63,4 +79,97 @@ canvas {
   display: block;
 }
 
-/*# sourceMappingURL=style.css.map */
+#intro {
+  position: absolute;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.5);
+  width: 100%;
+  height: 100vh;
+}
+
+.hide {
+  display: none;
+}
+
+.card {
+  width: 704px;
+  height: 704px;
+  position: absolute;
+  background: linear-gradient(0deg, #000000, #11203B);
+  margin: auto;
+  vertical-align: middle;
+  padding: 1em;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  /*overflow-y: scroll;*/
+}
+
+.content {
+  padding: 1em;
+  padding-top: 0em;
+}
+
+img {
+  max-width: 100%;
+}
+
+img.logo {
+  padding-left: 1em;
+}
+
+h1 {
+  font-size: 3.6em;
+  margin: 0;
+}
+
+h2 {
+  font-size: 3.6em;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+p {
+  font-size: 1.2em;
+}
+
+#explore {
+  background: rgba(17, 32, 59, 0.5);
+  cursor: pointer;
+  padding: 1em 0;
+}
+
+#explore:hover {
+  background: rgba(17, 32, 59, 1.0);
+}
+
+.half {
+  width: 50%;
+  padding: 0em;
+  margin: 0;
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+}
+
+@media (max-width: 735px), (max-height: 735px) {
+  .card {
+    font-size: 0.45em;
+    width: 304px;
+    height: 304px;
+  }
+  #explore {
+    padding: 0;
+  }
+  .half img {
+    width: 50%;
+    margin: 0;
+    padding: 0;
+  }
+  .half h2 {
+    margin: 0.65em 0;
+  }
+}
+
+/*# sourceMappingURL=style.css.map 
