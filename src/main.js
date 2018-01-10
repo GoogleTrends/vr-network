@@ -13,11 +13,18 @@ import '../node_modules/webvr-polyfill/build/webvr-polyfill.min';
 
 import { generateTextureCanvas } from './generateTextureCanvas';
 import { generateCurveGeometry } from './generateCurveGeometry';
-import { generateHorizon } from './generateHorizon';
-import { generateFloor } from './generateFloor';
+
+import { generateHorizon } from './elements/horizon';
+import { generateFloor } from './elements/floor';
+import { generateButtons } from './elements/buttons';
 
 import { updateLineMaterials } from './materials/lineMaterials';
 import * as sphereMaterials from './materials/sphereMaterials';
+
+import * as legend from './elements/legend';
+import * as cursor from './elements/cursor';
+import * as scaleValue from './scaleValue';
+import * as stars from './elements/stars';
 
 
 const worldState = {
@@ -30,7 +37,6 @@ const sceneObjects = {
   nodes: new THREE.Group(),
   links: new THREE.Group(),
   stars: new THREE.Group(),
-  legend: new THREE.Group(),
   cursor: new THREE.Group(),
   buttons: new THREE.Group(),
 };
@@ -49,79 +55,30 @@ let flourishState = {};
 let timer = null;
 let shadertime = 0;
 
-let vrDisplay;
 let scene;
-let controls;
 let effect;
 let camera;
 let renderer;
+let controls;
+let updating;
+let vrDisplay;
 let raycaster;
 let intersected;
 let lineMaterials;
+let hoveredButton;
 
-let updating;
-let shootingstar = null;
-
-// function precisionRound(number, precision) {
-//   const factor = 10 ** precision; // Math.pow(10, precision);
-//   return Math.round(number * factor) / factor;
-// }
 
 function updateNetwork() {
-  // const angles = [];
-  // const angles = {};
-
   sceneObjects.nodes.children
-    // .sort((a, b) => {
-    //   const [na] = globalData.nodes.filter(d => d.id === a.userData.id);
-    //   const [nb] = globalData.nodes.filter(d => d.id === b.userData.id);
-    //   return (na.pos.distanceTo(camera.position) > nb.pos.distanceTo(camera.position));
-    // })
     .forEach((n) => {
       const [nd] = globalData.nodes.filter(d => d.id === n.userData.id);
       if (!nd.shifted) {
         nd.lastPos = nd.pos;
       }
-
-      // const xzangle = precisionRound(
-      //   Math.atan2(
-      //     precisionRound(camera.position.z - nd.pos.z, 1),
-      //     precisionRound(camera.position.x - nd.pos.x, 1),
-      //   ) * (180 / Math.PI),
-      //   0,
-      // );
-      // // const xyangle = precisionRound(
-      // //   Math.atan2(
-      // //     precisionRound(camera.position.y - nd.pos.y, 1),
-      // //     precisionRound(camera.position.x - nd.pos.x, 1),
-      // //   ) * (180 / Math.PI),
-      // //   0,
-      // // );
-      // const zyangle = precisionRound(
-      //   Math.atan2(
-      //     precisionRound(camera.position.y - nd.pos.y, 1),
-      //     precisionRound(camera.position.z - nd.pos.z, 1),
-      //   ) * (180 / Math.PI),
-      //   0,
-      // );
-      // const anglestring = `${xzangle}-${zyangle}`;
-      // // const anglestring = `${xzangle}-${xyangle}-${zyangle}`;
-      // const showText = !(anglestring in angles);
-      // if (!showText) {
-      //   console.log(anglestring);
-      //   console.log(angles[anglestring]);
-      //   console.log(nd.name);
-      //   console.log('-- -- --');
-      // }
-      // angles[anglestring] = nd.name;
-
       n.children.forEach((c) => {
         if (c.userData.type === 'sphere') {
-          //
-          // Dispose existing geometry
-          c.material.dispose();
+          c.material.dispose(); // Dispose existing geometry
           c.material = null;
-          //
           if (nd.status === 'center') {
             c.currentMaterial = sphereMaterials.selected;
             c.material = sphereMaterials.highlight;
@@ -134,31 +91,21 @@ function updateNetwork() {
             c.children[0].material.visible = false;
           }
         } else if (c.name === 'name') {
-          // c.position.set(
           c.position.set(nd.nameOffset.x, nd.nameOffset.y, 0.15);
           c.material.visible = true;
-          // c.material.visible = showText;
-        // } else {
-          // c.material.visible = showText;
         }
       });
-      //
       n.userData.status = nd.status;
       n.userData.nextPos = nd.pos;
     });
-  //
-  // console.log(angles);
-  //
   sceneObjects.links.children.forEach((l) => {
     l.userData.nextSPos = globalData.nodes.filter(n => l.userData.source === n.id)[0].pos;
     l.userData.nextTPos = globalData.nodes.filter(n => l.userData.target === n.id)[0].pos;
   });
-  //
   updating.material.visible = false;
   sceneObjects.buttons.children.forEach((b) => {
     b.visible = true;
   });
-  //
 }
 
 function layoutByRank() {
@@ -189,49 +136,11 @@ function layoutByRank() {
   updateNetwork();
 }
 
-function scaleValue(value, domain, range) {
-  return (((value - domain.min) / (domain.max - domain.min)) * (range.max - range.min)) + range.min;
-}
-
-function scaleValueWithGap(value, domain, range, gap) {
-  let scaledValue = value;
-  const halfDomain = domain.min + ((domain.max - domain.min) / 2);
-  const halfRange = range.min + ((range.max - range.min) / 2);
-  if (value < halfDomain) {
-    scaledValue = scaleValue(
-      value,
-      {
-        min: domain.min,
-        max: halfDomain,
-      },
-      {
-        min: range.min,
-        max: halfRange - (gap / 2),
-      },
-    );
-  } else {
-    scaledValue = scaleValue(
-      value,
-      {
-        min: halfDomain,
-        max: domain.max,
-      },
-      {
-        min: halfRange + (gap / 2),
-        max: range.max,
-      },
-    );
-  }
-  return scaledValue;
-}
-
 function layoutByForce() {
   const simulation = d3Force.forceSimulation()
     .numDimensions(3)
     .nodes(globalData.nodes)
     .force('link', d3Force.forceLink().id(d => d.id).links(globalData.links))
-    // .force('charge', d3Force.forceManyBody().strength(-10)) // 1, -1,
-    // .force('charge', d3Force.forceManyBody().strength(d => d.linkCount)) // 1, -1,
     .force('charge', d3Force.forceManyBody().strength(-1)) // 1, -1,
     .force('center', d3Force.forceCenter());
 
@@ -251,7 +160,7 @@ function layoutByForce() {
       n.shifted = false;
       n.status = '';
       n.pos = new THREE.Vector3(
-        scaleValueWithGap(
+        scaleValue.toRangeWithGap(
           n.x,
           dimensionMap.x,
           {
@@ -260,7 +169,7 @@ function layoutByForce() {
           },
           stageSize / 10,
         ),
-        scaleValue(
+        scaleValue.toRange(
           n.y,
           dimensionMap.y,
           {
@@ -268,7 +177,7 @@ function layoutByForce() {
             max: controls.userHeight * 3.0,
           },
         ),
-        scaleValueWithGap(
+        scaleValue.toRangeWithGap(
           n.z,
           dimensionMap.z,
           {
@@ -316,27 +225,6 @@ function layoutByRandom() {
 
   updateNetwork();
 }
-
-// function layoutNetwork() {
-//   switch (worldState.layoutMode) {
-//     case 0:
-//       layoutByRank();
-//       updateNetwork();
-//       break;
-//     case 1:
-//       layoutByForce();
-//       break;
-//     default:
-//       layoutByRandom();
-//       updateNetwork();
-//       break;
-//   }
-// }
-
-// worldState.reset = () => {
-//   worldState.layoutMode = 1;
-//   layoutNetwork();
-// };
 
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -450,11 +338,8 @@ function transitionElements() {
         ||
         (l.userData.tpos.distanceTo(l.userData.nextTPos) > 0.01)
       ) {
-        //
-        // Dispose existing geometry
-        l.geometry.dispose();
+        l.geometry.dispose(); // Dispose existing geometry
         l.geometry = null;
-        //
         l.userData.spos = new THREE.Vector3(
           l.userData.nextSPos.x,
           l.userData.nextSPos.y,
@@ -473,7 +358,7 @@ function transitionElements() {
         const line = new MeshLine();
         line.setGeometry(
           lineGeometry,
-          () => scaleValue(l.userData.value, { min: 1, max: 100 }, linkScale),
+          () => scaleValue.toRange(l.userData.value, { min: 1, max: 100 }, linkScale),
         );
         const lineMesh = new THREE.Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
@@ -493,11 +378,8 @@ function resetIntersected() {
     intersected.userData.nextScale = 1;
     intersected.children.forEach((c) => {
       if (c.userData.type === 'sphere') {
-        //
-        // Dispose existing geometry
-        c.material.dispose();
+        c.material.dispose(); // Dispose existing geometry
         c.material = null;
-        //
         c.material = c.currentMaterial;
       }
     });
@@ -514,7 +396,6 @@ function highlightIntersected() {
     let searching = true;
     let index = 0;
     let nextIntersected = null;
-    //
     let foundCurrent = false;
     intersects.forEach((o) => {
       if (
@@ -532,20 +413,15 @@ function highlightIntersected() {
           o.object.userData.type === 'button'
         )
       ) {
-        //
         if (intersected.userData.type === 'node') {
           const scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
           intersected.userData.nextScale = scaleBy;
-          // intersected.scale.set(scaleBy, scaleBy, scaleBy);
         }
-        //
         if (intersected.userData.status !== 'center') {
           foundCurrent = true;
         }
       }
     });
-    //
-    // console.log(intersected);
     //
     while (searching) {
       if (
@@ -566,11 +442,13 @@ function highlightIntersected() {
         if (intersects[index].object.parent !== intersected) {
           nextIntersected = intersects[index].object;
         }
+        if (intersects[index].object.userData.type === 'button') {
+          intersects[index].object.material.opacity = 0.25;
+          hoveredButton = intersects[index].object.material;
+        }
         searching = false;
       }
       index += 1;
-      // MAGIC NUBMER: 3 is the number of children of a node group
-      // if (index > intersects.length - 1 || index > 3) {
       if (index > intersects.length - 1) {
         searching = false;
       }
@@ -585,11 +463,8 @@ function highlightIntersected() {
       intersected = nextIntersected.parent;
       if (intersected.userData.type === 'node') {
         sceneObjects.links.children.forEach((l) => {
-          //
-          // Dispose existing geometry
-          l.material.dispose();
+          l.material.dispose(); // Dispose existing geometry
           l.material = null;
-          //
           if (l.userData.source === intersected.userData.id) {
             l.material = lineMaterials.highlightOut;
             l.material.visible = true;
@@ -606,10 +481,8 @@ function highlightIntersected() {
         });
         const scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
         intersected.userData.nextScale = scaleBy;
-        // intersected.scale.set(scaleBy, scaleBy, scaleBy);
         intersected.children.forEach((c) => {
           if (c.userData.type === 'sphere') {
-            // c.currentMaterial = c.material;
             if (intersected.userData.status === 'center') {
               c.currentMaterial = sphereMaterials.selected;
             } else if (intersected.userData.status === 'adjacent') {
@@ -617,11 +490,8 @@ function highlightIntersected() {
             } else {
               c.currentMaterial = sphereMaterials.basic;
             }
-            //
-            // Dispose existing geometry
-            c.material.dispose();
+            c.material.dispose(); // Dispose existing geometry
             c.material = null;
-            //
             if (foundCurrent || intersected.userData.status === 'center') {
               c.material = sphereMaterials.highlight;
               c.children[0].material.visible = true;
@@ -639,21 +509,27 @@ function highlightIntersected() {
     if (foundCurrent && timer === null) {
       timer = 0;
     } else if (!foundCurrent && timer !== null) {
+      //
+      if (hoveredButton) {
+        hoveredButton.opacity = 0.1;
+        hoveredButton = null;
+      }
+      //
       timer = null;
-      //
-      // Dispose existing geometry
-      sceneObjects.cursor.children[3].geometry.dispose();
+      sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
       sceneObjects.cursor.children[3].geometry = null;
-      //
       sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
     }
   } else {
+    //
+    if (hoveredButton) {
+      hoveredButton.opacity = 0.1;
+      hoveredButton = null;
+    }
+    //
     timer = null;
-    //
-    // Dispose existing geometry
-    sceneObjects.cursor.children[3].geometry.dispose();
+    sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
     sceneObjects.cursor.children[3].geometry = null;
-    //
     sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
 }
@@ -678,7 +554,6 @@ function makeLinkedAdjacent(centerNode) {
 
     const linkCount = linked.length;
     const phi = (Math.PI * 2) / linkCount;
-    // const radius = (stageSize / 10) + (linkCount / 10);
     const radius = 0.5 + (linkCount / 25);
     const theta = angle + (90 * (Math.PI / 180));
 
@@ -707,31 +582,16 @@ function makeLinkedAdjacent(centerNode) {
         } else if (n.nameOffset.y > -0.1 && n.nameOffset.y < 0) {
           n.nameOffset.y = -0.1;
         }
-        // if (n.nameOffset.y < 0.65 && n.nameOffset.y > -0.65) {
-        //   n.nameOffset.y *= 2.0;
-        // }
-        // if (n.nameOffset.y === 0) {
-        //   n.nameOffset.y = -0.1;
-        // }
-        // n.getObjectByName(`name-${n.id}`, true).position.set(
-        //   Math.cos(theta),
-        //   0,
-        //   0.15,
-        // );
-        //
-      // } else if (n.id !== centerNode.id) {
       } else {
         n.shifted = false;
         n.status = '';
         n.pos = n.lastPos;
-        //
         const oangle = Math.atan2(n.pos.z, n.pos.x);
         n.pos = new THREE.Vector3(
           Math.cos(oangle) * (stageSize / 2),
           n.pos.y,
           Math.sin(oangle) * (stageSize / 2),
         );
-        //
       }
     });
 
@@ -741,53 +601,25 @@ function makeLinkedAdjacent(centerNode) {
     sceneObjects.buttons.children.forEach((b) => {
       b.visible = false;
     });
-    // intersected.visible = false;
-    if (centerNode.name === 'Rank') {
+    if (centerNode.name === 'Layout by Rank') {
       layoutByRank();
-    } else if (centerNode.name === 'Simulation') {
+    } else if (centerNode.name === 'Layout by Simulation') {
       layoutByForce();
     } else {
       globalData = cloneDeep(initData);
     }
-  }
-  // updateNetwork();
-}
-
-function updateStars(time) {
-  if (shootingstar) {
-    const tpos = new THREE.Vector3(
-      shootingstar.position.x,
-      shootingstar.position.y,
-      shootingstar.position.z,
-    ).lerp(shootingstar.userData.nextPos, 0.1);
-    shootingstar.position.set(tpos.x, tpos.y, tpos.z);
-    if (shootingstar.position.distanceTo(shootingstar.userData.nextPos) < 0.01) {
-      shootingstar = null;
-    }
-  } else if (Math.floor(time) % 1000 === 0) {
-    const index = Math.floor(Math.random() * sceneObjects.stars.children.length);
-    shootingstar = sceneObjects.stars.children[index];
-    shootingstar.userData.nextPos = new THREE.Vector3(
-      (Math.random() - 0.5) * stageSize * 2,
-      2 + (Math.random() * (stageSize / 2)),
-      (Math.random() - 0.5) * stageSize * 2,
-    );
   }
 }
 
 function updateCursor() {
   if (!worldState.isTransitioning) {
     highlightIntersected();
-    // checkButtons();
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
         timer += Math.PI / 30;
-        //
-        // Dispose existing geometry
-        sceneObjects.cursor.children[3].geometry.dispose();
+        sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
-        //
         sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(
           0.02,
           0.03,
@@ -802,11 +634,8 @@ function updateCursor() {
     }
   } else {
     timer = null;
-    //
-    // Dispose existing geometry
-    sceneObjects.cursor.children[3].geometry.dispose();
+    sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
     sceneObjects.cursor.children[3].geometry = null;
-    //
     sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(
       0.02,
       0.03,
@@ -818,17 +647,13 @@ function updateCursor() {
   }
 }
 
-// Request animation frame loop function
-
-function animate() {
+function animate() { // Request animation frame loop function
   const time = performance.now() * 0.01;
-
   shadertime += 0.1;
   if (shadertime > 100) {
     shadertime = 0.0;
   }
 
-  // lineMaterials.basic.uniforms.time.value = time;
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
 
@@ -836,7 +661,7 @@ function animate() {
 
   transitionElements();
 
-  updateStars(time);
+  stars.update(sceneObjects.stars, stageSize, time);
 
   updateCursor();
 
@@ -875,7 +700,7 @@ function drawNetwork() {
     const line = new MeshLine();
     line.setGeometry(
       lineGeometry,
-      () => scaleValue(l.value, { min: 1, max: 100 }, linkScale),
+      () => scaleValue.toRange(l.value, { min: 1, max: 100 }, linkScale),
     );
     const lineMesh = new THREE.Mesh(line.geometry, lineMaterials.basic);
     lineMesh.userData.source = l.source;
@@ -905,7 +730,6 @@ function drawNetwork() {
       map: textureLoader.load(`${Flourish.static_prefix}/glow.png`),
       color: 0xffA000,
       transparent: true,
-      // depthTest: false,
       blending: THREE.AdditiveBlending,
     });
     const sprite = new THREE.Sprite(spriteMaterial);
@@ -935,7 +759,6 @@ function drawNetwork() {
     text.position.set(0, -0.1, 0.15);
     text.userData.type = 'text';
     text.name = 'name';
-    // text.name = `name-${d.rank}`;
     node.add(text);
     //
 
@@ -947,7 +770,6 @@ function drawNetwork() {
 
   updateNetwork();
 
-  // layoutByForce();
   layoutByRank();
 }
 
@@ -964,161 +786,6 @@ function formatData() {
   });
   globalData.nodes = globalData.nodes.filter(n => n.linkCount);
   drawNetwork();
-}
-
-function generateStars() {
-  const starGeometry = new THREE.SphereGeometry(0.005, 12);
-  const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  let s = 0;
-  while (s < 1000) {
-    const star = new THREE.Mesh(starGeometry, starMaterial);
-    star.position.set(
-      (Math.random() - 0.5) * stageSize * 2,
-      2 + (Math.random() * (stageSize / 2)),
-      (Math.random() - 0.5) * stageSize * 2,
-    );
-    sceneObjects.stars.add(star);
-    s += 1;
-  }
-  return sceneObjects.stars;
-}
-
-function generateLegend(state) {
-  sceneObjects.legend = new THREE.Group();
-
-  const inLineGeometry = generateCurveGeometry(
-    // new THREE.Vector3(-0.5, 0, -1.05),
-    // new THREE.Vector3(0.5, 0, -1.05),
-    new THREE.Vector3(-0.5, 0, -1.0),
-    new THREE.Vector3(0.5, 0, -1.0),
-    controls.userHeight,
-  );
-  const inLine = new MeshLine();
-  inLine.setGeometry(inLineGeometry);
-  const inLineMesh = new THREE.Mesh(inLine.geometry, lineMaterials.highlightIn);
-  inLineMesh.userData.type = 'in';
-  sceneObjects.legend.add(inLineMesh);
-
-  const inText = generateTextureCanvas(state.legendInboundLabel, 36, 1024, 256); // 64
-  inText.scale.set(0.001, 0.001, 0.001);
-  // inText.position.set(0, 0, -1.1);
-  inText.position.set(0, 0, -1.05);
-  inText.rotation.set((Math.PI / 180) * -45, 0, 0);
-  sceneObjects.legend.add(inText);
-
-  const outLineGeometry = generateCurveGeometry(
-    // new THREE.Vector3(0.5, 0, -0.9),
-    // new THREE.Vector3(-0.5, 0, -0.9),
-    new THREE.Vector3(0.5, 0, -0.85),
-    new THREE.Vector3(-0.5, 0, -0.85),
-    controls.userHeight,
-  );
-  const outLine = new MeshLine();
-  outLine.setGeometry(outLineGeometry);
-  const outLineMesh = new THREE.Mesh(outLine.geometry, lineMaterials.highlightOut);
-  outLineMesh.userData.type = 'out';
-  sceneObjects.legend.add(outLineMesh);
-
-  const outText = generateTextureCanvas(state.legendOutboundLabel, 36, 1024, 256); // 64
-  outText.scale.set(0.001, 0.001, 0.001);
-  // outText.position.set(0, 0, -0.95);
-  outText.position.set(0, 0, -0.9);
-  outText.rotation.set((Math.PI / 180) * -45, 0, 0);
-  sceneObjects.legend.add(outText);
-
-  const buttonLabel = generateTextureCanvas('Layout By', 36, 1024, 256); // 64
-  buttonLabel.scale.set(0.001, 0.001, 0.001);
-  // buttonLabel.position.set(0, 0, -0.8);
-  buttonLabel.position.set(0, 0, -0.75);
-  buttonLabel.rotation.set((Math.PI / 180) * -45, 0, 0);
-  sceneObjects.legend.add(buttonLabel);
-
-  sceneObjects.legend.name = 'legend';
-
-  return sceneObjects.legend;
-}
-
-function generateCursor(state) {
-  sceneObjects.cursor = new THREE.Group();
-
-  const basicCursor = new THREE.Mesh(
-    new THREE.RingGeometry(0.02, 0.03, 24),
-    new THREE.MeshBasicMaterial({
-      color: new THREE.Color(state.cursorInnerColor),
-      opacity: state.cursorOpacity,
-      transparent: true,
-      depthTest: false,
-    }),
-  );
-  basicCursor.name = 'inner';
-  sceneObjects.cursor.add(basicCursor);
-
-  const innerCursor = new THREE.Mesh(
-    new THREE.RingGeometry(0.018, 0.02, 24),
-    new THREE.MeshBasicMaterial({
-      color: new THREE.Color(state.cursorOuterColor),
-      opacity: state.cursorOpacity,
-      transparent: true,
-      depthTest: false,
-    }),
-  );
-  innerCursor.name = 'outer';
-  sceneObjects.cursor.add(innerCursor);
-
-  const outerCursor = new THREE.Mesh(
-    new THREE.RingGeometry(0.03, 0.032, 24),
-    new THREE.MeshBasicMaterial({
-      color: new THREE.Color(state.cursorOuterColor),
-      opacity: state.cursorOpacity,
-      transparent: true,
-      depthTest: false,
-    }),
-  );
-  outerCursor.name = 'outer';
-  sceneObjects.cursor.add(outerCursor);
-
-  const highlightCursor = new THREE.Mesh(
-    new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0),
-    new THREE.MeshBasicMaterial({
-      color: new THREE.Color(state.cursorActiveColor),
-      opacity: 1.0,
-      transparent: true,
-      depthTest: false,
-    }),
-  );
-  highlightCursor.name = 'active';
-  sceneObjects.cursor.add(highlightCursor);
-
-  sceneObjects.cursor.position.z = -1;
-  sceneObjects.cursor.name = 'cursor';
-  return sceneObjects.cursor;
-}
-
-function generateButton(name, color, xoffset) {
-  const button = new THREE.Group();
-  button.userData.name = name;
-  button.userData.type = 'button';
-  button.scale.set(0.001, 0.001, 0.001);
-  // button.position.set(xoffset, 0, -0.65);
-  button.position.set(xoffset, 0, -0.6);
-  button.rotation.set((Math.PI / 180) * -45, 0, 0);
-  const text = generateTextureCanvas(name, 44, 256, 256); // 64
-  text.userData.type = 'text';
-  button.add(text);
-  const circle = new THREE.Mesh(
-    // new THREE.CircleGeometry(125, 24),
-    new THREE.CircleGeometry(145, 24),
-    new THREE.MeshBasicMaterial({ color: new THREE.Color(color) }),
-  );
-  circle.userData.type = 'button';
-  button.add(circle);
-  return button;
-}
-
-function generateButtons() {
-  sceneObjects.buttons.add(generateButton('Rank', 0x00A0FF, -0.25)); // 0.20));
-  sceneObjects.buttons.add(generateButton('Simulation', 0x00A0FF, 0.25)); // 0.20));
-  return sceneObjects.buttons;
 }
 
 export function setupScene(data, state) {
@@ -1158,9 +825,9 @@ export function setupScene(data, state) {
     flourishState.horizonExponent,
   ));
   scene.add(generateFloor(stageSize, controls.userHeight));
-  scene.add(generateStars());
-  scene.add(generateLegend(state));
-  scene.add(generateButtons());
+  scene.add(stars.generate(sceneObjects.stars, stageSize, 1000));
+  scene.add(legend.generate(state, lineMaterials, controls.userHeight));
+  scene.add(generateButtons(sceneObjects.buttons));
 
   //
   updating = generateTextureCanvas('Updating...', 60, 1024, 256);
@@ -1168,11 +835,11 @@ export function setupScene(data, state) {
   updating.scale.set(0.001, 0.001, 0.001);
   updating.position.set(0.015, 0, -0.6);
   updating.rotation.set((Math.PI / 180) * -45, 0, 0);
-
   scene.add(updating);
   //
 
-  camera.add(generateCursor(state));
+  sceneObjects.cursor = cursor.generate(state);
+  camera.add(sceneObjects.cursor);
   scene.add(camera);
 
   raycaster = new THREE.Raycaster();
@@ -1195,13 +862,14 @@ export function updateSceneFromState(state) {
   flourishState = state;
   //
   camera.remove(camera.getObjectByName('cursor', true));
-  camera.add(generateCursor(state));
+  sceneObjects.cursor = cursor.generate(state);
+  camera.add(sceneObjects.cursor);
   //
   lineMaterials = updateLineMaterials(flourishState);
   lineMaterials.basic.visible = false;
   //
   scene.remove(scene.getObjectByName('legend', true));
-  scene.add(generateLegend(state));
+  scene.add(legend.generate(state, lineMaterials, controls.userHeight));
   //
   sceneObjects.links.children.forEach((l) => {
     if (l.userData.status === 'out') {

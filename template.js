@@ -48521,7 +48521,8 @@ function generateTextureCanvas(text, textSize, width, height) {
   context.font = '' + weight + textSize + 'pt Roboto Condensed';
 
   var textWidth = context.measureText(text).width;
-  // context.fillStyle = 'rgba(0, 0, 0, 0.2)';
+
+  // context.fillStyle = 'rgba(255, 255, 255, 0.2)';
   // context.fillRect(0, 0, width, height);
 
   context.strokeStyle = 'rgb(0, 0, 0)';
@@ -48601,17 +48602,16 @@ function generateFloor(stageSize, userHeight) {
 
   var width = 1024;
   var height = 512;
-  // const textSize = 24;
-  var textSize = 32;
+  var textSize = 36;
   var canvas = document.createElement('canvas');
   var context = canvas.getContext('2d');
   canvas.width = width;
   canvas.height = height;
-  context.clearRect(0, 0, width, height);
 
-  // context.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  // context.fillStyle = 'rgba(255, 255, 255, 0.2)';
   // context.fillRect(0, 0, width, height);
 
+  context.clearRect(0, 0, width, height);
   context.font = textSize + 'pt Roboto Condensed';
   context.fillStyle = 'rgb(255, 255, 255)';
 
@@ -48651,6 +48651,43 @@ function generateFloor(stageSize, userHeight) {
   floor.rotation.set(Math.PI / 180 * -45, 0, 0);
 
   return floor;
+}
+
+function generateButton(name, color, yoffset) {
+  var button = new Group();
+  button.userData.name = name;
+  button.userData.type = 'button';
+  button.scale.set(0.001, 0.001, 0.001);
+  // button.position.set(xoffset, 0, -0.65);
+  button.position.set(-0.025, yoffset, 0);
+  // button.rotation.set((Math.PI / 180) * -45, 0, 0);
+  // button.rotation.set((Math.PI / 180) * -45, 0, 0);
+  var text = generateTextureCanvas(name, 36, 1024, 256); // 64
+  text.userData.type = 'text';
+  button.add(text);
+  var rect = new Mesh(
+  // new THREE.CircleGeometry(125, 24),
+  // new THREE.CircleGeometry(145, 24),
+  new PlaneGeometry(600, 150), new MeshBasicMaterial({
+    color: new Color(color),
+    transparent: true,
+    opacity: 0.1
+  }));
+  rect.position.set(-0.01, -0.01, -0.01);
+  rect.userData.type = 'button';
+  button.add(rect);
+  return button;
+}
+
+function generateButtons(container) {
+  // container.add(generateButton('Layout in Spiral', 0x00A0FF, 0));
+  // container.add(generateButton('Layout in Grid', 0x00A0FF, -0.2));
+  container.add(generateButton('Layout by Rank', 0xFFFFFF, 0));
+  container.add(generateButton('Layout by Simulation', 0xFFFFFF, -0.2));
+  container.position.set(1, 0.75, -1);
+  // container.rotation.set(0, (Math.PI / 180) * -45, 0);
+  container.rotation.set(Math.PI / 180 * -45, 0, 0);
+  return container;
 }
 
 var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  gl_Position = finalPosition;\n}\n";
@@ -48757,6 +48794,141 @@ var highlight = new MeshPhongMaterial({
   transparent: false,
   depthTest: true
 });
+
+function generate(state, lineMaterials, userHeight) {
+  var container = new Group();
+
+  var inLineGeometry = generateCurveGeometry(new Vector3(0, 0.05, -1), new Vector3(-1.5, 0.05, -1), userHeight);
+  var inLine = new MeshLine();
+  inLine.setGeometry(inLineGeometry);
+  var inLineMesh = new Mesh(inLine.geometry, lineMaterials.highlightIn);
+  inLineMesh.userData.type = 'in';
+  container.add(inLineMesh);
+
+  var inText = generateTextureCanvas(state.legendInboundLabel, 36, 1024, 256); // 64
+  inText.scale.set(0.001, 0.001, 0.001);
+  inText.position.set(0.025, 0, 0);
+  container.add(inText);
+
+  var outLineGeometry = generateCurveGeometry(new Vector3(-1.5, -0.3, -1), new Vector3(0, -0.3, -1), userHeight);
+  var outLine = new MeshLine();
+  outLine.setGeometry(outLineGeometry);
+  var outLineMesh = new Mesh(outLine.geometry, lineMaterials.highlightOut);
+  outLineMesh.userData.type = 'out';
+  container.add(outLineMesh);
+
+  var outText = generateTextureCanvas(state.legendOutboundLabel, 36, 1024, 256); // 64
+  outText.scale.set(0.001, 0.001, 0.001);
+  outText.position.set(0.025, -0.2, 0);
+  container.add(outText);
+
+  container.name = 'legend';
+  container.position.set(-1, 0.75, -1);
+  container.rotation.set(Math.PI / 180 * -45, 0, 0);
+
+  return container;
+}
+
+function generate$2(state) {
+  var container = new Group();
+
+  var basicCursor = new Mesh(new RingGeometry(0.02, 0.03, 24), new MeshBasicMaterial({
+    color: new Color(state.cursorInnerColor),
+    opacity: state.cursorOpacity,
+    transparent: true,
+    depthTest: false
+  }));
+  basicCursor.name = 'inner';
+  container.add(basicCursor);
+
+  var innerCursor = new Mesh(new RingGeometry(0.018, 0.02, 24), new MeshBasicMaterial({
+    color: new Color(state.cursorOuterColor),
+    opacity: state.cursorOpacity,
+    transparent: true,
+    depthTest: false
+  }));
+  innerCursor.name = 'outer';
+  container.add(innerCursor);
+
+  var outerCursor = new Mesh(new RingGeometry(0.03, 0.032, 24), new MeshBasicMaterial({
+    color: new Color(state.cursorOuterColor),
+    opacity: state.cursorOpacity,
+    transparent: true,
+    depthTest: false
+  }));
+  outerCursor.name = 'outer';
+  container.add(outerCursor);
+
+  var highlightCursor = new Mesh(new RingGeometry(0.02, 0.03, 24, 8, 0, 0), new MeshBasicMaterial({
+    color: new Color(state.cursorActiveColor),
+    opacity: 1.0,
+    transparent: true,
+    depthTest: false
+  }));
+  highlightCursor.name = 'active';
+  container.add(highlightCursor);
+
+  container.position.z = -1;
+  container.name = 'cursor';
+  return container;
+}
+
+function toRange(value, domain, range) {
+  return (value - domain.min) / (domain.max - domain.min) * (range.max - range.min) + range.min;
+}
+
+function toRangeWithGap(value, domain, range, gap) {
+  var scaledValue = value;
+  var halfDomain = domain.min + (domain.max - domain.min) / 2;
+  var halfRange = range.min + (range.max - range.min) / 2;
+  if (value < halfDomain) {
+    scaledValue = toRange(value, {
+      min: domain.min,
+      max: halfDomain
+    }, {
+      min: range.min,
+      max: halfRange - gap / 2
+    });
+  } else {
+    scaledValue = toRange(value, {
+      min: halfDomain,
+      max: domain.max
+    }, {
+      min: halfRange + gap / 2,
+      max: range.max
+    });
+  }
+  return scaledValue;
+}
+
+var shootingstar = null;
+
+function generate$4(container, stageSize, count) {
+  var starGeometry = new SphereGeometry(0.005, 12);
+  var starMaterial = new MeshBasicMaterial({ color: 0xffffff });
+  var s = 0;
+  while (s < count) {
+    var star = new Mesh(starGeometry, starMaterial);
+    star.position.set((Math.random() - 0.5) * stageSize * 2, 2 + Math.random() * (stageSize / 2), (Math.random() - 0.5) * stageSize * 2);
+    container.add(star);
+    s += 1;
+  }
+  return container;
+}
+
+function update$1(container, stageSize, time) {
+  if (shootingstar) {
+    var tpos = new Vector3(shootingstar.position.x, shootingstar.position.y, shootingstar.position.z).lerp(shootingstar.userData.nextPos, 0.1);
+    shootingstar.position.set(tpos.x, tpos.y, tpos.z);
+    if (shootingstar.position.distanceTo(shootingstar.userData.nextPos) < 0.01) {
+      shootingstar = null;
+    }
+  } else if (Math.floor(time) % 1000 === 0) {
+    var index = Math.floor(Math.random() * container.children.length);
+    shootingstar = container.children[index];
+    shootingstar.userData.nextPos = new Vector3((Math.random() - 0.5) * stageSize * 2, 2 + Math.random() * (stageSize / 2), (Math.random() - 0.5) * stageSize * 2);
+  }
+}
 
 var asyncGenerator = function () {
   function AwaitValue(value) {
@@ -48977,7 +49149,6 @@ var sceneObjects = {
   nodes: new Group(),
   links: new Group(),
   stars: new Group(),
-  legend: new Group(),
   cursor: new Group(),
   buttons: new Group()
 };
@@ -48996,35 +49167,20 @@ var flourishState = {};
 var timer = null;
 var shadertime = 0;
 
-var vrDisplay = void 0;
 var scene = void 0;
-var controls = void 0;
 var effect = void 0;
 var camera = void 0;
 var renderer = void 0;
+var controls = void 0;
+var updating = void 0;
+var vrDisplay = void 0;
 var raycaster = void 0;
 var intersected = void 0;
 var lineMaterials = void 0;
-
-var updating = void 0;
-var shootingstar = null;
-
-// function precisionRound(number, precision) {
-//   const factor = 10 ** precision; // Math.pow(10, precision);
-//   return Math.round(number * factor) / factor;
-// }
+var hoveredButton = void 0;
 
 function updateNetwork() {
-  // const angles = [];
-  // const angles = {};
-
-  sceneObjects.nodes.children
-  // .sort((a, b) => {
-  //   const [na] = globalData.nodes.filter(d => d.id === a.userData.id);
-  //   const [nb] = globalData.nodes.filter(d => d.id === b.userData.id);
-  //   return (na.pos.distanceTo(camera.position) > nb.pos.distanceTo(camera.position));
-  // })
-  .forEach(function (n) {
+  sceneObjects.nodes.children.forEach(function (n) {
     var _globalData$nodes$fil = globalData.nodes.filter(function (d) {
       return d.id === n.userData.id;
     }),
@@ -49034,46 +49190,10 @@ function updateNetwork() {
     if (!nd.shifted) {
       nd.lastPos = nd.pos;
     }
-
-    // const xzangle = precisionRound(
-    //   Math.atan2(
-    //     precisionRound(camera.position.z - nd.pos.z, 1),
-    //     precisionRound(camera.position.x - nd.pos.x, 1),
-    //   ) * (180 / Math.PI),
-    //   0,
-    // );
-    // // const xyangle = precisionRound(
-    // //   Math.atan2(
-    // //     precisionRound(camera.position.y - nd.pos.y, 1),
-    // //     precisionRound(camera.position.x - nd.pos.x, 1),
-    // //   ) * (180 / Math.PI),
-    // //   0,
-    // // );
-    // const zyangle = precisionRound(
-    //   Math.atan2(
-    //     precisionRound(camera.position.y - nd.pos.y, 1),
-    //     precisionRound(camera.position.z - nd.pos.z, 1),
-    //   ) * (180 / Math.PI),
-    //   0,
-    // );
-    // const anglestring = `${xzangle}-${zyangle}`;
-    // // const anglestring = `${xzangle}-${xyangle}-${zyangle}`;
-    // const showText = !(anglestring in angles);
-    // if (!showText) {
-    //   console.log(anglestring);
-    //   console.log(angles[anglestring]);
-    //   console.log(nd.name);
-    //   console.log('-- -- --');
-    // }
-    // angles[anglestring] = nd.name;
-
     n.children.forEach(function (c) {
       if (c.userData.type === 'sphere') {
-        //
-        // Dispose existing geometry
-        c.material.dispose();
+        c.material.dispose(); // Dispose existing geometry
         c.material = null;
-        //
         if (nd.status === 'center') {
           c.currentMaterial = selected;
           c.material = highlight;
@@ -49086,21 +49206,13 @@ function updateNetwork() {
           c.children[0].material.visible = false;
         }
       } else if (c.name === 'name') {
-        // c.position.set(
         c.position.set(nd.nameOffset.x, nd.nameOffset.y, 0.15);
         c.material.visible = true;
-        // c.material.visible = showText;
-        // } else {
-        // c.material.visible = showText;
       }
     });
-    //
     n.userData.status = nd.status;
     n.userData.nextPos = nd.pos;
   });
-  //
-  // console.log(angles);
-  //
   sceneObjects.links.children.forEach(function (l) {
     l.userData.nextSPos = globalData.nodes.filter(function (n) {
       return l.userData.source === n.id;
@@ -49109,12 +49221,10 @@ function updateNetwork() {
       return l.userData.target === n.id;
     })[0].pos;
   });
-  //
   updating.material.visible = false;
   sceneObjects.buttons.children.forEach(function (b) {
     b.visible = true;
   });
-  //
 }
 
 function layoutByRank() {
@@ -49147,41 +49257,10 @@ function layoutByRank() {
   updateNetwork();
 }
 
-function scaleValue(value, domain, range) {
-  return (value - domain.min) / (domain.max - domain.min) * (range.max - range.min) + range.min;
-}
-
-function scaleValueWithGap(value, domain, range, gap) {
-  var scaledValue = value;
-  var halfDomain = domain.min + (domain.max - domain.min) / 2;
-  var halfRange = range.min + (range.max - range.min) / 2;
-  if (value < halfDomain) {
-    scaledValue = scaleValue(value, {
-      min: domain.min,
-      max: halfDomain
-    }, {
-      min: range.min,
-      max: halfRange - gap / 2
-    });
-  } else {
-    scaledValue = scaleValue(value, {
-      min: halfDomain,
-      max: domain.max
-    }, {
-      min: halfRange + gap / 2,
-      max: range.max
-    });
-  }
-  return scaledValue;
-}
-
 function layoutByForce() {
   var simulation = d3Force.forceSimulation().numDimensions(3).nodes(globalData.nodes).force('link', d3Force.forceLink().id(function (d) {
     return d.id;
-  }).links(globalData.links))
-  // .force('charge', d3Force.forceManyBody().strength(-10)) // 1, -1,
-  // .force('charge', d3Force.forceManyBody().strength(d => d.linkCount)) // 1, -1,
-  .force('charge', d3Force.forceManyBody().strength(-1)) // 1, -1,
+  }).links(globalData.links)).force('charge', d3Force.forceManyBody().strength(-1)) // 1, -1,
   .force('center', d3Force.forceCenter());
 
   simulation.on('end', function () {
@@ -49201,13 +49280,13 @@ function layoutByForce() {
     globalData.nodes = simulation.nodes().map(function (n) {
       n.shifted = false;
       n.status = '';
-      n.pos = new Vector3(scaleValueWithGap(n.x, dimensionMap.x, {
+      n.pos = new Vector3(toRangeWithGap(n.x, dimensionMap.x, {
         min: 0,
         max: stageSize
-      }, stageSize / 10), scaleValue(n.y, dimensionMap.y, {
+      }, stageSize / 10), toRange(n.y, dimensionMap.y, {
         min: controls.userHeight * 0.75,
         max: controls.userHeight * 3.0
-      }), scaleValueWithGap(n.z, dimensionMap.z, {
+      }), toRangeWithGap(n.z, dimensionMap.z, {
         min: 0,
         max: stageSize
       }, stageSize / 10)).add(offset);
@@ -49252,27 +49331,6 @@ function layoutByRandom() {
 
   updateNetwork();
 }
-
-// function layoutNetwork() {
-//   switch (worldState.layoutMode) {
-//     case 0:
-//       layoutByRank();
-//       updateNetwork();
-//       break;
-//     case 1:
-//       layoutByForce();
-//       break;
-//     default:
-//       layoutByRandom();
-//       updateNetwork();
-//       break;
-//   }
-// }
-
-// worldState.reset = () => {
-//   worldState.layoutMode = 1;
-//   layoutNetwork();
-// };
 
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -49371,17 +49429,14 @@ function transitionElements() {
   } else {
     sceneObjects.links.children.forEach(function (l) {
       if (l.userData.spos.distanceTo(l.userData.nextSPos) > 0.01 || l.userData.tpos.distanceTo(l.userData.nextTPos) > 0.01) {
-        //
-        // Dispose existing geometry
-        l.geometry.dispose();
+        l.geometry.dispose(); // Dispose existing geometry
         l.geometry = null;
-        //
         l.userData.spos = new Vector3(l.userData.nextSPos.x, l.userData.nextSPos.y, l.userData.nextSPos.z);
         l.userData.tpos = new Vector3(l.userData.nextTPos.x, l.userData.nextTPos.y, l.userData.nextTPos.z);
         var lineGeometry = generateCurveGeometry(l.userData.spos, l.userData.tpos, controls.userHeight);
         var line = new MeshLine();
         line.setGeometry(lineGeometry, function () {
-          return scaleValue(l.userData.value, { min: 1, max: 100 }, linkScale);
+          return toRange(l.userData.value, { min: 1, max: 100 }, linkScale);
         });
         var lineMesh = new Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
@@ -49401,11 +49456,8 @@ function resetIntersected() {
     intersected.userData.nextScale = 1;
     intersected.children.forEach(function (c) {
       if (c.userData.type === 'sphere') {
-        //
-        // Dispose existing geometry
-        c.material.dispose();
+        c.material.dispose(); // Dispose existing geometry
         c.material = null;
-        //
         c.material = c.currentMaterial;
       }
     });
@@ -49422,24 +49474,18 @@ function highlightIntersected() {
     var searching = true;
     var index = 0;
     var nextIntersected = null;
-    //
     var foundCurrent = false;
     intersects.forEach(function (o) {
       if (o.object.parent === intersected && (intersects[index].distance > stageSize / 2 && intersects[index].object.userData.type === 'text' || o.object.userData.type === 'sphere' || o.object.userData.type === 'button')) {
-        //
         if (intersected.userData.type === 'node') {
           var scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
           intersected.userData.nextScale = scaleBy;
-          // intersected.scale.set(scaleBy, scaleBy, scaleBy);
         }
-        //
         if (intersected.userData.status !== 'center') {
           foundCurrent = true;
         }
       }
     });
-    //
-    // console.log(intersected);
     //
     while (searching) {
       if (
@@ -49449,11 +49495,13 @@ function highlightIntersected() {
         if (intersects[index].object.parent !== intersected) {
           nextIntersected = intersects[index].object;
         }
+        if (intersects[index].object.userData.type === 'button') {
+          intersects[index].object.material.opacity = 0.25;
+          hoveredButton = intersects[index].object.material;
+        }
         searching = false;
       }
       index += 1;
-      // MAGIC NUBMER: 3 is the number of children of a node group
-      // if (index > intersects.length - 1 || index > 3) {
       if (index > intersects.length - 1) {
         searching = false;
       }
@@ -49468,11 +49516,8 @@ function highlightIntersected() {
       intersected = nextIntersected.parent;
       if (intersected.userData.type === 'node') {
         sceneObjects.links.children.forEach(function (l) {
-          //
-          // Dispose existing geometry
-          l.material.dispose();
+          l.material.dispose(); // Dispose existing geometry
           l.material = null;
-          //
           if (l.userData.source === intersected.userData.id) {
             l.material = lineMaterials.highlightOut;
             l.material.visible = true;
@@ -49489,10 +49534,8 @@ function highlightIntersected() {
         });
         var scaleBy = Math.ceil(intersected.position.distanceTo(camera.position) / 2);
         intersected.userData.nextScale = scaleBy;
-        // intersected.scale.set(scaleBy, scaleBy, scaleBy);
         intersected.children.forEach(function (c) {
           if (c.userData.type === 'sphere') {
-            // c.currentMaterial = c.material;
             if (intersected.userData.status === 'center') {
               c.currentMaterial = selected;
             } else if (intersected.userData.status === 'adjacent') {
@@ -49500,11 +49543,8 @@ function highlightIntersected() {
             } else {
               c.currentMaterial = basic;
             }
-            //
-            // Dispose existing geometry
-            c.material.dispose();
+            c.material.dispose(); // Dispose existing geometry
             c.material = null;
-            //
             if (foundCurrent || intersected.userData.status === 'center') {
               c.material = highlight;
               c.children[0].material.visible = true;
@@ -49522,21 +49562,27 @@ function highlightIntersected() {
     if (foundCurrent && timer === null) {
       timer = 0;
     } else if (!foundCurrent && timer !== null) {
+      //
+      if (hoveredButton) {
+        hoveredButton.opacity = 0.1;
+        hoveredButton = null;
+      }
+      //
       timer = null;
-      //
-      // Dispose existing geometry
-      sceneObjects.cursor.children[3].geometry.dispose();
+      sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
       sceneObjects.cursor.children[3].geometry = null;
-      //
       sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
     }
   } else {
+    //
+    if (hoveredButton) {
+      hoveredButton.opacity = 0.1;
+      hoveredButton = null;
+    }
+    //
     timer = null;
-    //
-    // Dispose existing geometry
-    sceneObjects.cursor.children[3].geometry.dispose();
+    sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
     sceneObjects.cursor.children[3].geometry = null;
-    //
     sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
 }
@@ -49566,7 +49612,6 @@ function makeLinkedAdjacent(centerNode) {
 
     var linkCount = linked.length;
     var phi = Math.PI * 2 / linkCount;
-    // const radius = (stageSize / 10) + (linkCount / 10);
     var radius = 0.5 + linkCount / 25;
     var theta = angle + 90 * (Math.PI / 180);
 
@@ -49591,27 +49636,12 @@ function makeLinkedAdjacent(centerNode) {
         } else if (n.nameOffset.y > -0.1 && n.nameOffset.y < 0) {
           n.nameOffset.y = -0.1;
         }
-        // if (n.nameOffset.y < 0.65 && n.nameOffset.y > -0.65) {
-        //   n.nameOffset.y *= 2.0;
-        // }
-        // if (n.nameOffset.y === 0) {
-        //   n.nameOffset.y = -0.1;
-        // }
-        // n.getObjectByName(`name-${n.id}`, true).position.set(
-        //   Math.cos(theta),
-        //   0,
-        //   0.15,
-        // );
-        //
-        // } else if (n.id !== centerNode.id) {
       } else {
         n.shifted = false;
         n.status = '';
         n.pos = n.lastPos;
-        //
         var oangle = Math.atan2(n.pos.z, n.pos.x);
         n.pos = new Vector3(Math.cos(oangle) * (stageSize / 2), n.pos.y, Math.sin(oangle) * (stageSize / 2));
-        //
       }
     });
 
@@ -49621,45 +49651,25 @@ function makeLinkedAdjacent(centerNode) {
     sceneObjects.buttons.children.forEach(function (b) {
       b.visible = false;
     });
-    // intersected.visible = false;
-    if (centerNode.name === 'Rank') {
+    if (centerNode.name === 'Layout by Rank') {
       layoutByRank();
-    } else if (centerNode.name === 'Simulation') {
+    } else if (centerNode.name === 'Layout by Simulation') {
       layoutByForce();
     } else {
       globalData = lodash_clonedeep(initData);
     }
-  }
-  // updateNetwork();
-}
-
-function updateStars(time) {
-  if (shootingstar) {
-    var tpos = new Vector3(shootingstar.position.x, shootingstar.position.y, shootingstar.position.z).lerp(shootingstar.userData.nextPos, 0.1);
-    shootingstar.position.set(tpos.x, tpos.y, tpos.z);
-    if (shootingstar.position.distanceTo(shootingstar.userData.nextPos) < 0.01) {
-      shootingstar = null;
-    }
-  } else if (Math.floor(time) % 1000 === 0) {
-    var index = Math.floor(Math.random() * sceneObjects.stars.children.length);
-    shootingstar = sceneObjects.stars.children[index];
-    shootingstar.userData.nextPos = new Vector3((Math.random() - 0.5) * stageSize * 2, 2 + Math.random() * (stageSize / 2), (Math.random() - 0.5) * stageSize * 2);
   }
 }
 
 function updateCursor() {
   if (!worldState.isTransitioning) {
     highlightIntersected();
-    // checkButtons();
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
         timer += Math.PI / 30;
-        //
-        // Dispose existing geometry
-        sceneObjects.cursor.children[3].geometry.dispose();
+        sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
-        //
         sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
       } else {
         makeLinkedAdjacent(intersected.userData);
@@ -49667,26 +49677,20 @@ function updateCursor() {
     }
   } else {
     timer = null;
-    //
-    // Dispose existing geometry
-    sceneObjects.cursor.children[3].geometry.dispose();
+    sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
     sceneObjects.cursor.children[3].geometry = null;
-    //
     sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, 0, 0);
   }
 }
 
-// Request animation frame loop function
-
 function animate() {
+  // Request animation frame loop function
   var time = performance.now() * 0.01;
-
   shadertime += 0.1;
   if (shadertime > 100) {
     shadertime = 0.0;
   }
 
-  // lineMaterials.basic.uniforms.time.value = time;
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
 
@@ -49694,7 +49698,7 @@ function animate() {
 
   transitionElements();
 
-  updateStars(time);
+  update$1(sceneObjects.stars, stageSize, time);
 
   updateCursor();
 
@@ -49734,7 +49738,7 @@ function drawNetwork() {
     var lineGeometry = generateCurveGeometry(l.spos, l.tpos, controls.userHeight);
     var line = new MeshLine();
     line.setGeometry(lineGeometry, function () {
-      return scaleValue(l.value, { min: 1, max: 100 }, linkScale);
+      return toRange(l.value, { min: 1, max: 100 }, linkScale);
     });
     var lineMesh = new Mesh(line.geometry, lineMaterials.basic);
     lineMesh.userData.source = l.source;
@@ -49764,7 +49768,6 @@ function drawNetwork() {
       map: textureLoader.load(Flourish.static_prefix + '/glow.png'),
       color: 0xffA000,
       transparent: true,
-      // depthTest: false,
       blending: AdditiveBlending
     });
     var sprite = new Sprite(spriteMaterial);
@@ -49794,7 +49797,6 @@ function drawNetwork() {
     text.position.set(0, -0.1, 0.15);
     text.userData.type = 'text';
     text.name = 'name';
-    // text.name = `name-${d.rank}`;
     node.add(text);
     //
 
@@ -49806,7 +49808,6 @@ function drawNetwork() {
 
   updateNetwork();
 
-  // layoutByForce();
   layoutByRank();
 }
 
@@ -49827,137 +49828,6 @@ function formatData() {
     return n.linkCount;
   });
   drawNetwork();
-}
-
-function generateStars() {
-  var starGeometry = new SphereGeometry(0.005, 12);
-  var starMaterial = new MeshBasicMaterial({ color: 0xffffff });
-  var s = 0;
-  while (s < 1000) {
-    var star = new Mesh(starGeometry, starMaterial);
-    star.position.set((Math.random() - 0.5) * stageSize * 2, 2 + Math.random() * (stageSize / 2), (Math.random() - 0.5) * stageSize * 2);
-    sceneObjects.stars.add(star);
-    s += 1;
-  }
-  return sceneObjects.stars;
-}
-
-function generateLegend(state) {
-  sceneObjects.legend = new Group();
-
-  var inLineGeometry = generateCurveGeometry(
-  // new THREE.Vector3(-0.5, 0, -1.05),
-  // new THREE.Vector3(0.5, 0, -1.05),
-  new Vector3(-0.5, 0, -1.0), new Vector3(0.5, 0, -1.0), controls.userHeight);
-  var inLine = new MeshLine();
-  inLine.setGeometry(inLineGeometry);
-  var inLineMesh = new Mesh(inLine.geometry, lineMaterials.highlightIn);
-  inLineMesh.userData.type = 'in';
-  sceneObjects.legend.add(inLineMesh);
-
-  var inText = generateTextureCanvas(state.legendInboundLabel, 36, 1024, 256); // 64
-  inText.scale.set(0.001, 0.001, 0.001);
-  // inText.position.set(0, 0, -1.1);
-  inText.position.set(0, 0, -1.05);
-  inText.rotation.set(Math.PI / 180 * -45, 0, 0);
-  sceneObjects.legend.add(inText);
-
-  var outLineGeometry = generateCurveGeometry(
-  // new THREE.Vector3(0.5, 0, -0.9),
-  // new THREE.Vector3(-0.5, 0, -0.9),
-  new Vector3(0.5, 0, -0.85), new Vector3(-0.5, 0, -0.85), controls.userHeight);
-  var outLine = new MeshLine();
-  outLine.setGeometry(outLineGeometry);
-  var outLineMesh = new Mesh(outLine.geometry, lineMaterials.highlightOut);
-  outLineMesh.userData.type = 'out';
-  sceneObjects.legend.add(outLineMesh);
-
-  var outText = generateTextureCanvas(state.legendOutboundLabel, 36, 1024, 256); // 64
-  outText.scale.set(0.001, 0.001, 0.001);
-  // outText.position.set(0, 0, -0.95);
-  outText.position.set(0, 0, -0.9);
-  outText.rotation.set(Math.PI / 180 * -45, 0, 0);
-  sceneObjects.legend.add(outText);
-
-  var buttonLabel = generateTextureCanvas('Layout By', 36, 1024, 256); // 64
-  buttonLabel.scale.set(0.001, 0.001, 0.001);
-  // buttonLabel.position.set(0, 0, -0.8);
-  buttonLabel.position.set(0, 0, -0.75);
-  buttonLabel.rotation.set(Math.PI / 180 * -45, 0, 0);
-  sceneObjects.legend.add(buttonLabel);
-
-  sceneObjects.legend.name = 'legend';
-
-  return sceneObjects.legend;
-}
-
-function generateCursor(state) {
-  sceneObjects.cursor = new Group();
-
-  var basicCursor = new Mesh(new RingGeometry(0.02, 0.03, 24), new MeshBasicMaterial({
-    color: new Color(state.cursorInnerColor),
-    opacity: state.cursorOpacity,
-    transparent: true,
-    depthTest: false
-  }));
-  basicCursor.name = 'inner';
-  sceneObjects.cursor.add(basicCursor);
-
-  var innerCursor = new Mesh(new RingGeometry(0.018, 0.02, 24), new MeshBasicMaterial({
-    color: new Color(state.cursorOuterColor),
-    opacity: state.cursorOpacity,
-    transparent: true,
-    depthTest: false
-  }));
-  innerCursor.name = 'outer';
-  sceneObjects.cursor.add(innerCursor);
-
-  var outerCursor = new Mesh(new RingGeometry(0.03, 0.032, 24), new MeshBasicMaterial({
-    color: new Color(state.cursorOuterColor),
-    opacity: state.cursorOpacity,
-    transparent: true,
-    depthTest: false
-  }));
-  outerCursor.name = 'outer';
-  sceneObjects.cursor.add(outerCursor);
-
-  var highlightCursor = new Mesh(new RingGeometry(0.02, 0.03, 24, 8, 0, 0), new MeshBasicMaterial({
-    color: new Color(state.cursorActiveColor),
-    opacity: 1.0,
-    transparent: true,
-    depthTest: false
-  }));
-  highlightCursor.name = 'active';
-  sceneObjects.cursor.add(highlightCursor);
-
-  sceneObjects.cursor.position.z = -1;
-  sceneObjects.cursor.name = 'cursor';
-  return sceneObjects.cursor;
-}
-
-function generateButton(name, color, xoffset) {
-  var button = new Group();
-  button.userData.name = name;
-  button.userData.type = 'button';
-  button.scale.set(0.001, 0.001, 0.001);
-  // button.position.set(xoffset, 0, -0.65);
-  button.position.set(xoffset, 0, -0.6);
-  button.rotation.set(Math.PI / 180 * -45, 0, 0);
-  var text = generateTextureCanvas(name, 44, 256, 256); // 64
-  text.userData.type = 'text';
-  button.add(text);
-  var circle = new Mesh(
-  // new THREE.CircleGeometry(125, 24),
-  new CircleGeometry(145, 24), new MeshBasicMaterial({ color: new Color(color) }));
-  circle.userData.type = 'button';
-  button.add(circle);
-  return button;
-}
-
-function generateButtons() {
-  sceneObjects.buttons.add(generateButton('Rank', 0x00A0FF, -0.25)); // 0.20));
-  sceneObjects.buttons.add(generateButton('Simulation', 0x00A0FF, 0.25)); // 0.20));
-  return sceneObjects.buttons;
 }
 
 function setupScene(data, state) {
@@ -49995,9 +49865,9 @@ function setupScene(data, state) {
   // Generate Non-network Scene Elements
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
   scene.add(generateFloor(stageSize, controls.userHeight));
-  scene.add(generateStars());
-  scene.add(generateLegend(state));
-  scene.add(generateButtons());
+  scene.add(generate$4(sceneObjects.stars, stageSize, 1000));
+  scene.add(generate(state, lineMaterials, controls.userHeight));
+  scene.add(generateButtons(sceneObjects.buttons));
 
   //
   updating = generateTextureCanvas('Updating...', 60, 1024, 256);
@@ -50005,11 +49875,11 @@ function setupScene(data, state) {
   updating.scale.set(0.001, 0.001, 0.001);
   updating.position.set(0.015, 0, -0.6);
   updating.rotation.set(Math.PI / 180 * -45, 0, 0);
-
   scene.add(updating);
   //
 
-  camera.add(generateCursor(state));
+  sceneObjects.cursor = generate$2(state);
+  camera.add(sceneObjects.cursor);
   scene.add(camera);
 
   raycaster = new Raycaster();
@@ -50032,13 +49902,14 @@ function updateSceneFromState(state) {
   flourishState = state;
   //
   camera.remove(camera.getObjectByName('cursor', true));
-  camera.add(generateCursor(state));
+  sceneObjects.cursor = generate$2(state);
+  camera.add(sceneObjects.cursor);
   //
   lineMaterials = updateLineMaterials(flourishState);
   lineMaterials.basic.visible = false;
   //
   scene.remove(scene.getObjectByName('legend', true));
-  scene.add(generateLegend(state));
+  scene.add(generate(state, lineMaterials, controls.userHeight));
   //
   sceneObjects.links.children.forEach(function (l) {
     if (l.userData.status === 'out') {
@@ -50072,7 +49943,7 @@ var state = {
   legendOutboundLabel: 'Related Searches',
   cursorInnerColor: '#ffffff',
   cursorOuterColor: '#000000',
-  cursorActiveColor: '#00A0FF',
+  cursorActiveColor: '#0FA200',
   cursorOpacity: 0.5
 };
 
@@ -50092,11 +49963,9 @@ function draw() {
       families: ['Roboto Condensed:300,400,700']
     },
     active: function active() {
-      console.log('fonts loaded');
       setupScene(data, state);
     },
     inactive: function inactive() {
-      console.log('fonts failed to load');
       setupScene(data, state);
     },
     timeout: 2000

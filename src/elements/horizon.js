@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
-import horizonVertex from './shaders/horizon.vert';
-import horizonFragment from './shaders/horizon.frag';
+import horizonVertex from '../shaders/horizon.vert';
+import horizonFragment from '../shaders/horizon.frag';
 
 export function generateHorizon(topColor, bottomColor, exponent) {
   const uniforms = {

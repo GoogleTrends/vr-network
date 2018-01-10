@@ -11,7 +11,8 @@ export function generateTextureCanvas(text, textSize, width, height, weight = ''
   context.font = `${weight}${textSize}pt Roboto Condensed`;
 
   const textWidth = context.measureText(text).width;
-  // context.fillStyle = 'rgba(0, 0, 0, 0.2)';
+
+  // context.fillStyle = 'rgba(255, 255, 255, 0.2)';
   // context.fillRect(0, 0, width, height);
 
   context.strokeStyle = 'rgb(0, 0, 0)';

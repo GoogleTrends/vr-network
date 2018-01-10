@@ -16,17 +16,16 @@ export function generateFloor(stageSize, userHeight) {
 
   const width = 1024;
   const height = 512;
-  // const textSize = 24;
-  const textSize = 32;
+  const textSize = 36;
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   canvas.width = width;
   canvas.height = height;
-  context.clearRect(0, 0, width, height);
 
-  // context.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  // context.fillStyle = 'rgba(255, 255, 255, 0.2)';
   // context.fillRect(0, 0, width, height);
 
+  context.clearRect(0, 0, width, height);
   context.font = `${textSize}pt Roboto Condensed`;
   context.fillStyle = 'rgb(255, 255, 255)';
 

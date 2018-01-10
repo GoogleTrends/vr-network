@@ -18,7 +18,7 @@ export const state = {
   legendOutboundLabel: 'Related Searches',
   cursorInnerColor: '#ffffff',
   cursorOuterColor: '#000000',
-  cursorActiveColor: '#00A0FF',
+  cursorActiveColor: '#0FA200',
   cursorOpacity: 0.5,
 };
 
@@ -38,11 +38,9 @@ export function draw() {
       families: ['Roboto Condensed:300,400,700'],
     },
     active: () => {
-      console.log('fonts loaded');
       setupScene(data, state);
     },
     inactive: () => {
-      console.log('fonts failed to load');
       setupScene(data, state);
     },
     timeout: 2000,
