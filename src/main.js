@@ -130,24 +130,17 @@ function layoutByRank() {
 }
 
 function layoutInGrid() {
-  // const rowCount = 12;
-  // const perRow = Math.ceil(globalData.nodes.length / rowCount);
   const perRow = 10;
 
   globalData.nodes.sort((a, b) => parseInt(a.rank, 10) - parseInt(b.rank, 10));
 
-  // let x = 0;
   globalData.nodes = globalData.nodes.map((n, i) => {
     n.shifted = false;
     n.status = '';
     n.pos = new THREE.Vector3(
-      // Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
-      
       (-stageSize / 2) + (0.5 + (i % perRow)),
-      // (controls.userHeight / (rowCount * 0.5)) + 
       1 + Math.floor(i / perRow),
-      -stageSize / 2,
-      // Math.sin(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
+      -stageSize / 3,
     );
     return n;
   });
@@ -160,7 +153,7 @@ function layoutInGrid() {
 
   initData = cloneDeep(globalData);
 
-  updateNetwork(); 
+  updateNetwork();
 }
 
 function layoutByForce() {
@@ -288,15 +281,15 @@ function toggleVREnabled() {
   effect.setSize(window.innerWidth, window.innerHeight);
 }
 
-function hideIntro() {
-  document.querySelector('#intro').classList.add('hide');
-  toggleVREnabled();
-}
+// function hideIntro() {
+//   document.querySelector('#intro').classList.add('hide');
+//   toggleVREnabled();
+// }
 
-function showIntro() {
-  document.querySelector('#intro').classList.remove('hide');
-  toggleVREnabled();
-}
+// function showIntro() {
+//   document.querySelector('#intro').classList.remove('hide');
+//   toggleVREnabled();
+// }
 
 function transitionElements() {
   let countTransitioning = 0;
@@ -586,9 +579,9 @@ function makeLinkedAdjacent(centerNode) {
     const [centerData] = globalData.nodes.filter(n => n.id === centerNode.id);
     const angle = Math.atan2(centerData.pos.z, centerData.pos.x);
     centerData.pos = new THREE.Vector3(
-      Math.cos(angle) * (stageSize / 5),
+      Math.cos(angle) * (stageSize / 4),
       centerData.pos.y + ((controls.userHeight - centerData.pos.y) / 2),
-      Math.sin(angle) * (stageSize / 5),
+      Math.sin(angle) * (stageSize / 4),
     );
 
     const linkCount = linked.length;
@@ -643,7 +636,6 @@ function makeLinkedAdjacent(centerNode) {
         b.visible = false;
       }
     });
-    
     if (centerNode.name === 'Layout in Spiral') {
       layoutByRank();
     } else if (centerNode.name === 'Layout in Grid') {
@@ -895,8 +887,8 @@ export function setupScene(data, state) {
   window.addEventListener('touchstart', enableNoSleep, true);
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
-  document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  document.querySelector('#explore').addEventListener('click', hideIntro, true);
+  // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
+  // document.querySelector('#explore').addEventListener('click', hideIntro, true);
 
   formatData();
 }

@@ -48692,7 +48692,7 @@ function generateButtons(container) {
 
 var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  gl_Position = finalPosition;\n}\n";
 
-var animLineFragment = "precision highp float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  vec2 dist = vUV - vec2(0.5);\n  float radius = 1.0;\n  float circle = 1.0 - smoothstep(\n    radius,\n    radius,\n    dot(dist, dist) * 4.0\n  );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(vUV.x * 100.0 - time);\n  \n  \n  color.a = ((yCurve + xCurve) - circle) * color.a;\n  gl_FragColor = color;\n}\n";
+var animLineFragment = "precision highp float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vec4( vColor );\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(cos(vUV.x * 100.0 - time));\n  \n  \n  color.a = (yCurve + xCurve) * color.a;\n  gl_FragColor = color;\n}\n";
 
 var linkWidth = 1.0;
 
@@ -49258,24 +49258,16 @@ function layoutByRank() {
 }
 
 function layoutInGrid() {
-  // const rowCount = 12;
-  // const perRow = Math.ceil(globalData.nodes.length / rowCount);
   var perRow = 10;
 
   globalData.nodes.sort(function (a, b) {
     return parseInt(a.rank, 10) - parseInt(b.rank, 10);
   });
 
-  // let x = 0;
   globalData.nodes = globalData.nodes.map(function (n, i) {
     n.shifted = false;
     n.status = '';
-    n.pos = new Vector3(
-    // Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
-
-    -stageSize / 2 + (0.5 + i % perRow),
-    // (controls.userHeight / (rowCount * 0.5)) + 
-    1 + Math.floor(i / perRow), -stageSize / 2);
+    n.pos = new Vector3(-stageSize / 2 + (0.5 + i % perRow), 1 + Math.floor(i / perRow), -stageSize / 3);
     return n;
   });
 
@@ -49404,15 +49396,15 @@ function toggleVREnabled() {
   effect.setSize(window.innerWidth, window.innerHeight);
 }
 
-function hideIntro() {
-  document.querySelector('#intro').classList.add('hide');
-  toggleVREnabled();
-}
+// function hideIntro() {
+//   document.querySelector('#intro').classList.add('hide');
+//   toggleVREnabled();
+// }
 
-function showIntro() {
-  document.querySelector('#intro').classList.remove('hide');
-  toggleVREnabled();
-}
+// function showIntro() {
+//   document.querySelector('#intro').classList.remove('hide');
+//   toggleVREnabled();
+// }
 
 function transitionElements() {
   var countTransitioning = 0;
@@ -49657,7 +49649,7 @@ function makeLinkedAdjacent(centerNode) {
         centerData = _globalData$nodes$fil4[0];
 
     var angle = Math.atan2(centerData.pos.z, centerData.pos.x);
-    centerData.pos = new Vector3(Math.cos(angle) * (stageSize / 5), centerData.pos.y + (controls.userHeight - centerData.pos.y) / 2, Math.sin(angle) * (stageSize / 5));
+    centerData.pos = new Vector3(Math.cos(angle) * (stageSize / 4), centerData.pos.y + (controls.userHeight - centerData.pos.y) / 2, Math.sin(angle) * (stageSize / 4));
 
     var linkCount = linked.length;
     var phi = Math.PI * 2 / linkCount;
@@ -49703,7 +49695,6 @@ function makeLinkedAdjacent(centerNode) {
         b.visible = false;
       }
     });
-
     if (centerNode.name === 'Layout in Spiral') {
       layoutByRank();
     } else if (centerNode.name === 'Layout in Grid') {
@@ -49945,8 +49936,8 @@ function setupScene(data, state) {
   window.addEventListener('touchstart', enableNoSleep, true);
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
-  document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  document.querySelector('#explore').addEventListener('click', hideIntro, true);
+  // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
+  // document.querySelector('#explore').addEventListener('click', hideIntro, true);
 
   formatData();
 }
