@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { generateTextureCanvas } from '../generateTextureCanvas';
 
-function generateButton(name, color, yoffset) {
+export function generateButton(name, color, yoffset) {
   const button = new THREE.Group();
   button.userData.name = name;
   button.userData.type = 'button';

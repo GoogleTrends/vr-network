@@ -24,7 +24,8 @@ canvas {
   font-weight: 300;
   position: absolute;
   width: 60px;
-  height: 37px;
+  height: 60px;
+  /*height: 37px;*/
   padding: 0;
   margin: 0;
   text-align: center;
@@ -79,7 +80,7 @@ canvas {
   display: block;
 }
 
-#intro {
+/*#intro {
   position: absolute;
   z-index: 2;
   background: rgba(255, 255, 255, 0.5);
@@ -103,7 +104,6 @@ canvas {
   left: 0;
   bottom: 0;
   right: 0;
-  /*overflow-y: scroll;*/
 }
 
 .content {
@@ -170,6 +170,6 @@ p {
   .half h2 {
     margin: 0.65em 0;
   }
-}
+}*/
 
 /*# sourceMappingURL=style.css.map 

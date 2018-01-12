@@ -7,9 +7,9 @@ export function generate(state, lineMaterials, userHeight) {
   const container = new THREE.Group();
 
   const inLineGeometry = generateCurveGeometry(
-    new THREE.Vector3(0, 0.05, -1),
-    new THREE.Vector3(-1.5, 0.05, -1),
-    userHeight,
+    new THREE.Vector3(-0.3, 0.0, 0.0),
+    new THREE.Vector3(0.3, 0.0, 0.0),
+    userHeight / 2,
   );
   const inLine = new MeshLine();
   inLine.setGeometry(inLineGeometry);
@@ -23,9 +23,9 @@ export function generate(state, lineMaterials, userHeight) {
   container.add(inText);
 
   const outLineGeometry = generateCurveGeometry(
-    new THREE.Vector3(-1.5, -0.3, -1),
-    new THREE.Vector3(0, -0.3, -1),
-    userHeight,
+    new THREE.Vector3(0.3, -0.2, 0.0),
+    new THREE.Vector3(-0.3, -0.2, 0.0),
+    userHeight / 2,
   );
   const outLine = new MeshLine();
   outLine.setGeometry(outLineGeometry);

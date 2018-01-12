@@ -1,17 +1,27 @@
-/* global document, Flourish */
+/* global document */
 
 import * as THREE from 'three';
 
-export function generateFloor(stageSize, userHeight) {
+export function generateFloor(state, stageSize, userHeight) {
   const floor = new THREE.Group();
 
-  const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load(`${Flourish.static_prefix}/GoogleTrendsLogo.svg`);
+  // const textureLoader = new THREE.TextureLoader();
+  // const texture = textureLoader.load(`${Flourish.static_prefix}/GoogleTrendsLogo.svg`);
+  // console.log(state.logo);
+  // const texture = textureLoader.load(state.logo);
+  // const image = new Image(200, 200);
+  const image = document.createElement('img');
+  const texture = new THREE.Texture(image);
+  image.onload = () => { texture.needsUpdate = true; };
+  image.src = state.logo;
 
   const geometry = new THREE.PlaneGeometry(512, 128);
-  const material = new THREE.MeshBasicMaterial({ map: texture });
+  const material = new THREE.MeshBasicMaterial({
+    transparent: true,
+    map: texture,
+  });
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(12, 0, 0);
+  // mesh.position.set(12, 0, 0);
   floor.add(mesh);
 
   const width = 1024;
@@ -22,14 +32,13 @@ export function generateFloor(stageSize, userHeight) {
   canvas.width = width;
   canvas.height = height;
 
+  context.clearRect(0, 0, width, height);
   // context.fillStyle = 'rgba(255, 255, 255, 0.2)';
   // context.fillRect(0, 0, width, height);
-
-  context.clearRect(0, 0, width, height);
   context.font = `${textSize}pt Roboto Condensed`;
   context.fillStyle = 'rgb(255, 255, 255)';
 
-  const descriptiveText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'.split(' ');
+  const descriptiveText = state.description.split(' ');
   let thisLine = '';
   let lineCount = 0.5;
   descriptiveText.forEach((t) => {
@@ -38,12 +47,12 @@ export function generateFloor(stageSize, userHeight) {
       thisLine += `${t} `;
     } else {
       lineCount += 1;
-      context.fillText(thisLine, textSize, lineCount * textSize * 1.5);
-      thisLine = t;
+      context.fillText(thisLine, (textSize / 2), lineCount * textSize * 1.5);
+      thisLine = `${t} `;
     }
   });
   lineCount += 1;
-  context.fillText(thisLine, textSize, lineCount * textSize * 1.5);
+  context.fillText(thisLine, (textSize / 2), lineCount * textSize * 1.5);
 
   const textTexture = new THREE.Texture(canvas);
   textTexture.needsUpdate = true;

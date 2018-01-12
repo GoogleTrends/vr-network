@@ -26,18 +26,21 @@ settings:
   # • "boolean" >> gives a checkbox
   # • "color" >> gives a color picker
 
+  - Introduction
+  - property: logo
+    name: Logo
+    description: Data URI of Logo at 1024 x 256 pixels
+    type: text
+  - property: title
+    name: Title
+    description: Visualizaiton title
+    type: string
+  - property: description
+    name: Description
+    description: Introductory and explanatory text
+    type: text
+
   - Links
-  # - property: linkUnselectedColor
-  #   name: Unselected Color
-  #   description: The color of unselected links
-  #   type: color
-  # - property: linkUnselectedOpacity
-  #   name: Unselected Opacity
-  #   description: The opacity of unselected links
-  #   type: number
-  #   min: 0
-  #   max: 1
-  #   step: 0.01
   - property: linkInboundColor
     name: Inbound Color
     description: The color of links to shows also searched for

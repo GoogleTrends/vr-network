@@ -12,7 +12,7 @@ import '../node_modules/webvr-polyfill/build/webvr-polyfill.min';
 import { generateTextureCanvas } from './generateTextureCanvas';
 import { generateCurveGeometry } from './generateCurveGeometry';
 import { generateHorizon } from './elements/horizon';
-import { generateFloor } from './elements/floor';
+// import { generateFloor } from './elements/floor';
 import { generateButtons } from './elements/buttons';
 import { updateLineMaterials } from './materials/lineMaterials';
 import * as sphereMaterials from './materials/sphereMaterials';
@@ -20,14 +20,20 @@ import * as legend from './elements/legend';
 import * as cursor from './elements/cursor';
 import * as scaleValue from './scaleValue';
 import * as stars from './elements/stars';
+import * as intro from './elements/intro';
 
 const worldState = {
+  intro: {
+    active: true,
+    zooming: false,
+  },
   vrEnabled: false,
-  layoutMode: 1,
   isTransitioning: false,
   labelsNeedUpdate: true,
 };
 const sceneObjects = {
+  user: new THREE.Group(),
+  intro: new THREE.Group(),
   nodes: new THREE.Group(),
   links: new THREE.Group(),
   stars: new THREE.Group(),
@@ -39,6 +45,7 @@ const linkScale = {
   max: 3,
 };
 const light = new THREE.DirectionalLight(0xffffff);
+const raycaster = new THREE.Raycaster();
 const noSleep = new NoSleep();
 const stageSize = 10;
 
@@ -53,7 +60,6 @@ let camera;
 let renderer;
 let controls;
 let vrDisplay;
-let raycaster;
 let intersected;
 let lineMaterials;
 let hoveredButton;
@@ -66,6 +72,7 @@ function updateNetwork() {
         nd.lastPos = nd.pos;
       }
       n.children.forEach((c) => {
+        // console.log(c);
         if (c.userData.type === 'sphere') {
           c.material.dispose(); // Dispose existing geometry
           c.material = null;
@@ -82,6 +89,8 @@ function updateNetwork() {
           }
         } else if (c.name === 'name') {
           c.position.set(nd.nameOffset.x, nd.nameOffset.y, 0.15);
+          c.material.visible = true;
+        } else if (c.name === 'rank') {
           c.material.visible = true;
         }
       });
@@ -110,6 +119,8 @@ function layoutByRank() {
   globalData.nodes = globalData.nodes.map((n, i) => {
     n.shifted = false;
     n.status = '';
+    n.nameOffset.x = 0;
+    n.nameOffset.y = -0.1;
     n.pos = new THREE.Vector3(
       Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
       (controls.userHeight / (rowCount * 0.5)) + (i / perRow),
@@ -137,6 +148,8 @@ function layoutInGrid() {
   globalData.nodes = globalData.nodes.map((n, i) => {
     n.shifted = false;
     n.status = '';
+    n.nameOffset.x = 0;
+    n.nameOffset.y = -0.1;
     n.pos = new THREE.Vector3(
       (-stageSize / 2) + (0.5 + (i % perRow)),
       1 + Math.floor(i / perRow),
@@ -281,17 +294,24 @@ function toggleVREnabled() {
   effect.setSize(window.innerWidth, window.innerHeight);
 }
 
-// function hideIntro() {
-//   document.querySelector('#intro').classList.add('hide');
-//   toggleVREnabled();
-// }
-
-// function showIntro() {
-//   document.querySelector('#intro').classList.remove('hide');
-//   toggleVREnabled();
-// }
-
 function transitionElements() {
+  if (worldState.intro.zooming) {
+    const userTarget = new THREE.Vector3(0, 0, 0);
+    if (sceneObjects.user.position.distanceTo(userTarget) > 0.01) {
+      const tpos = new THREE.Vector3(
+        sceneObjects.user.position.x,
+        sceneObjects.user.position.y,
+        sceneObjects.user.position.z,
+      ).lerp(userTarget, 0.1);
+      sceneObjects.user.position.set(tpos.x, tpos.y, tpos.z);
+    } else {
+      sceneObjects.intro.visible = false;
+      worldState.intro.zooming = false;
+      worldState.intro.active = false;
+    }
+    return;
+  }
+  //
   let countTransitioning = 0;
   sceneObjects.nodes.children.forEach((n) => {
     if (n.position.distanceTo(n.userData.nextPos) > 0.01) {
@@ -364,6 +384,7 @@ function transitionElements() {
       l.material.visible = false;
     });
   } else {
+    // Don't do this in loop
     sceneObjects.links.children.forEach((l) => {
       if (
         (l.userData.spos.distanceTo(l.userData.nextSPos) > 0.01)
@@ -405,6 +426,16 @@ function transitionElements() {
   }
 }
 
+function resetLinks() {
+  sceneObjects.links.children.forEach((l) => {
+    l.material.dispose(); // Dispose existing geometry
+    l.material = null;
+    l.material = lineMaterials.basic;
+    l.material.visible = false;
+    l.userData.status = '';
+  });
+}
+
 function resetIntersected() {
   if (intersected.userData.type === 'node') {
     intersected.userData.nextScale = 1;
@@ -418,11 +449,17 @@ function resetIntersected() {
   }
 }
 
-function highlightIntersected() {
+function checkIntersected() {
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
-  const nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
-  const buttonIntersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
-  const intersects = [...new Set([...nodeIntersects, ...buttonIntersects])];
+  //
+  let intersects = [];
+  if (worldState.intro.active) {
+    intersects = [...new Set([...raycaster.intersectObjects([scene.getObjectByName('Explore', true), scene.getObjectByName('Ready?', true)], true)])];
+  } else {
+    const nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
+    const buttonIntersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
+    intersects = [...new Set([...nodeIntersects, ...buttonIntersects])];
+  }
   //
   if (intersects.length > 0) {
     let searching = true;
@@ -566,7 +603,7 @@ function highlightIntersected() {
   }
 }
 
-function makeLinkedAdjacent(centerNode) {
+function takeAction(centerNode) {
   if (centerNode.type === 'node') {
     const sourceLinks = globalData.links
       .filter(l => (l.sourceId === centerNode.id))
@@ -628,7 +665,7 @@ function makeLinkedAdjacent(centerNode) {
     });
 
     updateNetwork();
-  } else {
+  } else if (centerNode.type === 'button') {
     sceneObjects.buttons.children.forEach((b) => {
       if (b.name === 'updating') {
         b.visible = true;
@@ -636,6 +673,12 @@ function makeLinkedAdjacent(centerNode) {
         b.visible = false;
       }
     });
+    if (hoveredButton) {
+      hoveredButton.opacity = 0.1;
+      hoveredButton = null;
+    }
+    timer = null;
+    resetLinks();
     if (centerNode.name === 'Layout in Spiral') {
       layoutByRank();
     } else if (centerNode.name === 'Layout in Grid') {
@@ -647,12 +690,40 @@ function makeLinkedAdjacent(centerNode) {
     } else {
       globalData = cloneDeep(initData);
     }
+  } else if (centerNode.type === 'Explore') {
+    timer = null;
+    if (vrDisplay.canPresent) {
+      enableNoSleep();
+      document.querySelector('#centerline').classList.add('enabled');
+      //
+      sceneObjects.intro.getObjectByName('logo', true).visible = false;
+      //
+      sceneObjects.intro.getObjectByName('title', true).visible = false;
+      sceneObjects.intro.getObjectByName('headset', true).visible = true;
+      //
+      sceneObjects.intro.getObjectByName('description', true).visible = false;
+      sceneObjects.intro.getObjectByName('headsetDescription', true).visible = true;
+      //
+      sceneObjects.intro.getObjectByName('Explore', true).visible = false;
+      sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
+    } else {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      effect.setSize(window.innerWidth, window.innerHeight);
+      worldState.intro.zooming = true;
+    }
+  } else if (centerNode.type === 'Ready?') {
+    vrDisplay.requestPresent([{ source: document.body }]);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    effect.setSize(window.innerWidth, window.innerHeight);
+    document.querySelector('#vrbutton').classList.add('enabled');
+    worldState.vrEnabled = true;
+    worldState.intro.zooming = true;
   }
 }
 
 function updateCursor() {
   if (!worldState.isTransitioning) {
-    highlightIntersected();
+    checkIntersected();
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
@@ -668,7 +739,7 @@ function updateCursor() {
           timer,
         );
       } else {
-        makeLinkedAdjacent(intersected.userData);
+        takeAction(intersected.userData);
       }
     }
   } else {
@@ -692,17 +763,24 @@ function animate() { // Request animation frame loop function
   if (shadertime > 100) {
     shadertime = 0.0;
   }
-
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
 
-  scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
-
   transitionElements();
+
+  //
+  // if (worldState.isIntro) {
+  // sceneObjects.user.position.z -= 0.01;
+  // } else {
+  //
+  scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
 
   stars.update(sceneObjects.stars, stageSize, time);
 
   updateCursor();
+  //
+  // }
+  //
 
   // if (vrButton.isPresenting()) { // } // Only update controls if we're presenting.
   controls.update();
@@ -716,16 +794,10 @@ function animate() { // Request animation frame loop function
   vrDisplay.requestAnimationFrame(animate);
 }
 
-// Get the HMD, and if we're dealing with something that specifies
-// stageParameters, rearrange the scene.
 function setupStage() {
   navigator.getVRDisplays().then((displays) => {
     if (displays.length > 0) {
       [vrDisplay] = displays;
-      // if (vrDisplay.stageParameters) {
-      //   // TODO: Handle Stage Updates
-      //   setStageDimensions(vrDisplay.stageParameters);
-      // }
       vrDisplay.requestAnimationFrame(animate);
     }
   });
@@ -789,13 +861,14 @@ function drawNetwork() {
       weight = '300 ';
     }
     //
-    const rank = generateTextureCanvas(`${d.rank}`, 66, 1024, 256, weight);
+    const rank = generateTextureCanvas(`${d.rank}`, 66, 1024, 256, weight, false);
     rank.scale.set(0.001, 0.001, 0.001);
     rank.position.set(0, 0, 0.15);
     rank.userData.type = 'text';
+    rank.name = 'rank';
     node.add(rank);
     //
-    const text = generateTextureCanvas(`${d.name}`, 66, 1024, 256, weight);
+    const text = generateTextureCanvas(`${d.name}`, 66, 1024, 256, weight, false);
     text.scale.set(0.001, 0.001, 0.001);
     text.position.set(0, -0.1, 0.15);
     text.userData.type = 'text';
@@ -866,16 +939,26 @@ export function setupScene(data, state) {
     flourishState.horizonBottomColor,
     flourishState.horizonExponent,
   ));
-  scene.add(generateFloor(stageSize, controls.userHeight));
   scene.add(stars.generate(sceneObjects.stars, stageSize, 1000));
+
+  // scene.add(generateFloor(state, stageSize, controls.userHeight));
   scene.add(legend.generate(state, lineMaterials, controls.userHeight));
   scene.add(generateButtons(sceneObjects.buttons));
 
+  //
+  sceneObjects.intro = intro.generate(state, stageSize);
+  scene.add(sceneObjects.intro);
+  //
+
   sceneObjects.cursor = cursor.generate(state);
   camera.add(sceneObjects.cursor);
-  scene.add(camera);
 
-  raycaster = new THREE.Raycaster();
+  //
+  sceneObjects.user.add(camera);
+  sceneObjects.user.position.set(0, 0, stageSize / 2);
+
+  //
+  scene.add(sceneObjects.user);
 
   // Apply VR stereo rendering to renderer.
   effect = new StereoEffect(renderer);
