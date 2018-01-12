@@ -81,10 +81,10 @@ export function generate(state, stageSize) {
   intro.add(title);
 
   //
-  const headset = generateTextureCanvas('Place Your Phone In Your Headset Now!', 36, width, 128, '', true);
+  const headset = generateTextureCanvas('If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
   headset.name = 'headset';
   headset.scale.set(0.8, 0.8, 0.8);
-  headset.position.set(0, -160, zoffset);
+  headset.position.set(0, -210, zoffset);
   headset.visible = false;
   intro.add(headset);
   //
@@ -96,10 +96,10 @@ export function generate(state, stageSize) {
   intro.add(description);
 
   //
-  const headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore! If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
+  const headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore!', 36, width, 256, '', true);
   headsetDescription.name = 'headsetDescription';
   headsetDescription.scale.set(0.8, 0.8, 0.8);
-  headsetDescription.position.set(0, -32, zoffset);
+  headsetDescription.position.set(0, -72, zoffset);
   headsetDescription.visible = false;
   intro.add(headsetDescription);
   //

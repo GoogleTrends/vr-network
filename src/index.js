@@ -10,7 +10,7 @@ export const data = {};
 export const state = {
   logo: logoURI,
   title: 'Related Searches between Top 50 TV Shows 2017',
-  description: 'Look around at each Node to see the seach interest relationships between the Top 50 Seached TV Shows',
+  description: 'Look at each Node to see the seach interest relationships between the Top 50 Seached TV Shows',
   horizonTopColor: '#000000',
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,

@@ -80,7 +80,11 @@ canvas {
   display: block;
 }
 
-/*#intro {
+/**/
+/**/
+/**/
+
+#intro {
   position: absolute;
   z-index: 2;
   background: rgba(255, 255, 255, 0.5);
@@ -99,7 +103,8 @@ canvas {
   background: linear-gradient(0deg, #000000, #11203B);
   margin: auto;
   vertical-align: middle;
-  padding: 1em;
+  overflow: hidden;
+  padding: 0;
   top: 0;
   left: 0;
   bottom: 0;
@@ -107,50 +112,68 @@ canvas {
 }
 
 .content {
-  padding: 1em;
-  padding-top: 0em;
+  text-align: center;
+  padding: 0;
 }
 
 img {
   max-width: 100%;
 }
 
-img.logo {
-  padding-left: 1em;
-}
-
-h1 {
-  font-size: 3.6em;
-  margin: 0;
-}
-
-h2 {
-  font-size: 3.6em;
-  user-select: none;
-  text-transform: uppercase;
-}
-
-p {
-  font-size: 1.2em;
-}
-
-#explore {
-  background: rgba(17, 32, 59, 0.5);
-  cursor: pointer;
-  padding: 1em 0;
-}
-
-#explore:hover {
-  background: rgba(17, 32, 59, 1.0);
-}
-
 .half {
+  background: #fff;
   width: 50%;
-  padding: 0em;
+  padding: 0;
   margin: 0;
   display: inline-block;
   text-align: center;
   vertical-align: middle;
+}
+
+.cardboard {
+  width: 50%;
+  height: 256px;
+  object-fit: cover;
+}
+
+p {
+  user-select: none;
+  text-transform: uppercase;
+  font-size: 2.4em;
+  margin: 0;
+  padding: 0;
+}
+
+.message {
+  margin: 0.85em 1em;
+}
+
+a {
+  color: white;
+  text-decoration: none;
+}
+
+#explore {
+  text-align: center;
+  background: rgba(17, 32, 59, 0);
+  cursor: pointer;
+  padding: 1em 0;
+  margin: 0;
+}
+
+#explore:hover, .novr:hover {
+  background: rgba(17, 32, 59, 0.75);
+}
+
+.novr {
+  position: relative;
+  text-transform: uppercase;
+  font-size: 1.2em;
+  background: #11203B;
+  margin: 1em;
+  padding: 1em;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 @media (max-width: 735px), (max-height: 735px) {
@@ -159,17 +182,14 @@ p {
     width: 304px;
     height: 304px;
   }
-  #explore {
-    padding: 0;
-  }
-  .half img {
+  .cardboard {
     width: 50%;
-    margin: 0;
-    padding: 0;
+    height: 103px;
   }
-  .half h2 {
-    margin: 0.65em 0;
+  .novr {
+    margin: 0.75em;
+    padding: 0.75em;
   }
-}*/
+}
 
 /*# sourceMappingURL=style.css.map 

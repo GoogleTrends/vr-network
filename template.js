@@ -48960,10 +48960,10 @@ function generate$5(state, stageSize) {
   intro.add(title);
 
   //
-  var headset = generateTextureCanvas('Place Your Phone In Your Headset Now!', 36, width, 128, '', true);
+  var headset = generateTextureCanvas('If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
   headset.name = 'headset';
   headset.scale.set(0.8, 0.8, 0.8);
-  headset.position.set(0, -160, zoffset);
+  headset.position.set(0, -210, zoffset);
   headset.visible = false;
   intro.add(headset);
   //
@@ -48975,10 +48975,10 @@ function generate$5(state, stageSize) {
   intro.add(description);
 
   //
-  var headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore! If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
+  var headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore!', 36, width, 256, '', true);
   headsetDescription.name = 'headsetDescription';
   headsetDescription.scale.set(0.8, 0.8, 0.8);
-  headsetDescription.position.set(0, -32, zoffset);
+  headsetDescription.position.set(0, -72, zoffset);
   headsetDescription.visible = false;
   intro.add(headsetDescription);
   //
@@ -49210,6 +49210,7 @@ var toConsumableArray = function (arr) {
 var worldState = {
   intro: {
     active: true,
+    headset: false,
     zooming: false
   },
   vrEnabled: false,
@@ -49301,6 +49302,8 @@ function updateNetwork() {
       b.visible = true;
     }
   });
+  worldState.isTransitioning = true;
+  worldState.labelsNeedUpdate = true;
 }
 
 function layoutByRank() {
@@ -49477,17 +49480,20 @@ function toggleVREnabled() {
 }
 
 function transitionElements() {
-  if (worldState.intro.zooming) {
-    var userTarget = new Vector3(0, 0, 0);
-    if (sceneObjects.user.position.distanceTo(userTarget) > 0.01) {
-      var tpos = new Vector3(sceneObjects.user.position.x, sceneObjects.user.position.y, sceneObjects.user.position.z).lerp(userTarget, 0.1);
-      sceneObjects.user.position.set(tpos.x, tpos.y, tpos.z);
-    } else {
+  if (worldState.intro.active) {
+    sceneObjects.intro.quaternion.copy(camera.quaternion);
+    if (worldState.intro.zooming) {
       sceneObjects.intro.visible = false;
-      worldState.intro.zooming = false;
-      worldState.intro.active = false;
+      var userTarget = new Vector3(0, 0, 0);
+      if (sceneObjects.user.position.distanceTo(userTarget) > 0.01) {
+        var tpos = new Vector3(sceneObjects.user.position.x, sceneObjects.user.position.y, sceneObjects.user.position.z).lerp(userTarget, 0.1);
+        sceneObjects.user.position.set(tpos.x, tpos.y, tpos.z);
+      } else {
+        worldState.intro.zooming = false;
+        worldState.intro.active = false;
+      }
+      return;
     }
-    return;
   }
   //
   var countTransitioning = 0;
@@ -49506,6 +49512,9 @@ function transitionElements() {
   if (countTransitioning > 0) {
     worldState.isTransitioning = true;
     worldState.labelsNeedUpdate = true;
+    sceneObjects.links.children.forEach(function (l) {
+      l.material.visible = false;
+    });
   } else {
     worldState.isTransitioning = false;
   }
@@ -49543,15 +49552,7 @@ function transitionElements() {
         });
       }
     });
-    worldState.labelsNeedUpdate = false;
-  }
-  //
-  if (worldState.isTransitioning) {
-    sceneObjects.links.children.forEach(function (l) {
-      l.material.visible = false;
-    });
-  } else {
-    // Don't do this in loop
+    //
     sceneObjects.links.children.forEach(function (l) {
       if (l.userData.spos.distanceTo(l.userData.nextSPos) > 0.01 || l.userData.tpos.distanceTo(l.userData.nextTPos) > 0.01) {
         l.geometry.dispose(); // Dispose existing geometry
@@ -49573,7 +49574,10 @@ function transitionElements() {
         }
       }
     });
+    //
+    worldState.labelsNeedUpdate = false;
   }
+  //
 }
 
 function resetLinks() {
@@ -49814,31 +49818,22 @@ function takeAction(centerNode) {
     }
   } else if (centerNode.type === 'Explore') {
     timer = null;
-    if (vrDisplay.canPresent) {
-      enableNoSleep();
+    // if (vrDisplay.capabilities.canPresent) {
+    {
+      //
       document.querySelector('#centerline').classList.add('enabled');
+      document.querySelector('#intro').classList.remove('hide');
       //
       sceneObjects.intro.getObjectByName('logo', true).visible = false;
-      //
       sceneObjects.intro.getObjectByName('title', true).visible = false;
       sceneObjects.intro.getObjectByName('headset', true).visible = true;
-      //
       sceneObjects.intro.getObjectByName('description', true).visible = false;
       sceneObjects.intro.getObjectByName('headsetDescription', true).visible = true;
-      //
       sceneObjects.intro.getObjectByName('Explore', true).visible = false;
       sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
-    } else {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      effect.setSize(window.innerWidth, window.innerHeight);
-      worldState.intro.zooming = true;
+      //
     }
-  } else if (centerNode.type === 'Ready?') {
-    vrDisplay.requestPresent([{ source: document.body }]);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    effect.setSize(window.innerWidth, window.innerHeight);
-    document.querySelector('#vrbutton').classList.add('enabled');
-    worldState.vrEnabled = true;
+  } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
     worldState.intro.zooming = true;
   }
 }
@@ -49867,39 +49862,32 @@ function updateCursor() {
 
 function animate() {
   // Request animation frame loop function
+  controls.update();
+  //
   var time = performance.now() * 0.01;
+  scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
+  update$1(sceneObjects.stars, stageSize, time);
+  //
   shadertime += 0.1;
   if (shadertime > 100) {
     shadertime = 0.0;
   }
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
+  //
 
+  // $$$
   transitionElements();
-
-  //
-  // if (worldState.isIntro) {
-  // sceneObjects.user.position.z -= 0.01;
-  // } else {
-  //
-  scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
-
-  update$1(sceneObjects.stars, stageSize, time);
-
   updateCursor();
   //
-  // }
+
   //
-
-  // if (vrButton.isPresenting()) { // } // Only update controls if we're presenting.
-  controls.update();
-
   if (worldState.vrEnabled) {
     effect.render(scene, camera); // Render the scene.
   } else {
     renderer.render(scene, camera);
   }
-
+  //
   vrDisplay.requestAnimationFrame(animate);
 }
 
@@ -50018,6 +50006,19 @@ function formatData() {
   drawNetwork();
 }
 
+function vrReady() {
+  toggleVREnabled();
+  document.querySelector('#intro').classList.add('hide');
+  worldState.intro.headset = true;
+}
+
+function skipVRReady() {
+  document.querySelector('#centerline').classList.remove('enabled');
+  document.querySelector('#intro').classList.add('hide');
+  worldState.intro.headset = false;
+  worldState.intro.zooming = true;
+}
+
 function setupScene(data, state) {
   globalData = data;
   flourishState = state;
@@ -50084,7 +50085,8 @@ function setupScene(data, state) {
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
   // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  // document.querySelector('#explore').addEventListener('click', hideIntro, true);
+  document.querySelector('#explore').addEventListener('click', vrReady, true);
+  document.querySelector('#novr').addEventListener('click', skipVRReady, true);
 
   formatData();
 }
@@ -50127,7 +50129,7 @@ var data = {};
 var state = {
   logo: logoURI,
   title: 'Related Searches between Top 50 TV Shows 2017',
-  description: 'Look around at each Node to see the seach interest relationships between the Top 50 Seached TV Shows',
+  description: 'Look at each Node to see the seach interest relationships between the Top 50 Seached TV Shows',
   horizonTopColor: '#000000',
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,

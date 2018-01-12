@@ -25,6 +25,7 @@ import * as intro from './elements/intro';
 const worldState = {
   intro: {
     active: true,
+    headset: false,
     zooming: false,
   },
   vrEnabled: false,
@@ -108,6 +109,8 @@ function updateNetwork() {
       b.visible = true;
     }
   });
+  worldState.isTransitioning = true;
+  worldState.labelsNeedUpdate = true;
 }
 
 function layoutByRank() {
@@ -295,21 +298,24 @@ function toggleVREnabled() {
 }
 
 function transitionElements() {
-  if (worldState.intro.zooming) {
-    const userTarget = new THREE.Vector3(0, 0, 0);
-    if (sceneObjects.user.position.distanceTo(userTarget) > 0.01) {
-      const tpos = new THREE.Vector3(
-        sceneObjects.user.position.x,
-        sceneObjects.user.position.y,
-        sceneObjects.user.position.z,
-      ).lerp(userTarget, 0.1);
-      sceneObjects.user.position.set(tpos.x, tpos.y, tpos.z);
-    } else {
+  if (worldState.intro.active) {
+    sceneObjects.intro.quaternion.copy(camera.quaternion);
+    if (worldState.intro.zooming) {
       sceneObjects.intro.visible = false;
-      worldState.intro.zooming = false;
-      worldState.intro.active = false;
+      const userTarget = new THREE.Vector3(0, 0, 0);
+      if (sceneObjects.user.position.distanceTo(userTarget) > 0.01) {
+        const tpos = new THREE.Vector3(
+          sceneObjects.user.position.x,
+          sceneObjects.user.position.y,
+          sceneObjects.user.position.z,
+        ).lerp(userTarget, 0.1);
+        sceneObjects.user.position.set(tpos.x, tpos.y, tpos.z);
+      } else {
+        worldState.intro.zooming = false;
+        worldState.intro.active = false;
+      }
+      return;
     }
-    return;
   }
   //
   let countTransitioning = 0;
@@ -332,6 +338,9 @@ function transitionElements() {
   if (countTransitioning > 0) {
     worldState.isTransitioning = true;
     worldState.labelsNeedUpdate = true;
+    sceneObjects.links.children.forEach((l) => {
+      l.material.visible = false;
+    });
   } else {
     worldState.isTransitioning = false;
   }
@@ -376,15 +385,7 @@ function transitionElements() {
           });
       }
     });
-    worldState.labelsNeedUpdate = false;
-  }
-  //
-  if (worldState.isTransitioning) {
-    sceneObjects.links.children.forEach((l) => {
-      l.material.visible = false;
-    });
-  } else {
-    // Don't do this in loop
+    //
     sceneObjects.links.children.forEach((l) => {
       if (
         (l.userData.spos.distanceTo(l.userData.nextSPos) > 0.01)
@@ -423,7 +424,10 @@ function transitionElements() {
         }
       }
     });
+    //
+    worldState.labelsNeedUpdate = false;
   }
+  //
 }
 
 function resetLinks() {
@@ -693,30 +697,24 @@ function takeAction(centerNode) {
   } else if (centerNode.type === 'Explore') {
     timer = null;
     if (vrDisplay.capabilities.canPresent) {
-      enableNoSleep();
+      //
       document.querySelector('#centerline').classList.add('enabled');
+      document.querySelector('#intro').classList.remove('hide');
       //
       sceneObjects.intro.getObjectByName('logo', true).visible = false;
-      //
       sceneObjects.intro.getObjectByName('title', true).visible = false;
       sceneObjects.intro.getObjectByName('headset', true).visible = true;
-      //
       sceneObjects.intro.getObjectByName('description', true).visible = false;
       sceneObjects.intro.getObjectByName('headsetDescription', true).visible = true;
-      //
       sceneObjects.intro.getObjectByName('Explore', true).visible = false;
       sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
+      //
     } else {
       renderer.setSize(window.innerWidth, window.innerHeight);
       effect.setSize(window.innerWidth, window.innerHeight);
       worldState.intro.zooming = true;
     }
-  } else if (centerNode.type === 'Ready?') {
-    vrDisplay.requestPresent([{ source: document.body }]);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    effect.setSize(window.innerWidth, window.innerHeight);
-    document.querySelector('#vrbutton').classList.add('enabled');
-    worldState.vrEnabled = true;
+  } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
     worldState.intro.zooming = true;
   }
 }
@@ -758,39 +756,32 @@ function updateCursor() {
 }
 
 function animate() { // Request animation frame loop function
+  controls.update();
+  //
   const time = performance.now() * 0.01;
+  scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
+  stars.update(sceneObjects.stars, stageSize, time);
+  //
   shadertime += 0.1;
   if (shadertime > 100) {
     shadertime = 0.0;
   }
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
+  //
 
+  // $$$
   transitionElements();
-
-  //
-  // if (worldState.isIntro) {
-  // sceneObjects.user.position.z -= 0.01;
-  // } else {
-  //
-  scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
-
-  stars.update(sceneObjects.stars, stageSize, time);
-
   updateCursor();
   //
-  // }
+
   //
-
-  // if (vrButton.isPresenting()) { // } // Only update controls if we're presenting.
-  controls.update();
-
   if (worldState.vrEnabled) {
     effect.render(scene, camera); // Render the scene.
   } else {
     renderer.render(scene, camera);
   }
-
+  //
   vrDisplay.requestAnimationFrame(animate);
 }
 
@@ -903,6 +894,19 @@ function formatData() {
   drawNetwork();
 }
 
+function vrReady() {
+  toggleVREnabled();
+  document.querySelector('#intro').classList.add('hide');
+  worldState.intro.headset = true;
+}
+
+function skipVRReady() {
+  document.querySelector('#centerline').classList.remove('enabled');
+  document.querySelector('#intro').classList.add('hide');
+  worldState.intro.headset = false;
+  worldState.intro.zooming = true;
+}
+
 export function setupScene(data, state) {
   globalData = data;
   flourishState = state;
@@ -971,7 +975,8 @@ export function setupScene(data, state) {
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
   // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  // document.querySelector('#explore').addEventListener('click', hideIntro, true);
+  document.querySelector('#explore').addEventListener('click', vrReady, true);
+  document.querySelector('#novr').addEventListener('click', skipVRReady, true);
 
   formatData();
 }
