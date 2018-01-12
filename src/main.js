@@ -692,7 +692,7 @@ function takeAction(centerNode) {
     }
   } else if (centerNode.type === 'Explore') {
     timer = null;
-    if (vrDisplay.canPresent) {
+    if (vrDisplay.capabilities.canPresent) {
       enableNoSleep();
       document.querySelector('#centerline').classList.add('enabled');
       //
