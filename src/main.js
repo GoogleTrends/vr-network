@@ -697,6 +697,7 @@ function takeAction(centerNode) {
   } else if (centerNode.type === 'Explore') {
     timer = null;
     if (vrDisplay.capabilities.canPresent) {
+    // if (true) {
       //
       document.querySelector('#centerline').classList.add('enabled');
       document.querySelector('#intro').classList.remove('hide');

@@ -71,9 +71,9 @@ canvas {
   width: 1px;
   height: 100%;
   margin: 0 50%;
-  background: white;
+  background: #A29D9F;
   content: '';
-  z-index: 1;
+  z-index: 3;
 }
 
 #centerline.enabled {
@@ -112,8 +112,11 @@ canvas {
 }
 
 .content {
+  width: 704px;
+  height: 704px;
   text-align: center;
   padding: 0;
+  margin: 0;
 }
 
 img {
@@ -154,6 +157,8 @@ a {
 }
 
 #explore {
+  min-height: 571px;
+  overflow: hidden;
   text-align: center;
   background: rgba(17, 32, 59, 0);
   cursor: pointer;
@@ -181,6 +186,13 @@ a {
     font-size: 0.45em;
     width: 304px;
     height: 304px;
+  }
+  .content {
+    width: 304px;
+    height: 304px;
+  }
+  #explore {
+    min-height: 250px;
   }
   .cardboard {
     width: 50%;

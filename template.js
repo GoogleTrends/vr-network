@@ -49818,8 +49818,8 @@ function takeAction(centerNode) {
     }
   } else if (centerNode.type === 'Explore') {
     timer = null;
-    // if (vrDisplay.capabilities.canPresent) {
-    {
+    if (vrDisplay.capabilities.canPresent) {
+      // if (true) {
       //
       document.querySelector('#centerline').classList.add('enabled');
       document.querySelector('#intro').classList.remove('hide');
@@ -49832,6 +49832,10 @@ function takeAction(centerNode) {
       sceneObjects.intro.getObjectByName('Explore', true).visible = false;
       sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
       //
+    } else {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      effect.setSize(window.innerWidth, window.innerHeight);
+      worldState.intro.zooming = true;
     }
   } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
     worldState.intro.zooming = true;
