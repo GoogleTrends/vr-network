@@ -49,7 +49,10 @@ function startTimer() {
     if (introState.timer.count < 1) {
       clearInterval(introState.timer.interval);
       document.querySelector('#intro').classList.add('hide');
-      setupScene(data, state);
+      if (!introState.sceneExists) {
+        setupScene(data, state);
+        introState.sceneExists = true;
+      }
     }
   }, 1000);
 }
@@ -71,7 +74,7 @@ function showSlide(id) {
 }
 
 function swapSlidesOnOrientation() {
-  if (introState.slide === 1) {
+  if (introState.slide === 1 || introState.slide === 0) {
     if (introState.orientation.includes('landscape')) {
       document.querySelector('#logo').classList.add('hide');
       document.querySelector('#card').classList.add('horizontal');
@@ -102,13 +105,14 @@ function updateOrientation() {
 function setupIntro() {
   document.querySelector('#logo').src = state.logo;
   //
-  updateOrientation();
+  // updateOrientation();
   window.addEventListener('orientationchange', updateOrientation, false);
   //
   document.querySelector('#explore').addEventListener('click', () => showSlide(1), true);
   document.querySelector('#threesixty').addEventListener('click', () => {
     document.querySelector('#intro').classList.add('hide');
     setupScene(data, state);
+    introState.sceneExists = true;
   }, true);
   //
 

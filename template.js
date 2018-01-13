@@ -48883,120 +48883,6 @@ function update$1(container, stageSize, time) {
 
 /* global document, Flourish */
 
-function generateIntroButton(name, image, width, yoffset, innerYOffset, zoffset) {
-  var button = new Group();
-  button.name = name;
-  button.userData.type = name;
-  var text = generateTextureCanvas(name, 36, width / 2, width / 2, '', false);
-  text.position.set(width / 4.75, innerYOffset, 64);
-  text.userData.type = 'text';
-  button.add(text);
-  var rect = new Mesh(new PlaneGeometry(width, width / 2 * 0.65), new MeshBasicMaterial({
-    color: new Color('#FFFFFF'),
-    transparent: true,
-    opacity: 0.1
-  }));
-  rect.position.set(0, 0, 1);
-  rect.userData.type = 'button';
-  button.add(rect);
-  //
-  var textureLoader = new TextureLoader();
-  var imgGeometry = new PlaneGeometry(256, 256);
-  var imgMaterial = new MeshBasicMaterial({
-    map: textureLoader.load(Flourish.static_prefix + '/' + image),
-    transparent: true,
-    depthTest: false
-  });
-  var icon = new Mesh(imgGeometry, imgMaterial);
-  icon.scale.set(0.65, 0.65, 0.65);
-  icon.position.set(-width / 4.75, innerYOffset, 64);
-  button.add(icon);
-  //
-  button.scale.set(0.8, 0.8, 0.8);
-  button.position.set(0, yoffset, zoffset);
-  return button;
-}
-
-function generate$5(state, stageSize) {
-  var intro = new Group();
-  intro.name = 'intro';
-
-  var width = 512;
-  var zoffset = 64;
-
-  var backgroundGeometry = new PlaneGeometry(width, width);
-  var backgroundMaterial = new MeshBasicMaterial({
-    color: state.horizonBottomColor,
-    transparent: true,
-    opacity: 0.75,
-    depthTest: false
-  });
-  var background = new Mesh(backgroundGeometry, backgroundMaterial);
-  intro.add(background);
-
-  var imgHeight = 128;
-  var image = document.createElement('img');
-  var texture = new Texture(image);
-  image.onload = function () {
-    texture.needsUpdate = true;
-  };
-  image.src = state.logo;
-  var logoGeometry = new PlaneGeometry(width, imgHeight);
-  var logoMaterial = new MeshBasicMaterial({
-    transparent: true,
-    map: texture,
-    depthTest: false
-  });
-  var logo = new Mesh(logoGeometry, logoMaterial);
-  logo.name = 'logo';
-  logo.scale.set(0.8, 0.8, 0.8);
-  logo.position.set(0, 160, zoffset);
-  intro.add(logo);
-
-  var title = generateTextureCanvas(state.title, 36, width, 128, '', true);
-  title.name = 'title';
-  title.scale.set(0.8, 0.8, 0.8);
-  title.position.set(0, 64, zoffset);
-  intro.add(title);
-
-  //
-  var headset = generateTextureCanvas('If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
-  headset.name = 'headset';
-  headset.scale.set(0.8, 0.8, 0.8);
-  headset.position.set(0, -210, zoffset);
-  headset.visible = false;
-  intro.add(headset);
-  //
-
-  var description = generateTextureCanvas(state.description, 18, width, 64, '', true);
-  description.name = 'description';
-  description.scale.set(0.8, 0.8, 0.8);
-  description.position.set(0, -16, zoffset);
-  intro.add(description);
-
-  //
-  var headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore!', 36, width, 256, '', true);
-  headsetDescription.name = 'headsetDescription';
-  headsetDescription.scale.set(0.8, 0.8, 0.8);
-  headsetDescription.position.set(0, -72, zoffset);
-  headsetDescription.visible = false;
-  intro.add(headsetDescription);
-  //
-
-  intro.add(generateIntroButton('Explore', 'cardboard.png', width, -140, 12, zoffset));
-
-  //
-  var ready = generateIntroButton('Ready?', 'cardboard.png', width, 130, -16, zoffset);
-  ready.visible = false;
-  intro.add(ready);
-  //
-
-  intro.scale.set(0.01, 0.01, 0.01);
-  intro.position.set(0, stageSize / 5, 0);
-
-  return intro;
-}
-
 var asyncGenerator = function () {
   function AwaitValue(value) {
     this.value = value;
@@ -49211,7 +49097,7 @@ var worldState = {
   intro: {
     active: true,
     headset: false,
-    zooming: false
+    zooming: true
   },
   vrEnabled: false,
   isTransitioning: false,
@@ -49987,8 +49873,8 @@ function drawNetwork() {
 
   updateNetwork();
 
-  // layoutByRank();
-  layoutInGrid();
+  layoutByRank();
+  // layoutInGrid();
 }
 
 function formatData() {
@@ -50064,8 +49950,8 @@ function setupScene(data, state) {
   scene.add(generateButtons(sceneObjects.buttons));
 
   //
-  sceneObjects.intro = generate$5(state, stageSize);
-  scene.add(sceneObjects.intro);
+  // sceneObjects.intro = intro.generate(state, stageSize);
+  // scene.add(sceneObjects.intro);
   //
 
   sceneObjects.cursor = generate$2(state);
@@ -50172,7 +50058,10 @@ function startTimer() {
     if (introState.timer.count < 1) {
       clearInterval(introState.timer.interval);
       document.querySelector('#intro').classList.add('hide');
-      setupScene(data, state);
+      if (!introState.sceneExists) {
+        setupScene(data, state);
+        introState.sceneExists = true;
+      }
     }
   }, 1000);
 }
@@ -50194,7 +50083,7 @@ function showSlide(id) {
 }
 
 function swapSlidesOnOrientation() {
-  if (introState.slide === 1) {
+  if (introState.slide === 1 || introState.slide === 0) {
     if (introState.orientation.includes('landscape')) {
       document.querySelector('#logo').classList.add('hide');
       document.querySelector('#card').classList.add('horizontal');
@@ -50225,7 +50114,7 @@ function updateOrientation() {
 function setupIntro() {
   document.querySelector('#logo').src = state.logo;
   //
-  updateOrientation();
+  // updateOrientation();
   window.addEventListener('orientationchange', updateOrientation, false);
   //
   document.querySelector('#explore').addEventListener('click', function () {
@@ -50234,6 +50123,7 @@ function setupIntro() {
   document.querySelector('#threesixty').addEventListener('click', function () {
     document.querySelector('#intro').classList.add('hide');
     setupScene(data, state);
+    introState.sceneExists = true;
   }, true);
   //
 

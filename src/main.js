@@ -26,7 +26,7 @@ const worldState = {
   intro: {
     active: true,
     headset: false,
-    zooming: false,
+    zooming: true,
   },
   vrEnabled: false,
   isTransitioning: false,
@@ -876,8 +876,8 @@ function drawNetwork() {
 
   updateNetwork();
 
-  // layoutByRank();
-  layoutInGrid();
+  layoutByRank();
+  // layoutInGrid();
 }
 
 function formatData() {
@@ -951,8 +951,8 @@ export function setupScene(data, state) {
   scene.add(generateButtons(sceneObjects.buttons));
 
   //
-  sceneObjects.intro = intro.generate(state, stageSize);
-  scene.add(sceneObjects.intro);
+  // sceneObjects.intro = intro.generate(state, stageSize);
+  // scene.add(sceneObjects.intro);
   //
 
   sceneObjects.cursor = cursor.generate(state);
