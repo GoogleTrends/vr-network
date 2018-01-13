@@ -895,18 +895,18 @@ function formatData() {
   drawNetwork();
 }
 
-function vrReady() {
-  toggleVREnabled();
-  document.querySelector('#intro').classList.add('hide');
-  worldState.intro.headset = true;
-}
+// function vrReady() {
+//   toggleVREnabled();
+//   document.querySelector('#intro').classList.add('hide');
+//   worldState.intro.headset = true;
+// }
 
-function skipVRReady() {
-  document.querySelector('#centerline').classList.remove('enabled');
-  document.querySelector('#intro').classList.add('hide');
-  worldState.intro.headset = false;
-  worldState.intro.zooming = true;
-}
+// function skipVRReady() {
+//   document.querySelector('#centerline').classList.remove('enabled');
+//   document.querySelector('#intro').classList.add('hide');
+//   worldState.intro.headset = false;
+//   worldState.intro.zooming = true;
+// }
 
 export function setupScene(data, state) {
   globalData = data;
@@ -976,8 +976,8 @@ export function setupScene(data, state) {
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
   // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  document.querySelector('#explore').addEventListener('click', vrReady, true);
-  document.querySelector('#novr').addEventListener('click', skipVRReady, true);
+  // document.querySelector('#explore').addEventListener('click', vrReady, true);
+  // document.querySelector('#novr').addEventListener('click', skipVRReady, true);
 
   formatData();
 }
