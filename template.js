@@ -50072,7 +50072,7 @@ var state = {
   vrEnabled: false
 };
 
-var timerduration = 6;
+var timerduration = 5;
 var introState = {
   slide: 0,
   slides: [0, 1, 2],
@@ -50088,12 +50088,12 @@ var introState = {
 function startTimer() {
   var offset = 502; // radius of circle
   introState.timer.count = timerduration;
-  document.querySelector('#count').textContent = introState.timer.count;
-  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - (timerduration - introState.timer.count) * (offset / timerduration));
+  // document.querySelector('#count').textContent = introState.timer.count;
+  // document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration + 1))));
   introState.timer.interval = setInterval(function () {
     introState.timer.count -= 1;
     document.querySelector('#count').textContent = introState.timer.count;
-    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - (timerduration - introState.timer.count) * (offset / timerduration));
+    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - (timerduration - introState.timer.count) * (offset / (timerduration + 1)));
     if (!introState.active) {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);

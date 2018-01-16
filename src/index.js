@@ -29,7 +29,7 @@ export const state = {
   vrEnabled: false,
 };
 
-const timerduration = 6;
+const timerduration = 5;
 const introState = {
   slide: 0,
   slides: [0, 1, 2],
@@ -46,11 +46,11 @@ function startTimer() {
   const offset = 502; // radius of circle
   introState.timer.count = timerduration;
   document.querySelector('#count').textContent = introState.timer.count;
-  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / timerduration)));
+  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration + 1))));
   introState.timer.interval = setInterval(() => {
     introState.timer.count -= 1;
     document.querySelector('#count').textContent = introState.timer.count;
-    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / timerduration)));
+    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration + 1))));
     if (!introState.active) {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
