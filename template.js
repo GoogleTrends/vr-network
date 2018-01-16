@@ -49121,7 +49121,7 @@ var worldState = {
   intro: {
     active: true,
     headset: false,
-    zooming: true
+    zooming: false
   },
   vrEnabled: false,
   isTransitioning: false,
@@ -49159,6 +49159,10 @@ var vrDisplay = void 0;
 var intersected = void 0;
 var lineMaterials = void 0;
 var hoveredButton = void 0;
+
+function sceneReady() {
+  worldState.intro.zooming = true;
+}
 
 function updateNetwork() {
   sceneObjects.nodes.children.forEach(function (n) {
@@ -49366,7 +49370,19 @@ function enableNoSleep() {
   window.removeEventListener('touchstart', enableNoSleep, true);
 }
 
+function requestPresent() {
+  console.log('requestPresent');
+  enableNoSleep();
+  if (vrDisplay.capabilities.canPresent) {
+    vrDisplay.requestPresent([{ source: document.body }]);
+  }
+}
+
 function toggleVREnabled(set, value) {
+  console.log('called VR enabled');
+  console.log(set);
+  console.log(value);
+  console.log('- - - -');
   enableNoSleep();
   // TODO: remove stereo from desktop when done w/ development
   if (set === true && value !== undefined) {
@@ -49523,7 +49539,14 @@ function checkIntersected() {
   //
   var intersects = [];
   if (worldState.intro.active) {
-    intersects = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(raycaster.intersectObjects([scene.getObjectByName('Explore', true), scene.getObjectByName('Ready?', true)], true))))));
+    /*
+      intersects = [
+        ...new Set([
+          ...raycaster.intersectObjects([scene.getObjectByName('Explore', true),
+          scene.getObjectByName('Ready?', true)], true)
+        ])
+      ];
+    */
   } else {
     var nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
     var buttonIntersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
@@ -49731,30 +49754,31 @@ function takeAction(centerNode) {
     } else {
       globalData = lodash_clonedeep(initData);
     }
-  } else if (centerNode.type === 'Explore') {
-    timer = null;
-    if (vrDisplay.capabilities.canPresent) {
-      // if (true) {
-      //
-      document.querySelector('#centerline').classList.add('enabled');
-      document.querySelector('#intro').classList.remove('hide');
-      //
-      sceneObjects.intro.getObjectByName('logo', true).visible = false;
-      sceneObjects.intro.getObjectByName('title', true).visible = false;
-      sceneObjects.intro.getObjectByName('headset', true).visible = true;
-      sceneObjects.intro.getObjectByName('description', true).visible = false;
-      sceneObjects.intro.getObjectByName('headsetDescription', true).visible = true;
-      sceneObjects.intro.getObjectByName('Explore', true).visible = false;
-      sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
-      //
-    } else {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      effect.setSize(window.innerWidth, window.innerHeight);
-      worldState.intro.zooming = true;
-    }
-  } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
-    worldState.intro.zooming = true;
   }
+  // } else if (centerNode.type === 'Explore') {
+  //   timer = null;
+  //   if (vrDisplay.capabilities.canPresent) {
+  //   // if (true) {
+  //     //
+  //     document.querySelector('#centerline').classList.add('enabled');
+  //     document.querySelector('#intro').classList.remove('hide');
+  //     //
+  //     sceneObjects.intro.getObjectByName('logo', true).visible = false;
+  //     sceneObjects.intro.getObjectByName('title', true).visible = false;
+  //     sceneObjects.intro.getObjectByName('headset', true).visible = true;
+  //     sceneObjects.intro.getObjectByName('description', true).visible = false;
+  //     sceneObjects.intro.getObjectByName('headsetDescription', true).visible = true;
+  //     sceneObjects.intro.getObjectByName('Explore', true).visible = false;
+  //     sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
+  //     //
+  //   } else {
+  //     renderer.setSize(window.innerWidth, window.innerHeight);
+  //     effect.setSize(window.innerWidth, window.innerHeight);
+  //     worldState.intro.zooming = true;
+  //   }
+  // } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
+  //   worldState.intro.zooming = true;
+  // }
 }
 
 function updateCursor() {
@@ -49814,11 +49838,11 @@ function setupStage() {
   navigator.getVRDisplays().then(function (displays) {
     if (displays.length > 0) {
       //
+      // toggleVREnabled(true, flourishState.vrEnabled);
+      //
       var _displays = slicedToArray(displays, 1);
 
       vrDisplay = _displays[0];
-      toggleVREnabled(true, flourishState.vrEnabled);
-      //
       vrDisplay.requestAnimationFrame(animate);
     }
   });
@@ -49990,7 +50014,7 @@ function setupScene(data, state) {
 
   //
   sceneObjects.user.add(camera);
-  sceneObjects.user.position.set(0, 0, stageSize / 2);
+  sceneObjects.user.position.set(0, 0, stageSize / 3 * 2);
 
   //
   scene.add(sceneObjects.user);
@@ -50085,11 +50109,23 @@ var introState = {
   active: true
 };
 
+function enterScene() {
+  document.querySelector('#intro').classList.add('hide');
+  introState.active = false;
+  if (!introState.sceneExists) {
+    introState.sceneExists = true;
+    setupScene(data, state);
+  } else {
+    updateSceneFromState(state);
+  }
+  sceneReady();
+}
+
 function startTimer() {
   var offset = 502; // radius of circle
   introState.timer.count = timerduration;
-  // document.querySelector('#count').textContent = introState.timer.count;
-  // document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration + 1))));
+  document.querySelector('#count').textContent = introState.timer.count;
+  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - (timerduration - introState.timer.count) * (offset / (timerduration + 1)));
   introState.timer.interval = setInterval(function () {
     introState.timer.count -= 1;
     document.querySelector('#count').textContent = introState.timer.count;
@@ -50102,15 +50138,9 @@ function startTimer() {
     if (introState.timer.count < 0) {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
-      document.querySelector('#intro').classList.add('hide');
-      introState.active = false;
+      //
       state.vrEnabled = true;
-      if (!introState.sceneExists) {
-        introState.sceneExists = true;
-        setupScene(data, state);
-      } else {
-        updateSceneFromState(state);
-      }
+      enterScene();
     }
   }, 1000);
 }
@@ -50174,21 +50204,19 @@ function setupIntro() {
 
   window.addEventListener('resize', updateOrientation, false);
   // window.addEventListener('orientationchange', updateOrientation, false);
+
+  //
+  document.querySelector('#intro').addEventListener('click', requestPresent, true);
+  //
+
   //
   document.querySelector('#inbutton').addEventListener('click', showIntro, true);
   document.querySelector('#explore').addEventListener('click', function () {
     return showSlide(1);
   }, true);
   document.querySelector('#threesixty').addEventListener('click', function () {
-    document.querySelector('#intro').classList.add('hide');
-    introState.active = false;
     state.vrEnabled = false;
-    if (!introState.sceneExists) {
-      introState.sceneExists = true;
-      setupScene(data, state);
-    } else {
-      updateSceneFromState(state);
-    }
+    enterScene();
   }, true);
   //
 
@@ -50221,14 +50249,16 @@ function draw() {
   WebFont.load({
     google: {
       families: ['Roboto Condensed:300,400,700']
-    }
-    // active: () => {
-    //   // setupScene(data, state);
-    // },
-    // inactive: () => {
-    //   // setupScene(data, state);
-    // },
-    // timeout: 2000,
+    },
+    active: function active() {
+      setupScene(data, state);
+      introState.sceneExists = true;
+    },
+    inactive: function inactive() {
+      setupScene(data, state);
+      introState.sceneExists = true;
+    },
+    timeout: 2000
   });
 }
 

@@ -2,7 +2,7 @@
 
 // import cloneDeep from 'lodash.clonedeep';
 
-import { setupScene, updateSceneFromState } from './main';
+import { setupScene, updateSceneFromState, requestPresent, sceneReady } from './main';
 import { logoURI } from './logo';
 
 export const data = {};
@@ -42,6 +42,18 @@ const introState = {
   active: true,
 };
 
+function enterScene() {
+  document.querySelector('#intro').classList.add('hide');
+  introState.active = false;
+  if (!introState.sceneExists) {
+    introState.sceneExists = true;
+    setupScene(data, state);
+  } else {
+    updateSceneFromState(state);
+  }
+  sceneReady();
+}
+
 function startTimer() {
   const offset = 502; // radius of circle
   introState.timer.count = timerduration;
@@ -59,15 +71,9 @@ function startTimer() {
     if (introState.timer.count < 0) {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
-      document.querySelector('#intro').classList.add('hide');
-      introState.active = false;
+      //
       state.vrEnabled = true;
-      if (!introState.sceneExists) {
-        introState.sceneExists = true;
-        setupScene(data, state);
-      } else {
-        updateSceneFromState(state);
-      }
+      enterScene();
     }
   }, 1000);
 }
@@ -131,19 +137,17 @@ function setupIntro() {
 
   window.addEventListener('resize', updateOrientation, false);
   // window.addEventListener('orientationchange', updateOrientation, false);
+
+  //
+  document.querySelector('#intro').addEventListener('click', requestPresent, true);
+  //
+
   //
   document.querySelector('#inbutton').addEventListener('click', showIntro, true);
   document.querySelector('#explore').addEventListener('click', () => showSlide(1), true);
   document.querySelector('#threesixty').addEventListener('click', () => {
-    document.querySelector('#intro').classList.add('hide');
-    introState.active = false;
     state.vrEnabled = false;
-    if (!introState.sceneExists) {
-      introState.sceneExists = true;
-      setupScene(data, state);
-    } else {
-      updateSceneFromState(state);
-    }
+    enterScene();
   }, true);
   //
 
@@ -175,12 +179,14 @@ export function draw() {
     google: {
       families: ['Roboto Condensed:300,400,700'],
     },
-    // active: () => {
-    //   // setupScene(data, state);
-    // },
-    // inactive: () => {
-    //   // setupScene(data, state);
-    // },
-    // timeout: 2000,
+    active: () => {
+      setupScene(data, state);
+      introState.sceneExists = true;
+    },
+    inactive: () => {
+      setupScene(data, state);
+      introState.sceneExists = true;
+    },
+    timeout: 2000,
   });
 }
