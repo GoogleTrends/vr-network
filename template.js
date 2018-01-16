@@ -49371,7 +49371,6 @@ function enableNoSleep() {
 }
 
 function requestPresent() {
-  console.log('requestPresent');
   enableNoSleep();
   if (vrDisplay.capabilities.canPresent) {
     vrDisplay.requestPresent([{ source: document.body }]);
@@ -49379,10 +49378,6 @@ function requestPresent() {
 }
 
 function toggleVREnabled(set, value) {
-  console.log('called VR enabled');
-  console.log(set);
-  console.log(value);
-  console.log('- - - -');
   enableNoSleep();
   // TODO: remove stereo from desktop when done w/ development
   if (set === true && value !== undefined) {
@@ -49999,25 +49994,28 @@ function setupScene(data, state) {
   // Generate Non-network Scene Elements
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
   scene.add(generate$4(sceneObjects.stars, stageSize, 1000));
-
-  // scene.add(generateFloor(state, stageSize, controls.userHeight));
   scene.add(generate(state, lineMaterials, controls.userHeight));
   scene.add(generateButtons(sceneObjects.buttons));
 
+  var lookup = generateTextureCanvas('LOOK UP ^^^', 36, 256, 256);
+  lookup.position.set(0, -0.75, -0.5);
+  lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
+  lookup.scale.set(0.005, 0.005, 0.005);
+  scene.add(lookup);
+
   //
+  // scene.add(generateFloor(state, stageSize, controls.userHeight));
   // sceneObjects.intro = intro.generate(state, stageSize);
   // scene.add(sceneObjects.intro);
   //
 
+  //
   sceneObjects.cursor = generate$2(state);
   camera.add(sceneObjects.cursor);
-
-  //
   sceneObjects.user.add(camera);
   sceneObjects.user.position.set(0, 0, stageSize / 3 * 2);
-
-  //
   scene.add(sceneObjects.user);
+  //
 
   // Apply VR stereo rendering to renderer.
   effect = new StereoEffect(renderer);
