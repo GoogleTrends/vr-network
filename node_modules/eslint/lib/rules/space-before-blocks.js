@@ -16,8 +16,7 @@ module.exports = {
         docs: {
             description: "enforce consistent spacing before blocks",
             category: "Stylistic Issues",
-            recommended: false,
-            url: "https://eslint.org/docs/rules/space-before-blocks"
+            recommended: false
         },
 
         fixable: "whitespace",

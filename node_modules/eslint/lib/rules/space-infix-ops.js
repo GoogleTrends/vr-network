@@ -13,8 +13,7 @@ module.exports = {
         docs: {
             description: "require spacing around infix operators",
             category: "Stylistic Issues",
-            recommended: false,
-            url: "https://eslint.org/docs/rules/space-infix-ops"
+            recommended: false
         },
 
         fixable: "whitespace",

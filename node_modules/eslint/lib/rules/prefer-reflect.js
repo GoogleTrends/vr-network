@@ -15,8 +15,7 @@ module.exports = {
             description: "require `Reflect` methods where applicable",
             category: "ECMAScript 6",
             recommended: false,
-            replacedBy: [],
-            url: "https://eslint.org/docs/rules/prefer-reflect"
+            replacedBy: []
         },
 
         deprecated: true,

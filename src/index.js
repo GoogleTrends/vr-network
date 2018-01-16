@@ -29,11 +29,11 @@ export const state = {
   vrEnabled: false,
 };
 
-const timerduration = 5;
+const timerduration = 6;
 const introState = {
   slide: 0,
   slides: [0, 1, 2],
-  orientation: 'portrait-primary',
+  orientation: 'portrait',
   timer: {
     interval: null,
     count: timerduration,

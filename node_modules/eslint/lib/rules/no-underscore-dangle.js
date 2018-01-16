@@ -14,8 +14,7 @@ module.exports = {
         docs: {
             description: "disallow dangling underscores in identifiers",
             category: "Stylistic Issues",
-            recommended: false,
-            url: "https://eslint.org/docs/rules/no-underscore-dangle"
+            recommended: false
         },
 
         schema: [

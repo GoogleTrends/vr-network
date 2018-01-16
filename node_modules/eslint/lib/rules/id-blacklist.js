@@ -15,8 +15,7 @@ module.exports = {
         docs: {
             description: "disallow specified identifiers",
             category: "Stylistic Issues",
-            recommended: false,
-            url: "https://eslint.org/docs/rules/id-blacklist"
+            recommended: false
         },
 
         schema: {

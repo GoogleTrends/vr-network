@@ -16,8 +16,7 @@ module.exports = {
         docs: {
             description: "disallow synchronous methods",
             category: "Node.js and CommonJS",
-            recommended: false,
-            url: "https://eslint.org/docs/rules/no-sync"
+            recommended: false
         },
 
         schema: [

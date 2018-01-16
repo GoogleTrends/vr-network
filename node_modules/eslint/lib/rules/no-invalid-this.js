@@ -20,8 +20,7 @@ module.exports = {
         docs: {
             description: "disallow `this` keywords outside of classes or class-like objects",
             category: "Best Practices",
-            recommended: false,
-            url: "https://eslint.org/docs/rules/no-invalid-this"
+            recommended: false
         },
 
         schema: []

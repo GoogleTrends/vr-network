@@ -14,8 +14,7 @@ module.exports = {
         docs: {
             description: "require or disallow padding within blocks",
             category: "Stylistic Issues",
-            recommended: false,
-            url: "https://eslint.org/docs/rules/padded-blocks"
+            recommended: false
         },
 
         fixable: "whitespace",

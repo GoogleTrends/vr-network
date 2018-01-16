@@ -19,8 +19,7 @@ module.exports = {
         docs: {
             description: "disallow all tabs",
             category: "Stylistic Issues",
-            recommended: false,
-            url: "https://eslint.org/docs/rules/no-tabs"
+            recommended: false
         },
         schema: []
     },
