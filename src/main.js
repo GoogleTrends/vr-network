@@ -20,7 +20,7 @@ import * as legend from './elements/legend';
 import * as cursor from './elements/cursor';
 import * as scaleValue from './scaleValue';
 import * as stars from './elements/stars';
-import * as intro from './elements/intro';
+// import * as intro from './elements/intro';
 
 const worldState = {
   intro: {
@@ -274,10 +274,15 @@ function enableNoSleep() {
   window.removeEventListener('touchstart', enableNoSleep, true);
 }
 
-function toggleVREnabled() {
+function toggleVREnabled(set, value) {
   enableNoSleep();
   // TODO: remove stereo from desktop when done w/ development
-  worldState.vrEnabled = !worldState.vrEnabled;
+  if (set === true && value !== undefined) {
+    worldState.vrEnabled = value;
+  } else {
+    worldState.vrEnabled = !worldState.vrEnabled;
+  }
+  flourishState.vrEnabled = worldState.vrEnabled;
   if (worldState.vrEnabled) {
     if (vrDisplay.capabilities.canPresent) {
       vrDisplay.requestPresent([{ source: document.body }]);
@@ -790,6 +795,9 @@ function setupStage() {
   navigator.getVRDisplays().then((displays) => {
     if (displays.length > 0) {
       [vrDisplay] = displays;
+      //
+      toggleVREnabled(true, flourishState.vrEnabled);
+      //
       vrDisplay.requestAnimationFrame(animate);
     }
   });
@@ -1011,6 +1019,9 @@ export function updateSceneFromState(state) {
     flourishState.horizonBottomColor,
     flourishState.horizonExponent,
   ));
+  //
+  toggleVREnabled(true, flourishState.vrEnabled);
+  //
 }
 
 export default setupScene;

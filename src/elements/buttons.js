@@ -36,7 +36,9 @@ export function generateButtons(container) {
   updating.position.set(-0.025, -0.1, 0);
   container.add(updating);
   //
-  container.position.set(1, 0.75, -1);
+  // container.position.set(1, 0.75, -1);
+  // container.position.set(0.45, 0.75, -1);
+  container.position.set(0.45, 0.675, -0.9);
   container.rotation.set((Math.PI / 180) * -45, 0, 0);
   return container;
 }

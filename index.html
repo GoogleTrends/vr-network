@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width">
 		<!-- The <title> is inserted by Flourish -->
 		<!-- Link to a stylesheet, or include an inline <style> section here -->
 		<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
@@ -12,7 +12,7 @@
 	<body>
 		<!-- If you want to start with a non-empty document, add elements here -->
 		<!-- Relative links are rewritten to refer to the files in the static directory -->
-		<!-- <div id="inbutton" class="button">About</div> -->
+		<div id="inbutton" class="button">About</div>
 		<div id="vrbutton" class="button"></div>
 		<div id="centerline"></div>
 		<!-- class="hide" -->
@@ -22,39 +22,47 @@
 				<img id="logo">
 				<!--  -->
 				<div class="slide" id="slide-0">
-					<p>
-						Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
-					</p>
-					<div class="cardboard">
-						<img src="intro-cardboard.png">
+					<div class="section">
+						<div class="cardboard">
+							<img src="intro-cardboard.png">
+						</div>
 					</div>
-					<div class="introbutton" id="explore">
-						Explore
+					<div class="section">
+						<p>
+							Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+						</p>
+						<div class="introbutton" id="explore">
+							Explore
+						</div>
 					</div>
 				</div>
 				<!--  -->
 				<div class="slide hide" id="slide-1">
-					<div class="cardboard">
-						<img src="intro-insert.png">
-					</div>
-					<p>
-						Please insert your device into your Cardboard.
-					</p>
-					<p>
-						Make sure your orientation lock is turned off.
-					</p>
-					<div class="introbutton" id="threesixty">
-						360
-					</div>
-					<a href="https://vr.google.com/cardboard/get-cardboard/" target="_blank">
-						<div class="introbutton">
-							Get a viewer
+					<div class="section">
+						<div class="cardboard">
+							<img src="intro-insert.png">
 						</div>
-					</a>
+					</div>
+					<div class="section">
+						<p>
+							Please insert your device into your Cardboard.
+						</p>
+						<p>
+							Make sure your orientation lock is turned off.
+						</p>
+						<div class="introbutton" id="threesixty">
+							360
+						</div>
+						<a href="https://vr.google.com/cardboard/get-cardboard/" target="_blank">
+							<div class="introbutton">
+								Get a viewer
+							</div>
+						</a>
+					</div>
 				</div>
 				<!--  -->
 				<div class="slide hide" id="slide-2">
-					<div class="horizontalhalf"><img src="intro-cardboard.png"></div><div class="horizontalhalf"><div class="countdown">
+					<div class="section"><div class="cardboard"><img src="intro-cardboard.png"></div></div><div class="section"><div class="countdown">
 							<p>
 								Your experience will begin in
 							</p>

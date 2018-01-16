@@ -47,7 +47,10 @@ canvas {
   bottom: 8px;
   left: 8px;
   /**/
-  line-height: 37px;
+  /*margin: 16px 0;*/
+  height: 34px;
+  margin-bottom: 12px;
+  line-height: 34px;
   background: #FFFFFF;
   color: #000000;
   text-transform: uppercase;
@@ -101,6 +104,7 @@ canvas {
 #card {
   width: 320px;
   height: 568px;
+  display: inline-block;
   background: linear-gradient(0deg, #000000, #11203B);
   position: absolute;
   vertical-align: middle;
@@ -110,11 +114,6 @@ canvas {
   right: 0;
   margin: auto;
   padding: 0.5em 1em;
-}
-
-#card.horizontal {
-  width: 568px;
-  height: 320px;
 }
 
 .slide {
@@ -127,41 +126,31 @@ img {
 }
 
 p {
-  padding: 0;
+  padding: 8px 0;
   margin: 0;
   font-size: 18px;
 }
 
+a {
+  text-decoration: none;
+}
+
 .cardboard {
   width: 100%;
-  margin: 1.25em 0;
-  height: 256px;
+  margin: 0;
+  height: 272px;
   object-fit: cover;
   overflow: hidden;
 }
 
-.horizontalhalf {
-  position: relative;
-  vertical-align: top;
-  height: 284px;
-  display: inline-block;
-  width: 50% !important;
-  margin: 0;
-  padding: 0;
-}
-
 .countdown {
-  height: 284px;
+  height: 242px;
   text-align: center;
   vertical-align: middle;
 }
 
 .circle {
   transition: all 1s linear;
-}
-
-#explore {
-
 }
 
 .introbutton {
@@ -178,6 +167,43 @@ p {
 
 .introbutton:hover {
   background: rgba(255, 255, 255, 0.65);
+}
+
+@media (orientation: landscape) {
+  #card {
+    width: 568px;
+    height: 320px;
+    display: inline-block;
+    background: linear-gradient(0deg, #000000, #11203B);
+    position: absolute;
+    vertical-align: middle;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    margin: auto;
+    padding: 0;
+    padding-bottom: 8px;
+  }
+  #logo {
+    padding-left: 8px;
+    display: inline-block;
+    width: 50% !important;
+  }
+  p {
+    padding: 8px 0;
+  }
+  .section {
+    position: relative;
+    vertical-align: top;
+    float: left;
+    height: 242px;
+    overflow: hidden;
+    display: inline-block;
+    width: 268px;
+    margin: 0;
+    padding: 0 8px;
+  }
 }
 
 /*# sourceMappingURL=style.css.map 

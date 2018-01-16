@@ -1,3 +1,5 @@
+/* global document */
+
 import * as THREE from 'three';
 import MeshLine from '../../three_modules/THREE.MeshLine';
 import { generateTextureCanvas } from '../generateTextureCanvas';
@@ -5,6 +7,21 @@ import { generateCurveGeometry } from '../generateCurveGeometry';
 
 export function generate(state, lineMaterials, userHeight) {
   const container = new THREE.Group();
+
+  const image = document.createElement('img');
+  const texture = new THREE.Texture(image);
+  image.onload = () => { texture.needsUpdate = true; };
+  image.src = state.logo;
+
+  const geometry = new THREE.PlaneGeometry(512, 128);
+  const material = new THREE.MeshBasicMaterial({
+    transparent: true,
+    map: texture,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.scale.set(0.001, 0.001, 0.001);
+  mesh.position.set(0, 0.25, 0);
+  container.add(mesh);
 
   const inLineGeometry = generateCurveGeometry(
     new THREE.Vector3(-0.3, 0.0, 0.0),
@@ -39,7 +56,10 @@ export function generate(state, lineMaterials, userHeight) {
   container.add(outText);
 
   container.name = 'legend';
-  container.position.set(-1, 0.75, -1);
+  // container.position.set(-1, 0.75, -1);
+  // container.position.set(-0.5, 0.75, -1);
+  // container.position.set(-0.45, 0.675, -0.9);
+  container.position.set(-0.45, 0.6, -0.8);
   container.rotation.set((Math.PI / 180) * -45, 0, 0);
 
   return container;

@@ -1,5 +1,7 @@
 /* global window, document, WebFont */
 
+// import cloneDeep from 'lodash.clonedeep';
+
 import { setupScene, updateSceneFromState } from './main';
 import { logoURI } from './logo';
 
@@ -24,6 +26,7 @@ export const state = {
   cursorOuterColor: '#000000',
   cursorActiveColor: '#0FA200',
   cursorOpacity: 0.5,
+  vrEnabled: false,
 };
 
 const timerduration = 5;
@@ -36,40 +39,54 @@ const introState = {
     count: timerduration,
   },
   sceneExists: false,
+  active: true,
 };
 
 function startTimer() {
-  // timer = setInterval
   const offset = 502; // radius of circle
+  introState.timer.count = timerduration;
+  document.querySelector('#count').textContent = introState.timer.count;
+  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / timerduration)));
   introState.timer.interval = setInterval(() => {
     introState.timer.count -= 1;
     document.querySelector('#count').textContent = introState.timer.count;
     document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / timerduration)));
-    // 502
-    if (introState.timer.count < 1) {
+    if (!introState.active) {
+      introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
       document.querySelector('#intro').classList.add('hide');
+    }
+    if (introState.timer.count < 0) {
+      introState.timer.count = timerduration;
+      clearInterval(introState.timer.interval);
+      document.querySelector('#intro').classList.add('hide');
+      introState.active = false;
+      state.vrEnabled = true;
       if (!introState.sceneExists) {
-        setupScene(data, state);
         introState.sceneExists = true;
+        setupScene(data, state);
+      } else {
+        updateSceneFromState(state);
       }
     }
   }, 1000);
 }
 
 function showSlide(id) {
-  introState.slide = id;
-  introState.slides.forEach((s) => {
-    if (s === id) {
-      document.querySelector(`#slide-${s}`).classList.remove('hide');
-    } else {
-      document.querySelector(`#slide-${s}`).classList.add('hide');
+  if (introState.active) {
+    introState.slide = id;
+    introState.slides.forEach((s) => {
+      if (s === id) {
+        document.querySelector(`#slide-${s}`).classList.remove('hide');
+      } else {
+        document.querySelector(`#slide-${s}`).classList.add('hide');
+      }
+    });
+    if (id === 2) {
+      startTimer();
+    } else if (introState.timer.interval) {
+      clearInterval(introState.timer.interval);
     }
-  });
-  if (id === 2) {
-    startTimer();
-  } else if (introState.timer.interval) {
-    clearInterval(introState.timer.interval);
   }
 }
 
@@ -77,53 +94,63 @@ function swapSlidesOnOrientation() {
   if (introState.slide === 1 || introState.slide === 0) {
     if (introState.orientation.includes('landscape')) {
       document.querySelector('#logo').classList.add('hide');
-      document.querySelector('#card').classList.add('horizontal');
+      // document.querySelector('#card').classList.add('horizontal');
       showSlide(2);
     }
   } else if (introState.slide === 2) {
     if (introState.orientation.includes('portrait')) {
       document.querySelector('#logo').classList.remove('hide');
-      document.querySelector('#card').classList.remove('horizontal');
+      // document.querySelector('#card').classList.remove('horizontal');
       showSlide(1);
     }
   }
 }
 
 function updateOrientation() {
-  let orientation = 'portrait-primary';
-  if (window.screen.orientation) {
-    orientation = window.screen.orientation.type;
-  } else if (window.screen.mozOrientation) {
-    orientation = window.screen.mozOrientation.type;
+  const screenOrientation = (window.innerWidth > window.innerHeight) ? 90 : 0;
+  //
+  let orientation = 'portrait';
+  if (screenOrientation === 90) {
+    orientation = 'landscape';
   }
   introState.orientation = orientation;
-  console.log(introState.orientation);
   //
   swapSlidesOnOrientation();
+}
+
+function showIntro() {
+  introState.active = true;
+  showSlide(0);
+  document.querySelector('#intro').classList.remove('hide');
 }
 
 function setupIntro() {
   document.querySelector('#logo').src = state.logo;
   //
   // updateOrientation();
-  window.addEventListener('orientationchange', updateOrientation, false);
+
+  window.addEventListener('resize', updateOrientation, false);
+  // window.addEventListener('orientationchange', updateOrientation, false);
   //
+  document.querySelector('#inbutton').addEventListener('click', showIntro, true);
   document.querySelector('#explore').addEventListener('click', () => showSlide(1), true);
   document.querySelector('#threesixty').addEventListener('click', () => {
     document.querySelector('#intro').classList.add('hide');
-    setupScene(data, state);
-    introState.sceneExists = true;
+    introState.active = false;
+    state.vrEnabled = false;
+    if (!introState.sceneExists) {
+      introState.sceneExists = true;
+      setupScene(data, state);
+    } else {
+      updateSceneFromState(state);
+    }
   }, true);
   //
 
   /*
     TEMP FOR DEV
   */
-  document.querySelector('#slide-1').addEventListener('click', () => {
-    document.querySelector('#logo').classList.add('hide');
-    document.querySelector('#card').classList.add('horizontal');
-    showSlide(2);
-  }, true);
+  document.querySelector('#slide-1').addEventListener('click', () => showSlide(2), true);
   /*
     TEMP FOR DEV
   */
