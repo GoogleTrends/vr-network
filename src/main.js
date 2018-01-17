@@ -14,15 +14,14 @@ import '../node_modules/webvr-polyfill/build/webvr-polyfill.min';
 import { generateTextureCanvas } from './generateTextureCanvas';
 import { generateCurveGeometry } from './generateCurveGeometry';
 import { generateHorizon, updateHorizonVisibility } from './elements/horizon';
-// import { generateFloor } from './elements/floor';
 import { generateButtons } from './elements/buttons';
 import { updateLineMaterials } from './materials/lineMaterials';
 import * as sphereMaterials from './materials/sphereMaterials';
 import * as legend from './elements/legend';
 import * as cursor from './elements/cursor';
-import * as scaleValue from './scaleValue';
 import * as stars from './elements/stars';
-// import * as intro from './elements/intro';
+import * as intro from './elements/intro';
+import * as scaleValue from './scaleValue';
 
 const worldState = {
   intro: {
@@ -70,9 +69,6 @@ let hoveredButton;
 const sceneBuildOutFunctions = [];
 const nodeLabels = [];
 
-export function sceneReady() {
-  worldState.intro.zooming = true;
-}
 
 function updateNetwork() {
   sceneObjects.nodes.children
@@ -299,7 +295,7 @@ export function requestPresent() {
   }
 }
 
-function toggleVREnabled(set, value) {
+export function toggleVREnabled(set, value) {
   enableNoSleep();
   // TODO: remove stereo from desktop when done w/ development
   if (set === true && value !== undefined) {
@@ -727,7 +723,7 @@ function takeAction(centerNode) {
     } else {
       globalData = cloneDeep(initData);
     }
-  }
+  // }
   // } else if (centerNode.type === 'Explore') {
   //   timer = null;
   //   if (vrDisplay.capabilities.canPresent) {
@@ -750,8 +746,10 @@ function takeAction(centerNode) {
   //     worldState.intro.zooming = true;
   //   }
   // } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
-  //   worldState.intro.zooming = true;
-  // }
+  } else if (centerNode.type === 'Ready?') {
+    worldState.intro.zooming = true;
+    layoutByRank();
+  }
 }
 
 function updateCursor() {
@@ -915,8 +913,8 @@ function drawNetwork() {
 
   updateNetwork();
 
-  layoutByRank();
-  // layoutInGrid();
+  // layoutByRank();
+  layoutInGrid();
 }
 
 function formatData() {
@@ -951,7 +949,13 @@ function buildOutScene() {
   if (sceneBuildOutFunctions.length === 0) return;
   const nextStep = sceneBuildOutFunctions.shift();
   nextStep();
-  setTimeout(buildOutScene, 1000);
+  setTimeout(buildOutScene, 100);
+}
+
+export function sceneReady() {
+  // worldState.intro.zooming = true;
+  // setTimeout(buildOutScene, 500);
+  buildOutScene();
 }
 
 export function setupScene(data, state) {
@@ -980,7 +984,6 @@ export function setupScene(data, state) {
   const ctx = renderer.context;
   ctx.getShaderInfoLog = () => ''; // Quiet shader complaint log: GL_ARB_gpu_shader5
 
-
   // Light
   scene.add(light);
 
@@ -989,24 +992,20 @@ export function setupScene(data, state) {
     flourishState.horizonTopColor,
     flourishState.horizonBottomColor,
     flourishState.horizonExponent,
+    true,
   ));
-
-
   scene.add(stars.generate(sceneObjects.stars, stageSize, 1000));
 
-  // scene.add(generateFloor(state, stageSize, controls.userHeight));
-
-  scene.add(legend.generate(state, lineMaterials, controls.userHeight));
-  scene.add(generateButtons(sceneObjects.buttons));
+  // scene.add(legend.generate(state, lineMaterials, controls.userHeight));
+  // scene.add(generateButtons(sceneObjects.buttons));
 
   const lookup = generateTextureCanvas('LOOK UP ^^^', 36, 256, 256);
   lookup.position.set(0, -0.75, -0.5);
   lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
   lookup.scale.set(0.005, 0.005, 0.005);
-  scene.add(lookup);
+  // scene.add(lookup);
 
   //
-  // scene.add(generateFloor(state, stageSize, controls.userHeight));
   // sceneObjects.intro = intro.generate(state, stageSize);
   // scene.add(sceneObjects.intro);
   //
@@ -1034,7 +1033,8 @@ export function setupScene(data, state) {
   // document.querySelector('#novr').addEventListener('click', skipVRReady, true);
 
   formatData();
-  // sceneBuildOutFunctions.push(formatData);
+
+  //
   sceneBuildOutFunctions.push(updateHorizonVisibility);
   sceneBuildOutFunctions.push(stars.updateStarMaterial);
   sceneBuildOutFunctions.push(() => {
@@ -1054,18 +1054,23 @@ export function setupScene(data, state) {
         });
       }).start();
   });
-  // sceneBuildOutFunctions.push(() => {
-  //   worldState.intro.zooming = true;
-  // });
+  //
+  sceneBuildOutFunctions.push(() => {
+    sceneObjects.intro = intro.generate(state, stageSize);
+    scene.add(sceneObjects.intro);
+  });
+  //
   sceneBuildOutFunctions.push(() => {
     scene.add(legend.generate(state, lineMaterials, controls.userHeight));
     scene.add(generateButtons(sceneObjects.buttons));
     scene.getObjectByName('updating').visible = false;
+    scene.add(lookup);
   });
-  setTimeout(buildOutScene, 500);
+  //
 }
 
 export function updateSceneFromState(state) {
+  console.log('update scene from state');
   flourishState = state;
   //
   camera.remove(camera.getObjectByName('cursor', true));
@@ -1096,7 +1101,7 @@ export function updateSceneFromState(state) {
     false,
   ));
   //
-  toggleVREnabled(true, flourishState.vrEnabled);
+  // toggleVREnabled(true, flourishState.vrEnabled);
   //
 }
 

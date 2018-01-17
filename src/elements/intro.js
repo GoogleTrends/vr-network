@@ -1,4 +1,4 @@
-/* global document, Flourish */
+/* global Flourish */
 
 import * as THREE from 'three';
 import { generateTextureCanvas } from '../generateTextureCanvas';
@@ -35,7 +35,8 @@ function generateIntroButton(name, image, width, yoffset, innerYOffset, zoffset)
   icon.position.set(-width / 4.75, innerYOffset, 64);
   button.add(icon);
   //
-  button.scale.set(0.8, 0.8, 0.8);
+  // button.scale.set(0.8, 0.8, 0.8);
+  button.scale.set(0.906, 0.906, 0.906);
   button.position.set(0, yoffset, zoffset);
   return button;
 }
@@ -45,9 +46,10 @@ export function generate(state, stageSize) {
   intro.name = 'intro';
 
   const width = 512;
-  const zoffset = 64;
+  const height = 512;
+  // const zoffset = 64;
 
-  const backgroundGeometry = new THREE.PlaneGeometry(width, width);
+  const backgroundGeometry = new THREE.PlaneGeometry(width, height);
   const backgroundMaterial = new THREE.MeshBasicMaterial({
     color: state.horizonBottomColor,
     transparent: true,
@@ -57,63 +59,89 @@ export function generate(state, stageSize) {
   const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
   intro.add(background);
 
-  const imgHeight = 128;
-  const image = document.createElement('img');
-  const texture = new THREE.Texture(image);
-  image.onload = () => { texture.needsUpdate = true; };
-  image.src = state.logo;
-  const logoGeometry = new THREE.PlaneGeometry(width, imgHeight);
-  const logoMaterial = new THREE.MeshBasicMaterial({
+  const rectSize = 220;
+  const textureLoader = new THREE.TextureLoader();
+  const imgGeometry = new THREE.PlaneGeometry(rectSize, rectSize);
+
+  const cursor = new THREE.Group();
+  const cursorMaterial = new THREE.MeshBasicMaterial({
+    map: textureLoader.load(`${Flourish.static_prefix}/cursor.png`),
     transparent: true,
-    map: texture,
     depthTest: false,
   });
-  const logo = new THREE.Mesh(logoGeometry, logoMaterial);
-  logo.name = 'logo';
-  logo.scale.set(0.8, 0.8, 0.8);
-  logo.position.set(0, 160, zoffset);
-  intro.add(logo);
+  cursor.add(new THREE.Mesh(imgGeometry, cursorMaterial));
+  const cursorText = generateTextureCanvas('Look at any node to show it\'s connections', 36, 512, 256, '', true);
+  cursorText.scale.set(0.43, 0.43, 0.43);
+  cursorText.position.set(0, -166, 0);
+  cursor.add(cursorText);
+  // const cursor = new THREE.Mesh(imgGeometry, cursorMaterial);
+  cursor.position.set(-122, 122, 1);
+  intro.add(cursor);
 
-  const title = generateTextureCanvas(state.title, 36, width, 128, '', true);
-  title.name = 'title';
-  title.scale.set(0.8, 0.8, 0.8);
-  title.position.set(0, 64, zoffset);
-  intro.add(title);
+  const fuse = new THREE.Group();
+  const fuseMaterial = new THREE.MeshBasicMaterial({
+    map: textureLoader.load(`${Flourish.static_prefix}/fuse.png`),
+    transparent: true,
+    depthTest: false,
+  });
+  fuse.add(new THREE.Mesh(imgGeometry, fuseMaterial));
+  const fuseText = generateTextureCanvas('When the cursor fills, the connected nodes will be brought into view', 36, 512, 256, '', true);
+  fuseText.scale.set(0.43, 0.43, 0.43);
+  fuseText.position.set(0, -166, 0);
+  fuse.add(fuseText);
+  // const fuse = new THREE.Mesh(imgGeometry, fuseMaterial);
+  fuse.position.set(122, 122, 1);
+  intro.add(fuse);
+
+
+  // icon.scale.set(0.65, 0.65, 0.65);
+  // icon.position.set(-width / 4.75, innerYOffset, 64);
+  // button.add(icon);
+
+  // const fuseMaterial = new THREE.MeshBasicMaterial({
+  //   map: textureLoader.load(`${Flourish.static_prefix}/fuse.gif`),
+  //   transparent: true,
+  //   depthTest: false,
+  // });
+
+  // const imgHeight = 128;
+  // const image = document.createElement('img');
+  // const texture = new THREE.Texture(image);
+  // image.onload = () => { texture.needsUpdate = true; };
+  // image.src = state.logo;
+  // const logoGeometry = new THREE.PlaneGeometry(width, imgHeight);
+  // const logoMaterial = new THREE.MeshBasicMaterial({
+  //   transparent: true,
+  //   map: texture,
+  //   depthTest: false,
+  // });
+  // const logo = new THREE.Mesh(logoGeometry, logoMaterial);
+  // logo.name = 'logo';
+  // logo.scale.set(0.8, 0.8, 0.8);
+  // logo.position.set(0, 160, zoffset);
+  // intro.add(logo);
+
+  // state.title
+  // const headset = generateTextureCanvas('If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
+  // headset.name = 'headset';
+  // headset.scale.set(0.8, 0.8, 0.8);
+  // headset.position.set(0, -210, zoffset);
+  // intro.add(headset);
+
+  // state.description
+  // const headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore!', 36, width, 256, '', true);
+  // headsetDescription.name = 'headsetDescription';
+  // headsetDescription.scale.set(0.8, 0.8, 0.8);
+  // headsetDescription.position.set(0, -72, zoffset);
+  // intro.add(headsetDescription);
 
   //
-  const headset = generateTextureCanvas('If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
-  headset.name = 'headset';
-  headset.scale.set(0.8, 0.8, 0.8);
-  headset.position.set(0, -210, zoffset);
-  headset.visible = false;
-  intro.add(headset);
-  //
-
-  const description = generateTextureCanvas(state.description, 18, width, 64, '', true);
-  description.name = 'description';
-  description.scale.set(0.8, 0.8, 0.8);
-  description.position.set(0, -16, zoffset);
-  intro.add(description);
-
-  //
-  const headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore!', 36, width, 256, '', true);
-  headsetDescription.name = 'headsetDescription';
-  headsetDescription.scale.set(0.8, 0.8, 0.8);
-  headsetDescription.position.set(0, -72, zoffset);
-  headsetDescription.visible = false;
-  intro.add(headsetDescription);
-  //
-
-  intro.add(generateIntroButton('Explore', 'cardboard.png', width, -140, 12, zoffset));
-
-  //
-  const ready = generateIntroButton('Ready?', 'cardboard.png', width, 130, -16, zoffset);
-  ready.visible = false;
+  const ready = generateIntroButton('Ready?', 'cardboard.png', 512, -160, 16, 0);
   intro.add(ready);
-  //
 
   intro.scale.set(0.01, 0.01, 0.01);
-  intro.position.set(0, stageSize / 5, 0);
+  // intro.position.set(0, -0.1, stageSize / 5);
+  intro.position.set(0, 1.5, stageSize / 4);
 
   return intro;
 }

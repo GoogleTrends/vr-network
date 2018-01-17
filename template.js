@@ -49780,34 +49780,6 @@ function generate$2(state) {
   return container;
 }
 
-function toRange(value, domain, range) {
-  return (value - domain.min) / (domain.max - domain.min) * (range.max - range.min) + range.min;
-}
-
-function toRangeWithGap(value, domain, range, gap) {
-  var scaledValue = value;
-  var halfDomain = domain.min + (domain.max - domain.min) / 2;
-  var halfRange = range.min + (range.max - range.min) / 2;
-  if (value < halfDomain) {
-    scaledValue = toRange(value, {
-      min: domain.min,
-      max: halfDomain
-    }, {
-      min: range.min,
-      max: halfRange - gap / 2
-    });
-  } else {
-    scaledValue = toRange(value, {
-      min: halfDomain,
-      max: domain.max
-    }, {
-      min: halfRange + gap / 2,
-      max: range.max
-    });
-  }
-  return scaledValue;
-}
-
 var shootingstar = null;
 var starMaterial = new MeshBasicMaterial({
   color: 0xffffff,
@@ -49847,6 +49819,175 @@ function updateStarMaterial() {
   }, 500).onComplete(function () {
     starMaterial.transparent = false;
   }).start();
+}
+
+/* global Flourish */
+
+function generateIntroButton(name, image, width, yoffset, innerYOffset, zoffset) {
+  var button = new Group();
+  button.name = name;
+  button.userData.type = name;
+  var text = generateTextureCanvas(name, 36, width / 2, width / 2, '', false);
+  text.position.set(width / 4.75, innerYOffset, 64);
+  text.userData.type = 'text';
+  button.add(text);
+  var rect = new Mesh(new PlaneGeometry(width, width / 2 * 0.65), new MeshBasicMaterial({
+    color: new Color('#FFFFFF'),
+    transparent: true,
+    opacity: 0.1
+  }));
+  rect.position.set(0, 0, 1);
+  rect.userData.type = 'button';
+  button.add(rect);
+  //
+  var textureLoader = new TextureLoader();
+  var imgGeometry = new PlaneGeometry(256, 256);
+  var imgMaterial = new MeshBasicMaterial({
+    map: textureLoader.load(Flourish.static_prefix + '/' + image),
+    transparent: true,
+    depthTest: false
+  });
+  var icon = new Mesh(imgGeometry, imgMaterial);
+  icon.scale.set(0.65, 0.65, 0.65);
+  icon.position.set(-width / 4.75, innerYOffset, 64);
+  button.add(icon);
+  //
+  // button.scale.set(0.8, 0.8, 0.8);
+  button.scale.set(0.906, 0.906, 0.906);
+  button.position.set(0, yoffset, zoffset);
+  return button;
+}
+
+function generate$5(state, stageSize) {
+  var intro = new Group();
+  intro.name = 'intro';
+
+  var width = 512;
+  var height = 512;
+  // const zoffset = 64;
+
+  var backgroundGeometry = new PlaneGeometry(width, height);
+  var backgroundMaterial = new MeshBasicMaterial({
+    color: state.horizonBottomColor,
+    transparent: true,
+    opacity: 0.75,
+    depthTest: false
+  });
+  var background = new Mesh(backgroundGeometry, backgroundMaterial);
+  intro.add(background);
+
+  var rectSize = 220;
+  var textureLoader = new TextureLoader();
+  var imgGeometry = new PlaneGeometry(rectSize, rectSize);
+
+  var cursor = new Group();
+  var cursorMaterial = new MeshBasicMaterial({
+    map: textureLoader.load(Flourish.static_prefix + '/cursor.png'),
+    transparent: true,
+    depthTest: false
+  });
+  cursor.add(new Mesh(imgGeometry, cursorMaterial));
+  var cursorText = generateTextureCanvas('Look at any node to show it\'s connections', 36, 512, 256, '', true);
+  cursorText.scale.set(0.43, 0.43, 0.43);
+  cursorText.position.set(0, -166, 0);
+  cursor.add(cursorText);
+  // const cursor = new THREE.Mesh(imgGeometry, cursorMaterial);
+  cursor.position.set(-122, 122, 1);
+  intro.add(cursor);
+
+  var fuse = new Group();
+  var fuseMaterial = new MeshBasicMaterial({
+    map: textureLoader.load(Flourish.static_prefix + '/fuse.png'),
+    transparent: true,
+    depthTest: false
+  });
+  fuse.add(new Mesh(imgGeometry, fuseMaterial));
+  var fuseText = generateTextureCanvas('When the cursor fills, the connected nodes will be brought into view', 36, 512, 256, '', true);
+  fuseText.scale.set(0.43, 0.43, 0.43);
+  fuseText.position.set(0, -166, 0);
+  fuse.add(fuseText);
+  // const fuse = new THREE.Mesh(imgGeometry, fuseMaterial);
+  fuse.position.set(122, 122, 1);
+  intro.add(fuse);
+
+  // icon.scale.set(0.65, 0.65, 0.65);
+  // icon.position.set(-width / 4.75, innerYOffset, 64);
+  // button.add(icon);
+
+  // const fuseMaterial = new THREE.MeshBasicMaterial({
+  //   map: textureLoader.load(`${Flourish.static_prefix}/fuse.gif`),
+  //   transparent: true,
+  //   depthTest: false,
+  // });
+
+  // const imgHeight = 128;
+  // const image = document.createElement('img');
+  // const texture = new THREE.Texture(image);
+  // image.onload = () => { texture.needsUpdate = true; };
+  // image.src = state.logo;
+  // const logoGeometry = new THREE.PlaneGeometry(width, imgHeight);
+  // const logoMaterial = new THREE.MeshBasicMaterial({
+  //   transparent: true,
+  //   map: texture,
+  //   depthTest: false,
+  // });
+  // const logo = new THREE.Mesh(logoGeometry, logoMaterial);
+  // logo.name = 'logo';
+  // logo.scale.set(0.8, 0.8, 0.8);
+  // logo.position.set(0, 160, zoffset);
+  // intro.add(logo);
+
+  // state.title
+  // const headset = generateTextureCanvas('If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
+  // headset.name = 'headset';
+  // headset.scale.set(0.8, 0.8, 0.8);
+  // headset.position.set(0, -210, zoffset);
+  // intro.add(headset);
+
+  // state.description
+  // const headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore!', 36, width, 256, '', true);
+  // headsetDescription.name = 'headsetDescription';
+  // headsetDescription.scale.set(0.8, 0.8, 0.8);
+  // headsetDescription.position.set(0, -72, zoffset);
+  // intro.add(headsetDescription);
+
+  //
+  var ready = generateIntroButton('Ready?', 'cardboard.png', 512, -160, 16, 0);
+  intro.add(ready);
+
+  intro.scale.set(0.01, 0.01, 0.01);
+  // intro.position.set(0, -0.1, stageSize / 5);
+  intro.position.set(0, 1.5, stageSize / 4);
+
+  return intro;
+}
+
+function toRange(value, domain, range) {
+  return (value - domain.min) / (domain.max - domain.min) * (range.max - range.min) + range.min;
+}
+
+function toRangeWithGap(value, domain, range, gap) {
+  var scaledValue = value;
+  var halfDomain = domain.min + (domain.max - domain.min) / 2;
+  var halfRange = range.min + (range.max - range.min) / 2;
+  if (value < halfDomain) {
+    scaledValue = toRange(value, {
+      min: domain.min,
+      max: halfDomain
+    }, {
+      min: range.min,
+      max: halfRange - gap / 2
+    });
+  } else {
+    scaledValue = toRange(value, {
+      min: halfDomain,
+      max: domain.max
+    }, {
+      min: halfRange + gap / 2,
+      max: range.max
+    });
+  }
+  return scaledValue;
 }
 
 var asyncGenerator = function () {
@@ -50058,9 +50199,6 @@ var toConsumableArray = function (arr) {
 
 /* global window, document, navigator, performance, Flourish */
 
-// import { generateFloor } from './elements/floor';
-// import * as intro from './elements/intro';
-
 var worldState = {
   intro: {
     active: true,
@@ -50106,10 +50244,6 @@ var hoveredButton = void 0;
 
 var sceneBuildOutFunctions = [];
 var nodeLabels = [];
-
-function sceneReady() {
-  worldState.intro.zooming = true;
-}
 
 function updateNetwork() {
   sceneObjects.nodes.children.forEach(function (n) {
@@ -50701,31 +50835,33 @@ function takeAction(centerNode) {
     } else {
       globalData = lodash_clonedeep(initData);
     }
+    // }
+    // } else if (centerNode.type === 'Explore') {
+    //   timer = null;
+    //   if (vrDisplay.capabilities.canPresent) {
+    //   // if (true) {
+    //     //
+    //     document.querySelector('#centerline').classList.add('enabled');
+    //     document.querySelector('#intro').classList.remove('hide');
+    //     //
+    //     sceneObjects.intro.getObjectByName('logo', true).visible = false;
+    //     sceneObjects.intro.getObjectByName('title', true).visible = false;
+    //     sceneObjects.intro.getObjectByName('headset', true).visible = true;
+    //     sceneObjects.intro.getObjectByName('description', true).visible = false;
+    //     sceneObjects.intro.getObjectByName('headsetDescription', true).visible = true;
+    //     sceneObjects.intro.getObjectByName('Explore', true).visible = false;
+    //     sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
+    //     //
+    //   } else {
+    //     renderer.setSize(window.innerWidth, window.innerHeight);
+    //     effect.setSize(window.innerWidth, window.innerHeight);
+    //     worldState.intro.zooming = true;
+    //   }
+    // } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
+  } else if (centerNode.type === 'Ready?') {
+    worldState.intro.zooming = true;
+    layoutByRank();
   }
-  // } else if (centerNode.type === 'Explore') {
-  //   timer = null;
-  //   if (vrDisplay.capabilities.canPresent) {
-  //   // if (true) {
-  //     //
-  //     document.querySelector('#centerline').classList.add('enabled');
-  //     document.querySelector('#intro').classList.remove('hide');
-  //     //
-  //     sceneObjects.intro.getObjectByName('logo', true).visible = false;
-  //     sceneObjects.intro.getObjectByName('title', true).visible = false;
-  //     sceneObjects.intro.getObjectByName('headset', true).visible = true;
-  //     sceneObjects.intro.getObjectByName('description', true).visible = false;
-  //     sceneObjects.intro.getObjectByName('headsetDescription', true).visible = true;
-  //     sceneObjects.intro.getObjectByName('Explore', true).visible = false;
-  //     sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
-  //     //
-  //   } else {
-  //     renderer.setSize(window.innerWidth, window.innerHeight);
-  //     effect.setSize(window.innerWidth, window.innerHeight);
-  //     worldState.intro.zooming = true;
-  //   }
-  // } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
-  //   worldState.intro.zooming = true;
-  // }
 }
 
 function updateCursor() {
@@ -50877,8 +51013,8 @@ function drawNetwork() {
 
   updateNetwork();
 
-  layoutByRank();
-  // layoutInGrid();
+  // layoutByRank();
+  layoutInGrid();
 }
 
 function formatData() {
@@ -50917,7 +51053,13 @@ function buildOutScene() {
   if (sceneBuildOutFunctions.length === 0) return;
   var nextStep = sceneBuildOutFunctions.shift();
   nextStep();
-  setTimeout(buildOutScene, 1000);
+  setTimeout(buildOutScene, 100);
+}
+
+function sceneReady() {
+  // worldState.intro.zooming = true;
+  // setTimeout(buildOutScene, 500);
+  buildOutScene();
 }
 
 function setupScene(data, state) {
@@ -50948,28 +51090,23 @@ function setupScene(data, state) {
     return '';
   }; // Quiet shader complaint log: GL_ARB_gpu_shader5
 
-
   // Light
   scene.add(light);
 
   // Generate Non-network Scene Elements
-  scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent));
-
+  scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent, true));
   scene.add(generate$4(sceneObjects.stars, stageSize, 1000));
 
-  // scene.add(generateFloor(state, stageSize, controls.userHeight));
-
-  scene.add(generate(state, lineMaterials, controls.userHeight));
-  scene.add(generateButtons(sceneObjects.buttons));
+  // scene.add(legend.generate(state, lineMaterials, controls.userHeight));
+  // scene.add(generateButtons(sceneObjects.buttons));
 
   var lookup = generateTextureCanvas('LOOK UP ^^^', 36, 256, 256);
   lookup.position.set(0, -0.75, -0.5);
   lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
   lookup.scale.set(0.005, 0.005, 0.005);
-  scene.add(lookup);
+  // scene.add(lookup);
 
   //
-  // scene.add(generateFloor(state, stageSize, controls.userHeight));
   // sceneObjects.intro = intro.generate(state, stageSize);
   // scene.add(sceneObjects.intro);
   //
@@ -50997,7 +51134,8 @@ function setupScene(data, state) {
   // document.querySelector('#novr').addEventListener('click', skipVRReady, true);
 
   formatData();
-  // sceneBuildOutFunctions.push(formatData);
+
+  //
   sceneBuildOutFunctions.push(updateHorizonVisibility);
   sceneBuildOutFunctions.push(updateStarMaterial);
   sceneBuildOutFunctions.push(function () {
@@ -51015,18 +51153,23 @@ function setupScene(data, state) {
       });
     }).start();
   });
-  // sceneBuildOutFunctions.push(() => {
-  //   worldState.intro.zooming = true;
-  // });
+  //
+  sceneBuildOutFunctions.push(function () {
+    sceneObjects.intro = generate$5(state, stageSize);
+    scene.add(sceneObjects.intro);
+  });
+  //
   sceneBuildOutFunctions.push(function () {
     scene.add(generate(state, lineMaterials, controls.userHeight));
     scene.add(generateButtons(sceneObjects.buttons));
     scene.getObjectByName('updating').visible = false;
+    scene.add(lookup);
   });
-  setTimeout(buildOutScene, 500);
+  //
 }
 
 function updateSceneFromState(state) {
+  console.log('update scene from state');
   flourishState = state;
   //
   camera.remove(camera.getObjectByName('cursor', true));
@@ -51052,7 +51195,7 @@ function updateSceneFromState(state) {
   scene.remove(scene.getObjectByName('horizon', true));
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent, false));
   //
-  toggleVREnabled(true, flourishState.vrEnabled);
+  // toggleVREnabled(true, flourishState.vrEnabled);
   //
 }
 
@@ -51082,8 +51225,7 @@ var state = {
   cursorInnerColor: '#ffffff',
   cursorOuterColor: '#000000',
   cursorActiveColor: '#0FA200',
-  cursorOpacity: 0.5,
-  vrEnabled: false
+  cursorOpacity: 0.5
 };
 
 var timerduration = 5;
@@ -51097,7 +51239,8 @@ var introState = {
     count: timerduration
   },
   sceneExists: false,
-  active: true
+  active: true,
+  vrEnabled: false
 };
 
 function enterScene() {
@@ -51106,8 +51249,8 @@ function enterScene() {
   if (!introState.sceneExists) {
     introState.sceneExists = true;
     setupScene(data, state);
-  } else {
-    updateSceneFromState(state);
+    // } else {
+    //   updateSceneFromState(state);
   }
   sceneReady();
 }
@@ -51130,7 +51273,8 @@ function startTimer() {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
       //
-      state.vrEnabled = true;
+      // state.vrEnabled = true;
+      toggleVREnabled(true, true);
       enterScene();
     }
   }, 1000);
@@ -51157,14 +51301,12 @@ function showSlide(id) {
 function swapSlidesOnOrientation() {
   if (introState.slide === 1 || introState.slide === 0) {
     if (introState.orientation.includes('landscape')) {
-      document.querySelector('#logo').classList.add('hide');
-      // document.querySelector('#card').classList.add('horizontal');
+      // document.querySelector('#logo').classList.add('hide');
       showSlide(2);
     }
   } else if (introState.slide === 2) {
     if (introState.orientation.includes('portrait')) {
-      document.querySelector('#logo').classList.remove('hide');
-      // document.querySelector('#card').classList.remove('horizontal');
+      // document.querySelector('#logo').classList.remove('hide');
       showSlide(1);
     }
   }
@@ -51209,7 +51351,8 @@ function setupIntro() {
     return showSlide(1);
   }, true);
   document.querySelector('#threesixty').addEventListener('click', function () {
-    state.vrEnabled = false;
+    // state.vrEnabled = false;
+    toggleVREnabled(true, false);
     enterScene();
   }, true);
   //

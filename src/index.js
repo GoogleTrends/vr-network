@@ -2,7 +2,7 @@
 
 // import cloneDeep from 'lodash.clonedeep';
 
-import { setupScene, updateSceneFromState, requestPresent, sceneReady } from './main';
+import { setupScene, updateSceneFromState, requestPresent, toggleVREnabled, sceneReady } from './main';
 import { logoURI } from './logo';
 
 export const data = {};
@@ -26,7 +26,6 @@ export const state = {
   cursorOuterColor: '#000000',
   cursorActiveColor: '#0FA200',
   cursorOpacity: 0.5,
-  vrEnabled: false,
 };
 
 const timerduration = 5;
@@ -41,6 +40,7 @@ const introState = {
   },
   sceneExists: false,
   active: true,
+  vrEnabled: false,
 };
 
 function enterScene() {
@@ -49,8 +49,8 @@ function enterScene() {
   if (!introState.sceneExists) {
     introState.sceneExists = true;
     setupScene(data, state);
-  } else {
-    updateSceneFromState(state);
+  // } else {
+  //   updateSceneFromState(state);
   }
   sceneReady();
 }
@@ -73,7 +73,8 @@ function startTimer() {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
       //
-      state.vrEnabled = true;
+      // state.vrEnabled = true;
+      toggleVREnabled(true, true);
       enterScene();
     }
   }, 1000);
@@ -100,14 +101,12 @@ function showSlide(id) {
 function swapSlidesOnOrientation() {
   if (introState.slide === 1 || introState.slide === 0) {
     if (introState.orientation.includes('landscape')) {
-      document.querySelector('#logo').classList.add('hide');
-      // document.querySelector('#card').classList.add('horizontal');
+      // document.querySelector('#logo').classList.add('hide');
       showSlide(2);
     }
   } else if (introState.slide === 2) {
     if (introState.orientation.includes('portrait')) {
-      document.querySelector('#logo').classList.remove('hide');
-      // document.querySelector('#card').classList.remove('horizontal');
+      // document.querySelector('#logo').classList.remove('hide');
       showSlide(1);
     }
   }
@@ -150,7 +149,8 @@ function setupIntro() {
   document.querySelector('#inbutton').addEventListener('click', showIntro, true);
   document.querySelector('#explore').addEventListener('click', () => showSlide(1), true);
   document.querySelector('#threesixty').addEventListener('click', () => {
-    state.vrEnabled = false;
+    // state.vrEnabled = false;
+    toggleVREnabled(true, false);
     enterScene();
   }, true);
   //
