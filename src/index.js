@@ -73,11 +73,10 @@ function startTimer() {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
       //
-      // state.vrEnabled = true;
       toggleVREnabled(true, true);
       enterScene();
     }
-  }, 1000);
+  }, 2000);
 }
 
 function showSlide(id) {

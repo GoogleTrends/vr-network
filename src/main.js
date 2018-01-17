@@ -949,7 +949,7 @@ function buildOutScene() {
   if (sceneBuildOutFunctions.length === 0) return;
   const nextStep = sceneBuildOutFunctions.shift();
   nextStep();
-  setTimeout(buildOutScene, 100);
+  setTimeout(buildOutScene, 1000);
 }
 
 export function sceneReady() {
@@ -999,11 +999,25 @@ export function setupScene(data, state) {
   // scene.add(legend.generate(state, lineMaterials, controls.userHeight));
   // scene.add(generateButtons(sceneObjects.buttons));
 
-  const lookup = generateTextureCanvas('LOOK UP ^^^', 36, 256, 256);
-  lookup.position.set(0, -0.75, -0.5);
-  lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
-  lookup.scale.set(0.005, 0.005, 0.005);
+  // const lookup = generateTextureCanvas('LOOK UP ^^^', 36, 256, 256);
+  // lookup.position.set(0, -0.75, -0.5);
+  // lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
+  // lookup.scale.set(0.005, 0.005, 0.005);
   // scene.add(lookup);
+
+  //
+  const rectSize = 220;
+  const textureLoader = new THREE.TextureLoader();
+  const imgGeometry = new THREE.PlaneGeometry(rectSize, rectSize);
+  const lookMaterial = new THREE.MeshBasicMaterial({
+    map: textureLoader.load(`${Flourish.static_prefix}/cursor.png`),
+    transparent: true,
+    depthTest: false,
+  });
+  const lookup = new THREE.Mesh(imgGeometry, lookMaterial);
+  lookup.position.set(-122, 122, 1);
+  scene.add(lookup);
+  //
 
   //
   // sceneObjects.intro = intro.generate(state, stageSize);
