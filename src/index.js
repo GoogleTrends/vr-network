@@ -2,7 +2,7 @@
 
 // import cloneDeep from 'lodash.clonedeep';
 
-import { setupScene, updateSceneFromState } from './main';
+import { setupScene, updateSceneFromState, requestPresent, sceneReady } from './main';
 import { logoURI } from './logo';
 
 export const data = {};
@@ -33,7 +33,8 @@ const timerduration = 5;
 const introState = {
   slide: 0,
   slides: [0, 1, 2],
-  orientation: 'portrait-primary',
+  width: 0,
+  orientation: 'portrait',
   timer: {
     interval: null,
     count: timerduration,
@@ -42,15 +43,27 @@ const introState = {
   active: true,
 };
 
+function enterScene() {
+  document.querySelector('#intro').classList.add('hide');
+  introState.active = false;
+  if (!introState.sceneExists) {
+    introState.sceneExists = true;
+    setupScene(data, state);
+  } else {
+    updateSceneFromState(state);
+  }
+  sceneReady();
+}
+
 function startTimer() {
   const offset = 502; // radius of circle
   introState.timer.count = timerduration;
   document.querySelector('#count').textContent = introState.timer.count;
-  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / timerduration)));
+  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration + 1))));
   introState.timer.interval = setInterval(() => {
     introState.timer.count -= 1;
     document.querySelector('#count').textContent = introState.timer.count;
-    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / timerduration)));
+    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration + 1))));
     if (!introState.active) {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
@@ -59,15 +72,9 @@ function startTimer() {
     if (introState.timer.count < 0) {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
-      document.querySelector('#intro').classList.add('hide');
-      introState.active = false;
+      //
       state.vrEnabled = true;
-      if (!introState.sceneExists) {
-        introState.sceneExists = true;
-        setupScene(data, state);
-      } else {
-        updateSceneFromState(state);
-      }
+      enterScene();
     }
   }, 1000);
 }
@@ -107,15 +114,18 @@ function swapSlidesOnOrientation() {
 }
 
 function updateOrientation() {
-  const screenOrientation = (window.innerWidth > window.innerHeight) ? 90 : 0;
-  //
-  let orientation = 'portrait';
-  if (screenOrientation === 90) {
-    orientation = 'landscape';
+  if (introState.width !== window.innerWidth) {
+    const screenOrientation = (window.innerWidth > window.innerHeight) ? 90 : 0;
+    //
+    let orientation = 'portrait';
+    if (screenOrientation === 90) {
+      orientation = 'landscape';
+    }
+    introState.orientation = orientation;
+    introState.width = window.innerWidth;
+    //
+    swapSlidesOnOrientation();
   }
-  introState.orientation = orientation;
-  //
-  swapSlidesOnOrientation();
 }
 
 function showIntro() {
@@ -128,29 +138,27 @@ function setupIntro() {
   document.querySelector('#logo').src = state.logo;
   //
   // updateOrientation();
-
+  introState.width = window.innerWidth;
   window.addEventListener('resize', updateOrientation, false);
   // window.addEventListener('orientationchange', updateOrientation, false);
+
+  //
+  document.querySelector('#intro').addEventListener('click', requestPresent, true);
+  //
+
   //
   document.querySelector('#inbutton').addEventListener('click', showIntro, true);
   document.querySelector('#explore').addEventListener('click', () => showSlide(1), true);
   document.querySelector('#threesixty').addEventListener('click', () => {
-    document.querySelector('#intro').classList.add('hide');
-    introState.active = false;
     state.vrEnabled = false;
-    if (!introState.sceneExists) {
-      introState.sceneExists = true;
-      setupScene(data, state);
-    } else {
-      updateSceneFromState(state);
-    }
+    enterScene();
   }, true);
   //
 
   /*
     TEMP FOR DEV
   */
-  document.querySelector('#slide-1').addEventListener('click', () => showSlide(2), true);
+  // document.querySelector('#slide-1').addEventListener('click', () => showSlide(2), true);
   /*
     TEMP FOR DEV
   */
@@ -175,12 +183,14 @@ export function draw() {
     google: {
       families: ['Roboto Condensed:300,400,700'],
     },
-    // active: () => {
-    //   // setupScene(data, state);
-    // },
-    // inactive: () => {
-    //   // setupScene(data, state);
-    // },
-    // timeout: 2000,
+    active: () => {
+      setupScene(data, state);
+      introState.sceneExists = true;
+    },
+    inactive: () => {
+      setupScene(data, state);
+      introState.sceneExists = true;
+    },
+    timeout: 2000,
   });
 }

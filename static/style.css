@@ -34,6 +34,7 @@ canvas {
   border-radius: 4px;
   background-size: cover;
   background-repeat: none;
+  user-select: none;
   opacity: 0.5;
 }
 
@@ -132,7 +133,16 @@ p {
 }
 
 a {
-  text-decoration: none;
+  color: white;
+}
+
+.introlink {
+  width: 128px;
+  text-transform: uppercase;
+  text-align: center;
+  margin: auto;
+  padding: 1em;
+  color: white;
 }
 
 .cardboard {
