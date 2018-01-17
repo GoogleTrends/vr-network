@@ -33,6 +33,7 @@ const timerduration = 5;
 const introState = {
   slide: 0,
   slides: [0, 1, 2],
+  width: 0,
   orientation: 'portrait',
   timer: {
     interval: null,
@@ -113,15 +114,18 @@ function swapSlidesOnOrientation() {
 }
 
 function updateOrientation() {
-  const screenOrientation = (window.innerWidth > window.innerHeight) ? 90 : 0;
-  //
-  let orientation = 'portrait';
-  if (screenOrientation === 90) {
-    orientation = 'landscape';
+  if (introState.width !== window.innerWidth) {
+    const screenOrientation = (window.innerWidth > window.innerHeight) ? 90 : 0;
+    //
+    let orientation = 'portrait';
+    if (screenOrientation === 90) {
+      orientation = 'landscape';
+    }
+    introState.orientation = orientation;
+    introState.width = window.innerWidth;
+    //
+    swapSlidesOnOrientation();
   }
-  introState.orientation = orientation;
-  //
-  swapSlidesOnOrientation();
 }
 
 function showIntro() {
@@ -134,7 +138,7 @@ function setupIntro() {
   document.querySelector('#logo').src = state.logo;
   //
   // updateOrientation();
-
+  introState.width = window.innerWidth;
   window.addEventListener('resize', updateOrientation, false);
   // window.addEventListener('orientationchange', updateOrientation, false);
 
@@ -154,7 +158,7 @@ function setupIntro() {
   /*
     TEMP FOR DEV
   */
-  document.querySelector('#slide-1').addEventListener('click', () => showSlide(2), true);
+  // document.querySelector('#slide-1').addEventListener('click', () => showSlide(2), true);
   /*
     TEMP FOR DEV
   */

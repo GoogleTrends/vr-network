@@ -49372,9 +49372,27 @@ function enableNoSleep() {
 
 function requestPresent() {
   enableNoSleep();
+  //
   if (vrDisplay.capabilities.canPresent) {
-    vrDisplay.requestPresent([{ source: document.body }]);
+    var element = document.documentElement;
+    if (element.requestFullscreen) {
+      element.requestFullscreen();
+    } else if (element.mozRequestFullScreen) {
+      element.mozRequestFullScreen();
+    } else if (element.webkitRequestFullScreen) {
+      element.webkitRequestFullScreen();
+    } else if (element.msRequestFullscreen) {
+      element.msRequestFullscreen();
+    }
   }
+  //
+  // if (vrDisplay.capabilities.canPresent) {
+  // console.log(document.documentElement);
+  // console.log(document.documentElement);
+  // document.documentElement.requestFullscreen();
+  // document.documentElement.requestFullscreen();
+  //   vrDisplay.requestPresent([{ source: document.body }]);
+  // }
 }
 
 function toggleVREnabled(set, value) {
@@ -50098,6 +50116,7 @@ var timerduration = 5;
 var introState = {
   slide: 0,
   slides: [0, 1, 2],
+  width: 0,
   orientation: 'portrait',
   timer: {
     interval: null,
@@ -50178,15 +50197,18 @@ function swapSlidesOnOrientation() {
 }
 
 function updateOrientation() {
-  var screenOrientation = window.innerWidth > window.innerHeight ? 90 : 0;
-  //
-  var orientation = 'portrait';
-  if (screenOrientation === 90) {
-    orientation = 'landscape';
+  if (introState.width !== window.innerWidth) {
+    var screenOrientation = window.innerWidth > window.innerHeight ? 90 : 0;
+    //
+    var orientation = 'portrait';
+    if (screenOrientation === 90) {
+      orientation = 'landscape';
+    }
+    introState.orientation = orientation;
+    introState.width = window.innerWidth;
+    //
+    swapSlidesOnOrientation();
   }
-  introState.orientation = orientation;
-  //
-  swapSlidesOnOrientation();
 }
 
 function showIntro() {
@@ -50199,7 +50221,7 @@ function setupIntro() {
   document.querySelector('#logo').src = state.logo;
   //
   // updateOrientation();
-
+  introState.width = window.innerWidth;
   window.addEventListener('resize', updateOrientation, false);
   // window.addEventListener('orientationchange', updateOrientation, false);
 
@@ -50221,9 +50243,7 @@ function setupIntro() {
   /*
     TEMP FOR DEV
   */
-  document.querySelector('#slide-1').addEventListener('click', function () {
-    return showSlide(2);
-  }, true);
+  // document.querySelector('#slide-1').addEventListener('click', () => showSlide(2), true);
   /*
     TEMP FOR DEV
   */

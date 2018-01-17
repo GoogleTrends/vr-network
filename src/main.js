@@ -281,7 +281,16 @@ function enableNoSleep() {
 export function requestPresent() {
   enableNoSleep();
   if (vrDisplay.capabilities.canPresent) {
-    vrDisplay.requestPresent([{ source: document.body }]);
+    const element = document.documentElement;
+    if (element.requestFullscreen) {
+      element.requestFullscreen();
+    } else if (element.mozRequestFullScreen) {
+      element.mozRequestFullScreen();
+    } else if (element.webkitRequestFullScreen) {
+      element.webkitRequestFullScreen();
+    } else if (element.msRequestFullscreen) {
+      element.msRequestFullscreen();
+    }
   }
 }
 
