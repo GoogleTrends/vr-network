@@ -1,10 +1,15 @@
 import * as THREE from 'three';
+import TWEEN from '@tweenjs/tween.js';
 
 let shootingstar = null;
+const starMaterial = new THREE.MeshBasicMaterial({
+  color: 0xffffff,
+  transparent: true,
+  opacity: 0,
+});
 
 export function generate(container, stageSize, count) {
   const starGeometry = new THREE.SphereGeometry(0.005, 12);
-  const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
   let s = 0;
   while (s < count) {
     const star = new THREE.Mesh(starGeometry, starMaterial);
@@ -39,4 +44,15 @@ export function update(container, stageSize, time) {
       (Math.random() - 0.5) * stageSize * 2,
     );
   }
+}
+
+export function updateStarMaterial() {
+  new TWEEN.Tween(starMaterial)
+    .to({
+      opacity: 1,
+    }, 500)
+    .onComplete(() => {
+      starMaterial.transparent = false;
+    })
+    .start();
 }
