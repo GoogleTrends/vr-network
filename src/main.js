@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 import cloneDeep from 'lodash.clonedeep';
+import TWEEN from '@tweenjs/tween.js';
 import MeshLine from '../three_modules/THREE.MeshLine';
 import StereoEffect from '../three_modules/StereoEffect';
 import VRControls from '../three_modules/VRControls';
@@ -9,9 +10,10 @@ import d3Force from '../node_modules/d3-force-3d/build/d3-force-3d.min';
 import NoSleep from '../node_modules/nosleep.js/dist/NoSleep';
 import '../node_modules/webvr-polyfill/build/webvr-polyfill.min';
 
+
 import { generateTextureCanvas } from './generateTextureCanvas';
 import { generateCurveGeometry } from './generateCurveGeometry';
-import { generateHorizon } from './elements/horizon';
+import { generateHorizon, updateHorizonVisibility } from './elements/horizon';
 // import { generateFloor } from './elements/floor';
 import { generateButtons } from './elements/buttons';
 import { updateLineMaterials } from './materials/lineMaterials';
@@ -26,7 +28,7 @@ const worldState = {
   intro: {
     active: true,
     headset: false,
-    zooming: true,
+    zooming: false,
   },
   vrEnabled: false,
   isTransitioning: false,
@@ -64,6 +66,9 @@ let vrDisplay;
 let intersected;
 let lineMaterials;
 let hoveredButton;
+
+const sceneBuildOutFunctions = [];
+const nodeLabels = [];
 
 function updateNetwork() {
   sceneObjects.nodes.children
@@ -463,7 +468,10 @@ function checkIntersected() {
   //
   let intersects = [];
   if (worldState.intro.active) {
-    intersects = [...new Set([...raycaster.intersectObjects([scene.getObjectByName('Explore', true), scene.getObjectByName('Ready?', true)], true)])];
+    const objectsToCheck = [];
+    if (scene.getObjectByName('Explore', true)) objectsToCheck.push(scene.getObjectByName('Explore', true));
+    if (scene.getObjectByName('Ready?', true)) objectsToCheck.push(scene.getObjectByName('Ready?', true));
+    intersects = [...new Set([...raycaster.intersectObjects(objectsToCheck, true)])];
   } else {
     const nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
     const buttonIntersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
@@ -762,10 +770,13 @@ function updateCursor() {
 }
 
 function animate() { // Request animation frame loop function
+  TWEEN.update();
   controls.update();
   //
   const time = performance.now() * 0.01;
-  scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
+  if (scene.getObjectByName('updating')) {
+    scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
+  }
   stars.update(sceneObjects.stars, stageSize, time);
   //
   shadertime += 0.1;
@@ -860,21 +871,20 @@ function drawNetwork() {
     } else if (d.rank > 40) {
       weight = '300 ';
     }
-    //
-    const rank = generateTextureCanvas(`${d.rank}`, 66, 1024, 256, weight, false);
+
+    const rank = generateTextureCanvas(`${d.rank}`, 66, 1024, 256, weight, false, 0);
     rank.scale.set(0.001, 0.001, 0.001);
     rank.position.set(0, 0, 0.15);
     rank.userData.type = 'text';
     rank.name = 'rank';
-    node.add(rank);
-    //
-    const text = generateTextureCanvas(`${d.name}`, 66, 1024, 256, weight, false);
+
+    const text = generateTextureCanvas(`${d.name}`, 66, 1024, 256, weight, false, 0);
     text.scale.set(0.001, 0.001, 0.001);
     text.position.set(0, -0.1, 0.15);
     text.userData.type = 'text';
     text.name = 'name';
-    node.add(text);
-    //
+
+    nodeLabels.push([node, [rank, text]]);
 
     sceneObjects.nodes.add(node);
   });
@@ -916,6 +926,13 @@ function formatData() {
 //   worldState.intro.zooming = true;
 // }
 
+function buildOutScene() {
+  if (sceneBuildOutFunctions.length === 0) return;
+  const nextStep = sceneBuildOutFunctions.shift();
+  nextStep();
+  setTimeout(buildOutScene, 1000);
+}
+
 export function setupScene(data, state) {
   globalData = data;
   flourishState = state;
@@ -952,11 +969,12 @@ export function setupScene(data, state) {
     flourishState.horizonBottomColor,
     flourishState.horizonExponent,
   ));
+
+
   scene.add(stars.generate(sceneObjects.stars, stageSize, 1000));
 
   // scene.add(generateFloor(state, stageSize, controls.userHeight));
-  scene.add(legend.generate(state, lineMaterials, controls.userHeight));
-  scene.add(generateButtons(sceneObjects.buttons));
+
 
   //
   // sceneObjects.intro = intro.generate(state, stageSize);
@@ -988,6 +1006,35 @@ export function setupScene(data, state) {
   // document.querySelector('#novr').addEventListener('click', skipVRReady, true);
 
   formatData();
+  // sceneBuildOutFunctions.push(formatData);
+  sceneBuildOutFunctions.push(updateHorizonVisibility);
+  sceneBuildOutFunctions.push(stars.updateStarMaterial);
+  sceneBuildOutFunctions.push(() => {
+    sphereMaterials.updateSphereMaterial();
+    nodeLabels.forEach((node) => {
+      // add the rank & name label to the node object
+      node[0].add(node[1][0]);
+      node[0].add(node[1][1]);
+    });
+    const baseOpacity = { opacity: 0 };
+    new TWEEN.Tween(baseOpacity)
+      .to({ opacity: 1 }, 2000)
+      .onUpdate(() => {
+        nodeLabels.forEach((node) => {
+          node[1][0].material.opacity = baseOpacity.opacity;
+          node[1][1].material.opacity = baseOpacity.opacity;
+        });
+      }).start();
+  });
+  sceneBuildOutFunctions.push(() => {
+    worldState.intro.zooming = true;
+  });
+  sceneBuildOutFunctions.push(() => {
+    scene.add(legend.generate(state, lineMaterials, controls.userHeight));
+    scene.add(generateButtons(sceneObjects.buttons));
+    scene.getObjectByName('updating').visible = false;
+  });
+  setTimeout(buildOutScene, 500);
 }
 
 export function updateSceneFromState(state) {
@@ -1018,6 +1065,7 @@ export function updateSceneFromState(state) {
     flourishState.horizonTopColor,
     flourishState.horizonBottomColor,
     flourishState.horizonExponent,
+    false,
   ));
   //
   toggleVREnabled(true, flourishState.vrEnabled);

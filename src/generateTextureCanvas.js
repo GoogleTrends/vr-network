@@ -1,7 +1,7 @@
 /* global document */
 import * as THREE from 'three';
 
-export function generateTextureCanvas(text, textSize, width, height, weight = '', split = false) {
+export function generateTextureCanvas(text, textSize, width, height, weight = '', split = false, opacity = 1) {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   canvas.width = width;
@@ -47,6 +47,7 @@ export function generateTextureCanvas(text, textSize, width, height, weight = ''
     side: THREE.DoubleSide,
     transparent: true,
     depthTest: false,
+    opacity,
   });
   const geometry = new THREE.PlaneGeometry(width, height);
 

@@ -1,17 +1,22 @@
 import * as THREE from 'three';
+import TWEEN from '@tweenjs/tween.js';
 
 import horizonVertex from '../shaders/horizon.vert';
 import horizonFragment from '../shaders/horizon.frag';
 
-export function generateHorizon(topColor, bottomColor, exponent) {
-  const uniforms = {
+const skyGeo = new THREE.SphereGeometry(4000, 32, 15, 0, Math.PI * 2, 0, Math.PI / 2);
+let skyMat = null;
+let uniforms = null;
+let targetExponent = 0;
+export function generateHorizon(topColor, bottomColor, exponent, animate = true) {
+  targetExponent = exponent;
+  uniforms = {
     topColor: { type: 'c', value: new THREE.Color(topColor) },
     bottomColor: { type: 'c', value: new THREE.Color(bottomColor) },
     offset: { type: 'f', value: 33 },
-    exponent: { type: 'f', value: exponent },
+    exponent: { type: 'f', value: animate ? 0 : exponent },
   };
-  const skyGeo = new THREE.SphereGeometry(4000, 32, 15, 0, Math.PI * 2, 0, Math.PI / 2);
-  const skyMat = new THREE.ShaderMaterial({
+  skyMat = new THREE.ShaderMaterial({
     uniforms,
     vertexShader: horizonVertex,
     fragmentShader: horizonFragment,
@@ -23,3 +28,10 @@ export function generateHorizon(topColor, bottomColor, exponent) {
 }
 
 export default generateHorizon;
+export function updateHorizonVisibility() {
+  new TWEEN.Tween(uniforms.exponent)
+    .to({
+      value: targetExponent,
+    }, 1000)
+    .start();
+}
