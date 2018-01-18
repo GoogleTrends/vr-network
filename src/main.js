@@ -701,7 +701,7 @@ function takeAction(centerNode) {
     updateNetwork();
   } else if (centerNode.type === 'button') {
     sceneObjects.buttons.children.forEach((b) => {
-      if (b.name === 'updating') {
+      if (b.name === 'updating' || b.name === 'title') {
         b.visible = true;
       } else {
         b.visible = false;
@@ -713,16 +713,19 @@ function takeAction(centerNode) {
     }
     timer = null;
     resetLinks();
-    if (centerNode.name === 'Layout in Spiral') {
-      layoutByRank();
-    } else if (centerNode.name === 'Layout in Grid') {
-      layoutInGrid();
-    } else if (centerNode.name === 'Layout by Rank') {
-      layoutByRank();
-    } else if (centerNode.name === 'Layout by Simulation') {
-      layoutByForce();
-    } else {
-      globalData = cloneDeep(initData);
+    switch (centerNode.name) {
+      case 'Spiral':
+        layoutByRank();
+        break;
+      case 'Grid':
+        layoutInGrid();
+        break;
+      case 'Simulation':
+        layoutByForce();
+        break;
+      default:
+        globalData = cloneDeep(initData);
+        break;
     }
   } else if (centerNode.type === 'Ready?') {
     worldState.intro.zooming = true;
@@ -910,20 +913,10 @@ function buildOutScene() {
   const nextStep = sceneBuildOutFunctions.shift();
   nextStep();
   if (sceneBuildOutFunctions.length === 1) {
-    // reset camera y rotation here
-    // console.log(vrDisplay);
     vrDisplay.resetPose();
     worldState.intro.updating = false;
-    // console.log(vrDisplay);
-    // vrDisplay = cloneDeep(initvrDisplay);
-    // console.log(vrDisplay);
-    // initvrDisplay = cloneDeep(vrDisplay);
-    // console.log(vrDisplay);
-    // console.log(vrDisplay.orientation_);
-    // vrDisplay.orientation_.copy(new THREE.Quaternion());
-    // console.log(vrDisplay.orientation_);
   }
-  setTimeout(buildOutScene, 1000);
+  setTimeout(buildOutScene, 100);
 }
 
 export function sceneReady() {

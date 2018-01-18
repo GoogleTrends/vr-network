@@ -103,8 +103,6 @@ canvas {
 }
 
 #card {
-/*  width: 320px;
-  height: 568px;*/
   width: 288px;
   height: 544px;
   display: inline-block;
@@ -144,20 +142,6 @@ img {
   text-align: center;
   margin: 12px 0;
 }
-
-/*.cardboard {
-  display: inline-block;
-  vertical-align: middle;
-  text-align: center;
-  margin: 12px auto;
-}*/
-/*.cardboard {
-  width: 100%;
-  margin: 0;
-  height: 272px;
-  object-fit: cover;
-  overflow: hidden;
-}*/
 
 .icon img {
   width: 50%;
@@ -209,10 +193,7 @@ a {
 
 .introbutton {
   outline: 1px solid white;
-  /*position: absolute;*/
   width: 100%;
-  /*width: 288px;*/
-  /*bottom: 16px;*/
   color: #11203B;
   background: #FFFFFF;
   text-transform: uppercase;
@@ -265,10 +246,17 @@ a {
     padding: 12px 16px;
   }
   .section {
-    width: 50%;
+    /*width: 50%;*/
+    width: 268px;
     text-align: center;
     display: inline-block;
     float: left;
+  }
+  .ls-right-pad {
+    padding-right: 4px;
+  }
+  .ls-left-pad {
+    padding-left: 4px;
   }
   .landscape {
     display: inline-block;
@@ -276,39 +264,6 @@ a {
   .portrait {
     display: none;
   }
-/*  #card {
-    width: 568px;
-    height: 320px;
-    display: inline-block;
-    background: linear-gradient(0deg, #000000, #11203B);
-    position: absolute;
-    vertical-align: middle;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    margin: auto;
-    padding: 8px;
-  }*/
-  /*#logo {
-    padding-left: 8px;
-    display: inline-block;
-    width: 50% !important;
-  }*/
-/*  p {
-    padding: 8px 0;
-  }
-  .section {
-    position: relative;
-    vertical-align: top;
-    float: left;
-    height: 242px;
-    overflow: hidden;
-    display: inline-block;
-    width: 268px;
-    margin: 0;
-    padding: 0 8px;
-  }*/
 }
 
 /*# sourceMappingURL=style.css.map 

@@ -129,10 +129,12 @@ function setupIntro() {
   document.querySelector('#intro').addEventListener('click', requestPresent, true);
   document.querySelector('#inbutton').addEventListener('click', showIntro, true);
   document.querySelector('#explore').addEventListener('click', () => showSlide(1), true);
-  document.querySelector('#threesixty').addEventListener('click', () => {
-    toggleVREnabled(true, false);
-    enterScene();
-  }, true);
+  document.querySelectorAll('.threesixty').forEach((e) => {
+    e.addEventListener('click', () => {
+      toggleVREnabled(true, false);
+      enterScene();
+    }, true);
+  });
 }
 
 // The update function is called whenever the user changes a data table or settings

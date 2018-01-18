@@ -49529,14 +49529,31 @@ function updateHorizonVisibility() {
   }, 1000).start();
 }
 
+/* global Flourish */
+
+var textureLoader = new TextureLoader();
+var imgGeometry = new PlaneGeometry(256, 256);
+
 function generateButton(name, color, yoffset) {
   var button = new Group();
   button.userData.name = name;
   button.userData.type = 'button';
   button.scale.set(0.001, 0.001, 0.001);
   button.position.set(-0.025, yoffset, 0);
-  var text = generateTextureCanvas(name, 36, 1024, 256); // 64
+  //
+  var iconMaterial = new MeshBasicMaterial({
+    map: textureLoader.load(Flourish.static_prefix + '/' + name + '.png'),
+    transparent: true,
+    depthTest: false
+  });
+  var icon = new Mesh(imgGeometry, iconMaterial);
+  icon.scale.set(0.4, 0.4, 0.4);
+  icon.position.set(-192, 0, 0);
+  button.add(icon);
+  //
+  var text = generateTextureCanvas(name, 60, 512, 128, '', true);
   text.userData.type = 'text';
+  text.position.set(160, 0, 0);
   button.add(text);
   var rect = new Mesh(new PlaneGeometry(600, 150), new MeshBasicMaterial({
     color: new Color(color),
@@ -49550,20 +49567,25 @@ function generateButton(name, color, yoffset) {
 }
 
 function generateButtons(container) {
-  container.add(generateButton('Layout in Spiral', 0xFFFFFF, 0.1));
-  // container.add(generateButton('Layout by Rank', 0xFFFFFF, 0));
-  container.add(generateButton('Layout in Grid', 0xFFFFFF, -0.1));
-  container.add(generateButton('Layout by Simulation', 0xFFFFFF, -0.3));
+  var title = generateTextureCanvas('Layout', 60, 512, 128, '', true);
+  title.name = 'title';
+  title.scale.set(0.001, 0.001, 0.001);
+  title.position.set(0.1325, 0.175, 0);
+  container.add(title);
+  //
+  container.add(generateButton('Spiral', 0xFFFFFF, 0.0));
+  container.add(generateButton('Grid', 0xFFFFFF, -0.175));
+  container.add(generateButton('Simulation', 0xFFFFFF, -0.35));
   //
   var updating = generateTextureCanvas('Updating...', 60, 1024, 256);
   updating.name = 'updating';
   updating.scale.set(0.001, 0.001, 0.001);
-  updating.position.set(-0.025, -0.1, 0);
+  // updating.position.set(-0.025, -0.1, 0);
+  updating.position.set(-0.025, -0.175, 0);
   container.add(updating);
-  //
-  // container.position.set(1, 0.75, -1);
   // container.position.set(0.45, 0.75, -1);
-  container.position.set(0.45, 0.675, -0.9);
+  // container.position.set(0.45, 0.675, -0.9);
+  container.position.set(0.45, 0.65, -0.867);
   container.rotation.set(Math.PI / 180 * -45, 0, 0);
   return container;
 }
@@ -50768,7 +50790,7 @@ function takeAction(centerNode) {
     updateNetwork();
   } else if (centerNode.type === 'button') {
     sceneObjects.buttons.children.forEach(function (b) {
-      if (b.name === 'updating') {
+      if (b.name === 'updating' || b.name === 'title') {
         b.visible = true;
       } else {
         b.visible = false;
@@ -50780,16 +50802,19 @@ function takeAction(centerNode) {
     }
     timer = null;
     resetLinks();
-    if (centerNode.name === 'Layout in Spiral') {
-      layoutByRank();
-    } else if (centerNode.name === 'Layout in Grid') {
-      layoutInGrid();
-    } else if (centerNode.name === 'Layout by Rank') {
-      layoutByRank();
-    } else if (centerNode.name === 'Layout by Simulation') {
-      layoutByForce();
-    } else {
-      globalData = lodash_clonedeep(initData);
+    switch (centerNode.name) {
+      case 'Spiral':
+        layoutByRank();
+        break;
+      case 'Grid':
+        layoutInGrid();
+        break;
+      case 'Simulation':
+        layoutByForce();
+        break;
+      default:
+        globalData = lodash_clonedeep(initData);
+        break;
     }
   } else if (centerNode.type === 'Ready?') {
     worldState.intro.zooming = true;
@@ -50970,20 +50995,10 @@ function buildOutScene() {
   var nextStep = sceneBuildOutFunctions.shift();
   nextStep();
   if (sceneBuildOutFunctions.length === 1) {
-    // reset camera y rotation here
-    // console.log(vrDisplay);
     vrDisplay.resetPose();
     worldState.intro.updating = false;
-    // console.log(vrDisplay);
-    // vrDisplay = cloneDeep(initvrDisplay);
-    // console.log(vrDisplay);
-    // initvrDisplay = cloneDeep(vrDisplay);
-    // console.log(vrDisplay);
-    // console.log(vrDisplay.orientation_);
-    // vrDisplay.orientation_.copy(new THREE.Quaternion());
-    // console.log(vrDisplay.orientation_);
   }
-  setTimeout(buildOutScene, 1000);
+  setTimeout(buildOutScene, 100);
 }
 
 function sceneReady() {
@@ -51258,10 +51273,12 @@ function setupIntro() {
   document.querySelector('#explore').addEventListener('click', function () {
     return showSlide(1);
   }, true);
-  document.querySelector('#threesixty').addEventListener('click', function () {
-    toggleVREnabled(true, false);
-    enterScene();
-  }, true);
+  document.querySelectorAll('.threesixty').forEach(function (e) {
+    e.addEventListener('click', function () {
+      toggleVREnabled(true, false);
+      enterScene();
+    }, true);
+  });
 }
 
 // The update function is called whenever the user changes a data table or settings
