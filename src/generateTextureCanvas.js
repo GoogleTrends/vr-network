@@ -49,6 +49,7 @@ export function generateTextureCanvas(text, textSize, width, height, weight = ''
     depthTest: false,
     opacity,
   });
+
   const geometry = new THREE.PlaneGeometry(width, height);
 
   return new THREE.Mesh(geometry, material);

@@ -49471,6 +49471,7 @@ function generateTextureCanvas(text, textSize, width, height) {
     depthTest: false,
     opacity: opacity
   });
+
   var geometry = new PlaneGeometry(width, height);
 
   return new Mesh(geometry, material);
@@ -50213,7 +50214,6 @@ function updateNetwork() {
       nd.lastPos = nd.pos;
     }
     n.children.forEach(function (c) {
-      // console.log(c);
       if (c.userData.type === 'sphere') {
         c.material.dispose(); // Dispose existing geometry
         c.material = null;
@@ -50791,29 +50791,6 @@ function takeAction(centerNode) {
     } else {
       globalData = lodash_clonedeep(initData);
     }
-    // }
-    // } else if (centerNode.type === 'Explore') {
-    //   timer = null;
-    //   if (vrDisplay.capabilities.canPresent) {
-    //   // if (true) {
-    //     //
-    //     document.querySelector('#centerline').classList.add('enabled');
-    //     document.querySelector('#intro').classList.remove('hide');
-    //     //
-    //     sceneObjects.intro.getObjectByName('logo', true).visible = false;
-    //     sceneObjects.intro.getObjectByName('title', true).visible = false;
-    //     sceneObjects.intro.getObjectByName('headset', true).visible = true;
-    //     sceneObjects.intro.getObjectByName('description', true).visible = false;
-    //     sceneObjects.intro.getObjectByName('headsetDescription', true).visible = true;
-    //     sceneObjects.intro.getObjectByName('Explore', true).visible = false;
-    //     sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
-    //     //
-    //   } else {
-    //     renderer.setSize(window.innerWidth, window.innerHeight);
-    //     effect.setSize(window.innerWidth, window.innerHeight);
-    //     worldState.intro.zooming = true;
-    //   }
-    // } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
   } else if (centerNode.type === 'Ready?') {
     worldState.intro.zooming = true;
     layoutByRank();
@@ -50848,8 +50825,6 @@ function animate() {
   if (!worldState.intro.updating) {
     controls.update();
   }
-
-  // camera.rotation.y++;
   lookup.quaternion.copy(camera.quaternion);
 
   var time = performance.now() * 0.01;
@@ -50881,12 +50856,10 @@ function animate() {
 function setupStage() {
   navigator.getVRDisplays().then(function (displays) {
     if (displays.length > 0) {
-      //
-      // toggleVREnabled(true, flourishState.vrEnabled);
-      //
       var _displays = slicedToArray(displays, 1);
 
       vrDisplay = _displays[0];
+
       vrDisplay.requestAnimationFrame(animate);
     }
   });
@@ -50939,9 +50912,7 @@ function drawNetwork() {
     sprite.material.visible = false;
     sphere.add(sprite);
     node.add(sphere);
-    //
 
-    //
     var weight = '';
     if (d.rank <= 20) {
       weight = 'bold ';
@@ -50994,31 +50965,28 @@ function formatData() {
   drawNetwork();
 }
 
-// function vrReady() {
-//   toggleVREnabled();
-//   document.querySelector('#intro').classList.add('hide');
-//   worldState.intro.headset = true;
-// }
-
-// function skipVRReady() {
-//   document.querySelector('#centerline').classList.remove('enabled');
-//   document.querySelector('#intro').classList.add('hide');
-//   worldState.intro.headset = false;
-//   worldState.intro.zooming = true;
-// }
-
 function buildOutScene() {
   if (sceneBuildOutFunctions.length === 0) return;
   var nextStep = sceneBuildOutFunctions.shift();
   nextStep();
   if (sceneBuildOutFunctions.length === 1) {
+    // reset camera y rotation here
+    // console.log(vrDisplay);
+    vrDisplay.resetPose();
     worldState.intro.updating = false;
+    // console.log(vrDisplay);
+    // vrDisplay = cloneDeep(initvrDisplay);
+    // console.log(vrDisplay);
+    // initvrDisplay = cloneDeep(vrDisplay);
+    // console.log(vrDisplay);
+    // console.log(vrDisplay.orientation_);
+    // vrDisplay.orientation_.copy(new THREE.Quaternion());
+    // console.log(vrDisplay.orientation_);
   }
-  setTimeout(buildOutScene, 2000);
+  setTimeout(buildOutScene, 1000);
 }
 
 function sceneReady() {
-  // buildOutScene();
   setTimeout(buildOutScene, 500);
 }
 
@@ -51041,6 +51009,8 @@ function setupScene(data, state) {
   // Create a three.js camera.
   var aspect = window.innerWidth / window.innerHeight;
   camera = new PerspectiveCamera(75, aspect, 0.01, 10000);
+  camera.name = 'camera';
+
   controls = new VRControls(camera);
   controls.standing = true;
   camera.position.y = controls.userHeight;
@@ -51057,15 +51027,6 @@ function setupScene(data, state) {
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent, true));
   scene.add(generate$4(sceneObjects.stars, stageSize, 1000));
 
-  // scene.add(legend.generate(state, lineMaterials, controls.userHeight));
-  // scene.add(generateButtons(sceneObjects.buttons));
-
-  // const lookup = generateTextureCanvas('LOOK UP ^^^', 36, 256, 256);
-  // lookup.position.set(0, -0.75, -0.5);
-  // lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
-  // lookup.scale.set(0.005, 0.005, 0.005);
-  // scene.add(lookup);
-
   //
   var textureLoader = new TextureLoader();
   var imgGeometry = new PlaneGeometry(512, 256);
@@ -51076,16 +51037,8 @@ function setupScene(data, state) {
   });
   lookup = new Mesh(imgGeometry, lookMaterial);
   lookup.name = 'lookup';
-  // lookup.position.set(0, -0.75, -0.5);
   lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
   lookup.scale.set(0.0025, 0.0025, 0.0025);
-  scene.add(lookup);
-  // camera.add(lookup);
-  //
-
-  //
-  // sceneObjects.intro = intro.generate(state, stageSize);
-  // scene.add(sceneObjects.intro);
   //
 
   //
@@ -51107,8 +51060,6 @@ function setupScene(data, state) {
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
   // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  // document.querySelector('#explore').addEventListener('click', vrReady, true);
-  // document.querySelector('#novr').addEventListener('click', skipVRReady, true);
 
   formatData();
 
@@ -51132,21 +51083,20 @@ function setupScene(data, state) {
   });
   //
   sceneBuildOutFunctions.push(function () {
-    sceneObjects.intro = generate$5(state, stageSize);
-    scene.add(sceneObjects.intro);
-  });
-  //
-  sceneBuildOutFunctions.push(function () {
     scene.add(generate(state, lineMaterials, controls.userHeight));
     scene.add(generateButtons(sceneObjects.buttons));
     scene.getObjectByName('updating').visible = false;
     scene.add(lookup);
   });
   //
+  sceneBuildOutFunctions.push(function () {
+    sceneObjects.intro = generate$5(state, stageSize);
+    scene.add(sceneObjects.intro);
+  });
+  //
 }
 
 function updateSceneFromState(state) {
-  console.log('update scene from state');
   flourishState = state;
   //
   camera.remove(camera.getObjectByName('cursor', true));

@@ -80,7 +80,6 @@ function updateNetwork() {
         nd.lastPos = nd.pos;
       }
       n.children.forEach((c) => {
-        // console.log(c);
         if (c.userData.type === 'sphere') {
           c.material.dispose(); // Dispose existing geometry
           c.material = null;
@@ -725,29 +724,6 @@ function takeAction(centerNode) {
     } else {
       globalData = cloneDeep(initData);
     }
-  // }
-  // } else if (centerNode.type === 'Explore') {
-  //   timer = null;
-  //   if (vrDisplay.capabilities.canPresent) {
-  //   // if (true) {
-  //     //
-  //     document.querySelector('#centerline').classList.add('enabled');
-  //     document.querySelector('#intro').classList.remove('hide');
-  //     //
-  //     sceneObjects.intro.getObjectByName('logo', true).visible = false;
-  //     sceneObjects.intro.getObjectByName('title', true).visible = false;
-  //     sceneObjects.intro.getObjectByName('headset', true).visible = true;
-  //     sceneObjects.intro.getObjectByName('description', true).visible = false;
-  //     sceneObjects.intro.getObjectByName('headsetDescription', true).visible = true;
-  //     sceneObjects.intro.getObjectByName('Explore', true).visible = false;
-  //     sceneObjects.intro.getObjectByName('Ready?', true).visible = true;
-  //     //
-  //   } else {
-  //     renderer.setSize(window.innerWidth, window.innerHeight);
-  //     effect.setSize(window.innerWidth, window.innerHeight);
-  //     worldState.intro.zooming = true;
-  //   }
-  // } else if (centerNode.type === 'Ready?' && worldState.intro.headset) {
   } else if (centerNode.type === 'Ready?') {
     worldState.intro.zooming = true;
     layoutByRank();
@@ -795,8 +771,6 @@ function animate() { // Request animation frame loop function
   if (!worldState.intro.updating) {
     controls.update();
   }
-
-  // camera.rotation.y++;
   lookup.quaternion.copy(camera.quaternion);
 
   const time = performance.now() * 0.01;
@@ -829,9 +803,6 @@ function setupStage() {
   navigator.getVRDisplays().then((displays) => {
     if (displays.length > 0) {
       [vrDisplay] = displays;
-      //
-      // toggleVREnabled(true, flourishState.vrEnabled);
-      //
       vrDisplay.requestAnimationFrame(animate);
     }
   });
@@ -885,9 +856,7 @@ function drawNetwork() {
     sprite.material.visible = false;
     sphere.add(sprite);
     node.add(sphere);
-    //
 
-    //
     let weight = '';
     if (d.rank <= 20) {
       weight = 'bold ';
@@ -936,31 +905,28 @@ function formatData() {
   drawNetwork();
 }
 
-// function vrReady() {
-//   toggleVREnabled();
-//   document.querySelector('#intro').classList.add('hide');
-//   worldState.intro.headset = true;
-// }
-
-// function skipVRReady() {
-//   document.querySelector('#centerline').classList.remove('enabled');
-//   document.querySelector('#intro').classList.add('hide');
-//   worldState.intro.headset = false;
-//   worldState.intro.zooming = true;
-// }
-
 function buildOutScene() {
   if (sceneBuildOutFunctions.length === 0) return;
   const nextStep = sceneBuildOutFunctions.shift();
   nextStep();
   if (sceneBuildOutFunctions.length === 1) {
+    // reset camera y rotation here
+    // console.log(vrDisplay);
+    vrDisplay.resetPose();
     worldState.intro.updating = false;
+    // console.log(vrDisplay);
+    // vrDisplay = cloneDeep(initvrDisplay);
+    // console.log(vrDisplay);
+    // initvrDisplay = cloneDeep(vrDisplay);
+    // console.log(vrDisplay);
+    // console.log(vrDisplay.orientation_);
+    // vrDisplay.orientation_.copy(new THREE.Quaternion());
+    // console.log(vrDisplay.orientation_);
   }
-  setTimeout(buildOutScene, 2000);
+  setTimeout(buildOutScene, 1000);
 }
 
 export function sceneReady() {
-  // buildOutScene();
   setTimeout(buildOutScene, 500);
 }
 
@@ -983,6 +949,8 @@ export function setupScene(data, state) {
   // Create a three.js camera.
   const aspect = window.innerWidth / window.innerHeight;
   camera = new THREE.PerspectiveCamera(75, aspect, 0.01, 10000);
+  camera.name = 'camera';
+
   controls = new VRControls(camera);
   controls.standing = true;
   camera.position.y = controls.userHeight;
@@ -1002,15 +970,6 @@ export function setupScene(data, state) {
   ));
   scene.add(stars.generate(sceneObjects.stars, stageSize, 1000));
 
-  // scene.add(legend.generate(state, lineMaterials, controls.userHeight));
-  // scene.add(generateButtons(sceneObjects.buttons));
-
-  // const lookup = generateTextureCanvas('LOOK UP ^^^', 36, 256, 256);
-  // lookup.position.set(0, -0.75, -0.5);
-  // lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
-  // lookup.scale.set(0.005, 0.005, 0.005);
-  // scene.add(lookup);
-
   //
   const textureLoader = new THREE.TextureLoader();
   const imgGeometry = new THREE.PlaneGeometry(512, 256);
@@ -1021,16 +980,8 @@ export function setupScene(data, state) {
   });
   lookup = new THREE.Mesh(imgGeometry, lookMaterial);
   lookup.name = 'lookup';
-  // lookup.position.set(0, -0.75, -0.5);
   lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
   lookup.scale.set(0.0025, 0.0025, 0.0025);
-  scene.add(lookup);
-  // camera.add(lookup);
-  //
-
-  //
-  // sceneObjects.intro = intro.generate(state, stageSize);
-  // scene.add(sceneObjects.intro);
   //
 
   //
@@ -1052,8 +1003,6 @@ export function setupScene(data, state) {
 
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
   // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  // document.querySelector('#explore').addEventListener('click', vrReady, true);
-  // document.querySelector('#novr').addEventListener('click', skipVRReady, true);
 
   formatData();
 
@@ -1079,21 +1028,20 @@ export function setupScene(data, state) {
   });
   //
   sceneBuildOutFunctions.push(() => {
-    sceneObjects.intro = intro.generate(state, stageSize);
-    scene.add(sceneObjects.intro);
-  });
-  //
-  sceneBuildOutFunctions.push(() => {
     scene.add(legend.generate(state, lineMaterials, controls.userHeight));
     scene.add(generateButtons(sceneObjects.buttons));
     scene.getObjectByName('updating').visible = false;
     scene.add(lookup);
   });
   //
+  sceneBuildOutFunctions.push(() => {
+    sceneObjects.intro = intro.generate(state, stageSize);
+    scene.add(sceneObjects.intro);
+  });
+  //
 }
 
 export function updateSceneFromState(state) {
-  console.log('update scene from state');
   flourishState = state;
   //
   camera.remove(camera.getObjectByName('cursor', true));
