@@ -49864,7 +49864,6 @@ function generate$5(state, stageSize) {
 
   var width = 512;
   var height = 512;
-  // const zoffset = 64;
 
   var backgroundGeometry = new PlaneGeometry(width, height);
   var backgroundMaterial = new MeshBasicMaterial({
@@ -49891,7 +49890,6 @@ function generate$5(state, stageSize) {
   cursorText.scale.set(0.43, 0.43, 0.43);
   cursorText.position.set(0, -166, 0);
   cursor.add(cursorText);
-  // const cursor = new THREE.Mesh(imgGeometry, cursorMaterial);
   cursor.position.set(-122, 122, 1);
   intro.add(cursor);
 
@@ -49906,57 +49904,13 @@ function generate$5(state, stageSize) {
   fuseText.scale.set(0.43, 0.43, 0.43);
   fuseText.position.set(0, -166, 0);
   fuse.add(fuseText);
-  // const fuse = new THREE.Mesh(imgGeometry, fuseMaterial);
   fuse.position.set(122, 122, 1);
   intro.add(fuse);
 
-  // icon.scale.set(0.65, 0.65, 0.65);
-  // icon.position.set(-width / 4.75, innerYOffset, 64);
-  // button.add(icon);
-
-  // const fuseMaterial = new THREE.MeshBasicMaterial({
-  //   map: textureLoader.load(`${Flourish.static_prefix}/fuse.gif`),
-  //   transparent: true,
-  //   depthTest: false,
-  // });
-
-  // const imgHeight = 128;
-  // const image = document.createElement('img');
-  // const texture = new THREE.Texture(image);
-  // image.onload = () => { texture.needsUpdate = true; };
-  // image.src = state.logo;
-  // const logoGeometry = new THREE.PlaneGeometry(width, imgHeight);
-  // const logoMaterial = new THREE.MeshBasicMaterial({
-  //   transparent: true,
-  //   map: texture,
-  //   depthTest: false,
-  // });
-  // const logo = new THREE.Mesh(logoGeometry, logoMaterial);
-  // logo.name = 'logo';
-  // logo.scale.set(0.8, 0.8, 0.8);
-  // logo.position.set(0, 160, zoffset);
-  // intro.add(logo);
-
-  // state.title
-  // const headset = generateTextureCanvas('If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
-  // headset.name = 'headset';
-  // headset.scale.set(0.8, 0.8, 0.8);
-  // headset.position.set(0, -210, zoffset);
-  // intro.add(headset);
-
-  // state.description
-  // const headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore!', 36, width, 256, '', true);
-  // headsetDescription.name = 'headsetDescription';
-  // headsetDescription.scale.set(0.8, 0.8, 0.8);
-  // headsetDescription.position.set(0, -72, zoffset);
-  // intro.add(headsetDescription);
-
-  //
   var ready = generateIntroButton('Ready?', 'cardboard.png', 512, -160, 16, 0);
   intro.add(ready);
 
   intro.scale.set(0.01, 0.01, 0.01);
-  // intro.position.set(0, -0.1, stageSize / 5);
   intro.position.set(0, 1.5, stageSize / 4);
 
   return intro;
@@ -50203,6 +50157,7 @@ var worldState = {
   intro: {
     active: true,
     headset: false,
+    updating: true,
     zooming: false
   },
   vrEnabled: false,
@@ -50235,6 +50190,7 @@ var shadertime = 0;
 var scene = void 0;
 var effect = void 0;
 var camera = void 0;
+var lookup = void 0;
 var renderer = void 0;
 var controls = void 0;
 var vrDisplay = void 0;
@@ -50870,7 +50826,7 @@ function updateCursor() {
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
-        timer += Math.PI / 30;
+        timer += Math.PI / 45;
         sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
         sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
@@ -50889,34 +50845,36 @@ function updateCursor() {
 function animate() {
   // Request animation frame loop function
   Tween.update();
-  controls.update();
-  //
+  if (!worldState.intro.updating) {
+    controls.update();
+  }
+
+  // camera.rotation.y++;
+  lookup.quaternion.copy(camera.quaternion);
+
   var time = performance.now() * 0.01;
   if (scene.getObjectByName('updating')) {
     scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
   }
   update$1(sceneObjects.stars, stageSize, time);
-  //
+
   shadertime += 0.1;
   if (shadertime > 100) {
     shadertime = 0.0;
   }
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
-  //
 
   // $$$
   transitionElements();
   updateCursor();
   //
 
-  //
   if (worldState.vrEnabled) {
     effect.render(scene, camera); // Render the scene.
   } else {
     renderer.render(scene, camera);
   }
-  //
   vrDisplay.requestAnimationFrame(animate);
 }
 
@@ -51053,13 +51011,15 @@ function buildOutScene() {
   if (sceneBuildOutFunctions.length === 0) return;
   var nextStep = sceneBuildOutFunctions.shift();
   nextStep();
-  setTimeout(buildOutScene, 1000);
+  if (sceneBuildOutFunctions.length === 1) {
+    worldState.intro.updating = false;
+  }
+  setTimeout(buildOutScene, 2000);
 }
 
 function sceneReady() {
-  // worldState.intro.zooming = true;
-  // setTimeout(buildOutScene, 500);
-  buildOutScene();
+  // buildOutScene();
+  setTimeout(buildOutScene, 500);
 }
 
 function setupScene(data, state) {
@@ -51107,17 +51067,20 @@ function setupScene(data, state) {
   // scene.add(lookup);
 
   //
-  var rectSize = 220;
   var textureLoader = new TextureLoader();
-  var imgGeometry = new PlaneGeometry(rectSize, rectSize);
+  var imgGeometry = new PlaneGeometry(512, 256);
   var lookMaterial = new MeshBasicMaterial({
-    map: textureLoader.load(Flourish.static_prefix + '/cursor.png'),
+    map: textureLoader.load(Flourish.static_prefix + '/lookup.png'),
     transparent: true,
     depthTest: false
   });
-  var lookup = new Mesh(imgGeometry, lookMaterial);
-  lookup.position.set(-122, 122, 1);
+  lookup = new Mesh(imgGeometry, lookMaterial);
+  lookup.name = 'lookup';
+  // lookup.position.set(0, -0.75, -0.5);
+  lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
+  lookup.scale.set(0.0025, 0.0025, 0.0025);
   scene.add(lookup);
+  // camera.add(lookup);
   //
 
   //
@@ -51242,7 +51205,7 @@ var state = {
   cursorOpacity: 0.5
 };
 
-var timerduration = 5;
+var timerduration = 4;
 var introState = {
   slide: 0,
   slides: [0, 1, 2],
@@ -51260,24 +51223,18 @@ var introState = {
 function enterScene() {
   document.querySelector('#intro').classList.add('hide');
   introState.active = false;
-  if (!introState.sceneExists) {
-    introState.sceneExists = true;
-    setupScene(data, state);
-    // } else {
-    //   updateSceneFromState(state);
-  }
   sceneReady();
 }
 
 function startTimer() {
-  var offset = 502; // radius of circle
+  var offset = 377; // 2 * PI * radius of circle
   introState.timer.count = timerduration;
   document.querySelector('#count').textContent = introState.timer.count;
-  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - (timerduration - introState.timer.count) * (offset / (timerduration + 1)));
+  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - (timerduration - introState.timer.count) * (offset / timerduration));
   introState.timer.interval = setInterval(function () {
     introState.timer.count -= 1;
-    document.querySelector('#count').textContent = introState.timer.count;
-    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - (timerduration - introState.timer.count) * (offset / (timerduration + 1)));
+    document.querySelector('#count').textContent = introState.timer.count + 1;
+    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - (timerduration - introState.timer.count) * (offset / timerduration));
     if (!introState.active) {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
@@ -51290,7 +51247,7 @@ function startTimer() {
       toggleVREnabled(true, true);
       enterScene();
     }
-  }, 2000);
+  }, 1000);
 }
 
 function showSlide(id) {
@@ -51314,12 +51271,10 @@ function showSlide(id) {
 function swapSlidesOnOrientation() {
   if (introState.slide === 1 || introState.slide === 0) {
     if (introState.orientation.includes('landscape')) {
-      // document.querySelector('#logo').classList.add('hide');
       showSlide(2);
     }
   } else if (introState.slide === 2) {
     if (introState.orientation.includes('portrait')) {
-      // document.querySelector('#logo').classList.remove('hide');
       showSlide(1);
     }
   }
@@ -51328,14 +51283,12 @@ function swapSlidesOnOrientation() {
 function updateOrientation() {
   if (introState.width !== window.innerWidth) {
     var screenOrientation = window.innerWidth > window.innerHeight ? 90 : 0;
-    //
     var orientation = 'portrait';
     if (screenOrientation === 90) {
       orientation = 'landscape';
     }
     introState.orientation = orientation;
     introState.width = window.innerWidth;
-    //
     swapSlidesOnOrientation();
   }
 }
@@ -51348,35 +51301,17 @@ function showIntro() {
 
 function setupIntro() {
   document.querySelector('#logo').src = state.logo;
-  //
-  // updateOrientation();
   introState.width = window.innerWidth;
   window.addEventListener('resize', updateOrientation, false);
-  // window.addEventListener('orientationchange', updateOrientation, false);
-
-  //
   document.querySelector('#intro').addEventListener('click', requestPresent, true);
-  //
-
-  //
   document.querySelector('#inbutton').addEventListener('click', showIntro, true);
   document.querySelector('#explore').addEventListener('click', function () {
     return showSlide(1);
   }, true);
   document.querySelector('#threesixty').addEventListener('click', function () {
-    // state.vrEnabled = false;
     toggleVREnabled(true, false);
     enterScene();
   }, true);
-  //
-
-  /*
-    TEMP FOR DEV
-  */
-  // document.querySelector('#slide-1').addEventListener('click', () => showSlide(2), true);
-  /*
-    TEMP FOR DEV
-  */
 }
 
 // The update function is called whenever the user changes a data table or settings
@@ -51393,7 +51328,6 @@ function update() {
 // The draw function is called when the template first loads
 function draw() {
   setupIntro(state);
-  // setupScene(data, state);
   WebFont.load({
     google: {
       families: ['Roboto Condensed:300,400,700']

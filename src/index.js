@@ -28,7 +28,7 @@ export const state = {
   cursorOpacity: 0.5,
 };
 
-const timerduration = 5;
+const timerduration = 4;
 const introState = {
   slide: 0,
   slides: [0, 1, 2],
@@ -46,24 +46,18 @@ const introState = {
 function enterScene() {
   document.querySelector('#intro').classList.add('hide');
   introState.active = false;
-  if (!introState.sceneExists) {
-    introState.sceneExists = true;
-    setupScene(data, state);
-  // } else {
-  //   updateSceneFromState(state);
-  }
   sceneReady();
 }
 
 function startTimer() {
-  const offset = 502; // radius of circle
+  const offset = 377; // 2 * PI * radius of circle
   introState.timer.count = timerduration;
   document.querySelector('#count').textContent = introState.timer.count;
-  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration + 1))));
+  document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration))));
   introState.timer.interval = setInterval(() => {
     introState.timer.count -= 1;
-    document.querySelector('#count').textContent = introState.timer.count;
-    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration + 1))));
+    document.querySelector('#count').textContent = (introState.timer.count + 1);
+    document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration))));
     if (!introState.active) {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
@@ -76,7 +70,7 @@ function startTimer() {
       toggleVREnabled(true, true);
       enterScene();
     }
-  }, 2000);
+  }, 1000);
 }
 
 function showSlide(id) {
@@ -100,12 +94,10 @@ function showSlide(id) {
 function swapSlidesOnOrientation() {
   if (introState.slide === 1 || introState.slide === 0) {
     if (introState.orientation.includes('landscape')) {
-      // document.querySelector('#logo').classList.add('hide');
       showSlide(2);
     }
   } else if (introState.slide === 2) {
     if (introState.orientation.includes('portrait')) {
-      // document.querySelector('#logo').classList.remove('hide');
       showSlide(1);
     }
   }
@@ -114,14 +106,12 @@ function swapSlidesOnOrientation() {
 function updateOrientation() {
   if (introState.width !== window.innerWidth) {
     const screenOrientation = (window.innerWidth > window.innerHeight) ? 90 : 0;
-    //
     let orientation = 'portrait';
     if (screenOrientation === 90) {
       orientation = 'landscape';
     }
     introState.orientation = orientation;
     introState.width = window.innerWidth;
-    //
     swapSlidesOnOrientation();
   }
 }
@@ -134,33 +124,15 @@ function showIntro() {
 
 function setupIntro() {
   document.querySelector('#logo').src = state.logo;
-  //
-  // updateOrientation();
   introState.width = window.innerWidth;
   window.addEventListener('resize', updateOrientation, false);
-  // window.addEventListener('orientationchange', updateOrientation, false);
-
-  //
   document.querySelector('#intro').addEventListener('click', requestPresent, true);
-  //
-
-  //
   document.querySelector('#inbutton').addEventListener('click', showIntro, true);
   document.querySelector('#explore').addEventListener('click', () => showSlide(1), true);
   document.querySelector('#threesixty').addEventListener('click', () => {
-    // state.vrEnabled = false;
     toggleVREnabled(true, false);
     enterScene();
   }, true);
-  //
-
-  /*
-    TEMP FOR DEV
-  */
-  // document.querySelector('#slide-1').addEventListener('click', () => showSlide(2), true);
-  /*
-    TEMP FOR DEV
-  */
 }
 
 // The update function is called whenever the user changes a data table or settings
@@ -177,7 +149,6 @@ export function update() {
 // The draw function is called when the template first loads
 export function draw() {
   setupIntro(state);
-  // setupScene(data, state);
   WebFont.load({
     google: {
       families: ['Roboto Condensed:300,400,700'],

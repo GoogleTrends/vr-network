@@ -27,6 +27,7 @@ const worldState = {
   intro: {
     active: true,
     headset: false,
+    updating: true,
     zooming: false,
   },
   vrEnabled: false,
@@ -59,6 +60,7 @@ let shadertime = 0;
 let scene;
 let effect;
 let camera;
+let lookup;
 let renderer;
 let controls;
 let vrDisplay;
@@ -758,7 +760,7 @@ function updateCursor() {
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
-        timer += Math.PI / 30;
+        timer += Math.PI / 45;
         sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
         sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(
@@ -790,34 +792,36 @@ function updateCursor() {
 
 function animate() { // Request animation frame loop function
   TWEEN.update();
-  controls.update();
-  //
+  if (!worldState.intro.updating) {
+    controls.update();
+  }
+
+  // camera.rotation.y++;
+  lookup.quaternion.copy(camera.quaternion);
+
   const time = performance.now() * 0.01;
   if (scene.getObjectByName('updating')) {
     scene.getObjectByName('updating').material.opacity = Math.abs(Math.cos(time / 5.0));
   }
   stars.update(sceneObjects.stars, stageSize, time);
-  //
+
   shadertime += 0.1;
   if (shadertime > 100) {
     shadertime = 0.0;
   }
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
-  //
 
   // $$$
   transitionElements();
   updateCursor();
   //
 
-  //
   if (worldState.vrEnabled) {
     effect.render(scene, camera); // Render the scene.
   } else {
     renderer.render(scene, camera);
   }
-  //
   vrDisplay.requestAnimationFrame(animate);
 }
 
@@ -949,13 +953,15 @@ function buildOutScene() {
   if (sceneBuildOutFunctions.length === 0) return;
   const nextStep = sceneBuildOutFunctions.shift();
   nextStep();
-  setTimeout(buildOutScene, 1000);
+  if (sceneBuildOutFunctions.length === 1) {
+    worldState.intro.updating = false;
+  }
+  setTimeout(buildOutScene, 2000);
 }
 
 export function sceneReady() {
-  // worldState.intro.zooming = true;
-  // setTimeout(buildOutScene, 500);
-  buildOutScene();
+  // buildOutScene();
+  setTimeout(buildOutScene, 500);
 }
 
 export function setupScene(data, state) {
@@ -1006,17 +1012,20 @@ export function setupScene(data, state) {
   // scene.add(lookup);
 
   //
-  const rectSize = 220;
   const textureLoader = new THREE.TextureLoader();
-  const imgGeometry = new THREE.PlaneGeometry(rectSize, rectSize);
+  const imgGeometry = new THREE.PlaneGeometry(512, 256);
   const lookMaterial = new THREE.MeshBasicMaterial({
-    map: textureLoader.load(`${Flourish.static_prefix}/cursor.png`),
+    map: textureLoader.load(`${Flourish.static_prefix}/lookup.png`),
     transparent: true,
     depthTest: false,
   });
-  const lookup = new THREE.Mesh(imgGeometry, lookMaterial);
-  lookup.position.set(-122, 122, 1);
+  lookup = new THREE.Mesh(imgGeometry, lookMaterial);
+  lookup.name = 'lookup';
+  // lookup.position.set(0, -0.75, -0.5);
+  lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
+  lookup.scale.set(0.0025, 0.0025, 0.0025);
   scene.add(lookup);
+  // camera.add(lookup);
   //
 
   //

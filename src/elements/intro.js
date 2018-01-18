@@ -47,7 +47,6 @@ export function generate(state, stageSize) {
 
   const width = 512;
   const height = 512;
-  // const zoffset = 64;
 
   const backgroundGeometry = new THREE.PlaneGeometry(width, height);
   const backgroundMaterial = new THREE.MeshBasicMaterial({
@@ -74,7 +73,6 @@ export function generate(state, stageSize) {
   cursorText.scale.set(0.43, 0.43, 0.43);
   cursorText.position.set(0, -166, 0);
   cursor.add(cursorText);
-  // const cursor = new THREE.Mesh(imgGeometry, cursorMaterial);
   cursor.position.set(-122, 122, 1);
   intro.add(cursor);
 
@@ -89,58 +87,13 @@ export function generate(state, stageSize) {
   fuseText.scale.set(0.43, 0.43, 0.43);
   fuseText.position.set(0, -166, 0);
   fuse.add(fuseText);
-  // const fuse = new THREE.Mesh(imgGeometry, fuseMaterial);
   fuse.position.set(122, 122, 1);
   intro.add(fuse);
 
-
-  // icon.scale.set(0.65, 0.65, 0.65);
-  // icon.position.set(-width / 4.75, innerYOffset, 64);
-  // button.add(icon);
-
-  // const fuseMaterial = new THREE.MeshBasicMaterial({
-  //   map: textureLoader.load(`${Flourish.static_prefix}/fuse.gif`),
-  //   transparent: true,
-  //   depthTest: false,
-  // });
-
-  // const imgHeight = 128;
-  // const image = document.createElement('img');
-  // const texture = new THREE.Texture(image);
-  // image.onload = () => { texture.needsUpdate = true; };
-  // image.src = state.logo;
-  // const logoGeometry = new THREE.PlaneGeometry(width, imgHeight);
-  // const logoMaterial = new THREE.MeshBasicMaterial({
-  //   transparent: true,
-  //   map: texture,
-  //   depthTest: false,
-  // });
-  // const logo = new THREE.Mesh(logoGeometry, logoMaterial);
-  // logo.name = 'logo';
-  // logo.scale.set(0.8, 0.8, 0.8);
-  // logo.position.set(0, 160, zoffset);
-  // intro.add(logo);
-
-  // state.title
-  // const headset = generateTextureCanvas('If you need to enter or exit VR later, tap the headset button in the bottom right corner.', 18, width, 128, '', true);
-  // headset.name = 'headset';
-  // headset.scale.set(0.8, 0.8, 0.8);
-  // headset.position.set(0, -210, zoffset);
-  // intro.add(headset);
-
-  // state.description
-  // const headsetDescription = generateTextureCanvas('Look at the button above when you\'re ready to explore!', 36, width, 256, '', true);
-  // headsetDescription.name = 'headsetDescription';
-  // headsetDescription.scale.set(0.8, 0.8, 0.8);
-  // headsetDescription.position.set(0, -72, zoffset);
-  // intro.add(headsetDescription);
-
-  //
   const ready = generateIntroButton('Ready?', 'cardboard.png', 512, -160, 16, 0);
   intro.add(ready);
 
   intro.scale.set(0.01, 0.01, 0.01);
-  // intro.position.set(0, -0.1, stageSize / 5);
   intro.position.set(0, 1.5, stageSize / 4);
 
   return intro;
