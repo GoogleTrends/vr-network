@@ -22,7 +22,7 @@ export function generateCurveGeometry(start, end, userHeight) {
 
   return {
     lineGeometry,
-    lineLength: curvePath.getCurveLengths()
+    lineLength: curvePath.getCurveLengths(),
   };
 }
 

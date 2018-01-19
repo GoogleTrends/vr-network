@@ -137,6 +137,11 @@ function setupIntro() {
   });
 }
 
+function updateHtml() {
+  document.querySelector('#introTitle').innerText = state.title;
+  document.querySelector('#introDescription').innerText = state.description;
+}
+
 // The update function is called whenever the user changes a data table or settings
 // in the visualisation editor, or when changing slides in the story editor.
 // Tip: to make your template work nicely in the story editor, ensure that all user
@@ -146,6 +151,7 @@ export function update() {
   if (introState.sceneExists) {
     updateSceneFromState(state);
   }
+  updateHtml();
 }
 
 // The draw function is called when the template first loads
@@ -165,4 +171,5 @@ export function draw() {
     },
     timeout: 2000,
   });
+  updateHtml();
 }
