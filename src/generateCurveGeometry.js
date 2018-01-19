@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 export function generateCurveGeometry(start, end, userHeight) {
   const lineGeometry = new THREE.Geometry();
+
   const startVector = new THREE.Vector3(start.x, start.y, start.z);
 
   const variance = 0.0; // 0.25; // 1.0;
@@ -18,7 +19,11 @@ export function generateCurveGeometry(start, end, userHeight) {
   curvePath.getPoints(18).forEach((p) => {
     lineGeometry.vertices.push(p);
   });
-  return lineGeometry;
+
+  return {
+    lineGeometry,
+    lineLength: curvePath.getCurveLengths()
+  };
 }
 
 export default generateCurveGeometry;

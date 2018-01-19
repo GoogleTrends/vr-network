@@ -26,13 +26,19 @@ export function generate(state, lineMaterials, userHeight) {
   mesh.position.set(0, 0.25, 0);
   container.add(mesh);
 
-  const inLineGeometry = generateCurveGeometry(
+  const inLineCurve = generateCurveGeometry(
     new THREE.Vector3(-0.3, 0.0, 0.0),
     new THREE.Vector3(0.3, 0.0, 0.0),
     userHeight / 2,
   );
+  const inLineGeometry = inLineCurve.lineGeometry;
+  const inLineLength = inLineCurve.lineLength;
   const inLine = new MeshLine();
   inLine.setGeometry(inLineGeometry);
+  const inLineLengths = new Float32Array(inLine.geometry.attributes.position.count)
+    .fill(inLineLength);
+  inLine.geometry.addAttribute('lineLength', new THREE.Float32BufferAttribute(inLineLengths, 1));
+
   const inLineMesh = new THREE.Mesh(inLine.geometry, lineMaterials.highlightIn);
   inLineMesh.userData.type = 'in';
   container.add(inLineMesh);
@@ -42,13 +48,18 @@ export function generate(state, lineMaterials, userHeight) {
   inText.position.set(0.025, 0, 0);
   container.add(inText);
 
-  const outLineGeometry = generateCurveGeometry(
+  const outLineCurve = generateCurveGeometry(
     new THREE.Vector3(0.3, -0.2, 0.0),
     new THREE.Vector3(-0.3, -0.2, 0.0),
     userHeight / 2,
   );
+  const outLineGeometry = outLineCurve.lineGeometry;
+  const outLineLength = outLineCurve.lineLength;
   const outLine = new MeshLine();
   outLine.setGeometry(outLineGeometry);
+  const outLineLengths = new Float32Array(outLine.geometry.attributes.position.count)
+    .fill(outLineLength);
+  outLine.geometry.addAttribute('lineLength', new THREE.Float32BufferAttribute(outLineLengths, 1));
   const outLineMesh = new THREE.Mesh(outLine.geometry, lineMaterials.highlightOut);
   outLineMesh.userData.type = 'out';
   container.add(outLineMesh);

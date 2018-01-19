@@ -455,7 +455,7 @@ function transitionElements() {
           l.userData.nextTPos.y,
           l.userData.nextTPos.z,
         );
-        const lineGeometry = generateCurveGeometry(
+        const { lineGeometry, lineLength } = generateCurveGeometry(
           l.userData.spos,
           l.userData.tpos,
           controls.userHeight,
@@ -468,6 +468,11 @@ function transitionElements() {
         const lineMesh = new THREE.Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
         l.geometry.attributes.position.needsUpdate = true;
+        const lengths = new Float32Array(l.geometry.attributes.position.count)
+          .fill(lineLength);
+
+        l.geometry.addAttribute('lineLength', new THREE.Float32BufferAttribute(lengths, 1));
+
         if (l.userData.status === 'out') {
           l.material.visible = true;
         } else if (l.userData.status === 'in') {
@@ -849,15 +854,19 @@ function setupStage() {
 
 function drawNetwork() {
   layoutByRandom();
-
   globalData.links.forEach((l) => {
-    const lineGeometry = generateCurveGeometry(l.spos, l.tpos, controls.userHeight);
+    const { lineGeometry, lineLength } = generateCurveGeometry(l.spos, l.tpos, controls.userHeight);
     const line = new MeshLine();
     line.setGeometry(
       lineGeometry,
       () => scaleValue.toRange(l.value, { min: 1, max: 100 }, linkScale),
     );
+    const lengths = new Float32Array(line.geometry.attributes.position.count)
+      .fill(lineLength);
+
+    line.geometry.addAttribute('lineLength', new THREE.Float32BufferAttribute(lengths, 1));
     const lineMesh = new THREE.Mesh(line.geometry, lineMaterials.basic);
+
     lineMesh.userData.source = l.source;
     lineMesh.userData.spos = l.spos;
     lineMesh.userData.target = l.target;
