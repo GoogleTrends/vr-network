@@ -49705,7 +49705,10 @@ function updateSphereMaterial() {
   }).start();
 }
 
-/* global document */
+/* global document, Flourish */
+
+var textureLoader$1 = new TextureLoader();
+var imgGeometry$1 = new PlaneGeometry(256, 256);
 
 function generate(state, lineMaterials, userHeight) {
   var container = new Group();
@@ -49751,10 +49754,26 @@ function generate(state, lineMaterials, userHeight) {
   outText.position.set(0.025, -0.2, 0);
   container.add(outText);
 
+  var infoMaterial = new MeshBasicMaterial({
+    map: textureLoader$1.load(Flourish.static_prefix + '/info.png'),
+    transparent: true,
+    depthTest: false
+  });
+  var info = new Mesh(imgGeometry$1, infoMaterial);
+  info.name = 'info';
+  info.userData.type = 'button';
+  info.scale.set(0.0005, 0.0005, 0.0005);
+  info.position.set(0, -0.35, 0);
+  container.add(info);
+
+  var made = generateTextureCanvas('Made by Pitch Interactive', 36, 512, 128);
+  made.scale.set(0.001, 0.001, 0.001);
+  made.position.set(0.45, -0.5, 0);
+  container.add(made);
+
   container.name = 'legend';
-  // container.position.set(-1, 0.75, -1);
-  // container.position.set(-0.5, 0.75, -1);
-  // container.position.set(-0.45, 0.675, -0.9);
+  container.userData.name = 'info';
+  container.userData.type = 'button';
   container.position.set(-0.45, 0.6, -0.8);
   container.rotation.set(Math.PI / 180 * -45, 0, 0);
 
@@ -49800,7 +49819,15 @@ function generate$2(state) {
   highlightCursor.name = 'active';
   container.add(highlightCursor);
 
-  [{ x: 0.0, y: 0.045, w: 0.0025, h: 0.01 }, { x: 0.045, y: 0.0, w: 0.01, h: 0.0025 }, { x: 0.0, y: -0.045, w: 0.0025, h: 0.01 }, { x: -0.045, y: 0.0, w: 0.01, h: 0.0025 }].forEach(function (t) {
+  [{
+    x: 0.0, y: 0.045, w: 0.0025, h: 0.01
+  }, {
+    x: 0.045, y: 0.0, w: 0.01, h: 0.0025
+  }, {
+    x: 0.0, y: -0.045, w: 0.0025, h: 0.01
+  }, {
+    x: -0.045, y: 0.0, w: 0.01, h: 0.0025
+  }].forEach(function (t) {
     var tick = new Mesh(new PlaneGeometry(t.w, t.h), new MeshBasicMaterial({
       color: new Color(state.cursorInnerColor),
       transparent: false,
@@ -50180,9 +50207,9 @@ var toConsumableArray = function (arr) {
 var worldState = {
   intro: {
     active: true,
-    headset: false,
     updating: true,
-    zooming: false
+    zooming: false,
+    returning: false
   },
   vrEnabled: false,
   isTransitioning: false,
@@ -50195,6 +50222,7 @@ var sceneObjects = {
   links: new Group(),
   stars: new Group(),
   cursor: new Group(),
+  lookup: new Group(),
   buttons: new Group()
 };
 var linkScale = {
@@ -50214,7 +50242,6 @@ var shadertime = 0;
 var scene = void 0;
 var effect = void 0;
 var camera = void 0;
-var lookup = void 0;
 var renderer = void 0;
 var controls = void 0;
 var vrDisplay = void 0;
@@ -50474,6 +50501,18 @@ function toggleVREnabled(set, value) {
   effect.setSize(window.innerWidth, window.innerHeight);
 }
 
+function showIntroduction() {
+  worldState.intro.active = true;
+  worldState.intro.returning = true;
+  sceneObjects.buttons.children.forEach(function (b) {
+    if (b.name === 'updating') {
+      b.visible = false;
+    } else {
+      b.visible = true;
+    }
+  });
+}
+
 function transitionElements() {
   if (worldState.intro.active) {
     sceneObjects.intro.quaternion.copy(camera.quaternion);
@@ -50488,14 +50527,23 @@ function transitionElements() {
         worldState.intro.active = false;
       }
       return;
+    } else if (worldState.intro.returning) {
+      var _userTarget = new Vector3(0, 0, stageSize / 3 * 2);
+      if (sceneObjects.user.position.distanceTo(_userTarget) > 0.01) {
+        var _tpos = new Vector3(sceneObjects.user.position.x, sceneObjects.user.position.y, sceneObjects.user.position.z).lerp(_userTarget, 0.1);
+        sceneObjects.user.position.set(_tpos.x, _tpos.y, _tpos.z);
+      } else {
+        worldState.intro.return = false;
+        sceneObjects.intro.visible = true;
+      }
     }
   }
   //
   var countTransitioning = 0;
   sceneObjects.nodes.children.forEach(function (n) {
     if (n.position.distanceTo(n.userData.nextPos) > 0.01) {
-      var _tpos = new Vector3(n.position.x, n.position.y, n.position.z).lerp(n.userData.nextPos, 0.1);
-      n.position.set(_tpos.x, _tpos.y, _tpos.z);
+      var _tpos2 = new Vector3(n.position.x, n.position.y, n.position.z).lerp(n.userData.nextPos, 0.1);
+      n.position.set(_tpos2.x, _tpos2.y, _tpos2.z);
       countTransitioning += 1;
     }
     if (Math.abs(n.scale.x - n.userData.nextScale) > 0.01) {
@@ -50605,17 +50653,20 @@ function checkIntersected() {
     hoveredButton = null;
   }
   //
-  var intersects = [];
+  var objectsToCheck = [];
   if (worldState.intro.active) {
-    var objectsToCheck = [];
     if (scene.getObjectByName('Explore', true)) objectsToCheck.push(scene.getObjectByName('Explore', true));
     if (scene.getObjectByName('GOT IT', true)) objectsToCheck.push(scene.getObjectByName('GOT IT', true));
-    intersects = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(raycaster.intersectObjects(objectsToCheck, true))))));
   } else {
-    var nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
-    var buttonIntersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
-    intersects = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(nodeIntersects), toConsumableArray(buttonIntersects)))));
+    if (sceneObjects.nodes.children) {
+      objectsToCheck = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(objectsToCheck), toConsumableArray(sceneObjects.nodes.children)))));
+    }
+    if (sceneObjects.buttons.children) {
+      objectsToCheck = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(objectsToCheck), toConsumableArray(sceneObjects.buttons.children)))));
+    }
+    if (scene.getObjectByName('info', true)) objectsToCheck.push(scene.getObjectByName('info', true));
   }
+  var intersects = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(raycaster.intersectObjects(objectsToCheck, true))))));
   //
   if (intersects.length > 0) {
     var searching = true;
@@ -50819,6 +50870,9 @@ function takeAction(centerNode) {
       case 'Simulation':
         layoutByForce();
         break;
+      case 'info':
+        showIntroduction();
+        break;
       default:
         globalData = lodash_clonedeep(initData);
         break;
@@ -50857,7 +50911,7 @@ function animate() {
   if (!worldState.intro.updating) {
     controls.update();
   }
-  lookup.quaternion.copy(camera.quaternion);
+  sceneObjects.lookup.quaternion.copy(camera.quaternion);
 
   var time = performance.now() * 0.01;
   if (scene.getObjectByName('updating')) {
@@ -51005,7 +51059,7 @@ function buildOutScene() {
     vrDisplay.resetPose();
     worldState.intro.updating = false;
   }
-  setTimeout(buildOutScene, 1000);
+  setTimeout(buildOutScene, 2000);
 }
 
 function sceneReady() {
@@ -51048,6 +51102,19 @@ function setupScene(data, state) {
   // Generate Non-network Scene Elements
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent, true));
   scene.add(generate$4(sceneObjects.stars, stageSize, 1000));
+  scene.add(generate(state, lineMaterials, controls.userHeight));
+  scene.add(generateButtons(sceneObjects.buttons));
+
+  //
+  var cover = new Mesh(new PlaneGeometry(1600, 800), new MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 1.0
+  }));
+  cover.scale.set(0.001, 0.001, 0.001);
+  cover.position.set(0, 0.6, 0);
+  cover.name = 'cover';
+  scene.add(cover);
 
   //
   var textureLoader = new TextureLoader();
@@ -51057,10 +51124,10 @@ function setupScene(data, state) {
     transparent: true,
     depthTest: false
   });
-  lookup = new Mesh(imgGeometry, lookMaterial);
-  lookup.name = 'lookup';
-  lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
-  lookup.scale.set(0.0025, 0.0025, 0.0025);
+  sceneObjects.lookup.add(new Mesh(imgGeometry, lookMaterial));
+  sceneObjects.lookup.name = 'lookup';
+  sceneObjects.lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
+  sceneObjects.lookup.scale.set(0.0025, 0.0025, 0.0025);
 
   //
   sceneObjects.cursor = generate$2(state);
@@ -51100,19 +51167,17 @@ function setupScene(data, state) {
       });
     }).start();
   });
-  //
   sceneBuildOutFunctions.push(function () {
-    scene.add(generate(state, lineMaterials, controls.userHeight));
-    scene.add(generateButtons(sceneObjects.buttons));
-    scene.getObjectByName('updating').visible = false;
-    scene.add(lookup);
+    var baseOpacity = { opacity: 1 };
+    new Tween.Tween(baseOpacity).to({ opacity: 0 }, 2000).onUpdate(function () {
+      cover.material.opacity = baseOpacity.opacity;
+    }).start();
   });
-  //
   sceneBuildOutFunctions.push(function () {
+    sceneObjects.user.add(sceneObjects.lookup);
     sceneObjects.intro = generate$5(state, stageSize);
     scene.add(sceneObjects.intro);
   });
-  //
 }
 
 function updateSceneFromState(state) {
@@ -51238,7 +51303,7 @@ function showSlide(id) {
 }
 
 function swapSlidesOnOrientation() {
-  if (introState.slide === 1 || introState.slide === 0) {
+  if (introState.slide === 1) {
     if (introState.orientation.includes('landscape')) {
       showSlide(2);
     }

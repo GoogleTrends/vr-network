@@ -92,7 +92,7 @@ function showSlide(id) {
 }
 
 function swapSlidesOnOrientation() {
-  if (introState.slide === 1 || introState.slide === 0) {
+  if (introState.slide === 1) {
     if (introState.orientation.includes('landscape')) {
       showSlide(2);
     }
