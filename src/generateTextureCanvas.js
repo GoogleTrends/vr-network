@@ -1,7 +1,7 @@
 /* global document */
 import * as THREE from 'three';
 
-export function generateTextureCanvas(text, textSize, width, height, weight = '', split = false, opacity = 1) {
+export function generateTextureCanvas(text, textSize, width, height, weight = '', split = false, opacity = 1, fill = 'rgb(255, 255, 255)', stroke = 'rgb(0, 0, 0)') {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   canvas.width = width;
@@ -12,7 +12,7 @@ export function generateTextureCanvas(text, textSize, width, height, weight = ''
   // context.fillRect(0, 0, width, height);
 
   context.font = `${weight}${textSize}pt Roboto Condensed`;
-  context.fillStyle = 'rgb(255, 255, 255)';
+  context.fillStyle = fill;
 
   if (split) {
     const splitText = text.split(' ');
@@ -32,10 +32,10 @@ export function generateTextureCanvas(text, textSize, width, height, weight = ''
     context.fillText(thisline, 0, lineCount * textSize * 1.5);
   } else {
     const textWidth = context.measureText(text).width;
-    context.strokeStyle = 'rgb(0, 0, 0)';
+    context.strokeStyle = stroke;
     context.lineWidth = 6;
     context.strokeText(text, (width / 2) - (textWidth / 2), (height / 2) + (textSize / 2.25));
-    context.fillStyle = 'rgb(255, 255, 255)';
+    context.fillStyle = fill;
     context.fillText(text, (width / 2) - (textWidth / 2), (height / 2) + (textSize / 2.25));
   }
 

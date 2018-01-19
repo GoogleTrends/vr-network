@@ -49423,6 +49423,8 @@ function generateTextureCanvas(text, textSize, width, height) {
   var weight = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
   var split = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
   var opacity = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 1;
+  var fill = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 'rgb(255, 255, 255)';
+  var stroke = arguments.length > 8 && arguments[8] !== undefined ? arguments[8] : 'rgb(0, 0, 0)';
 
   var canvas = document.createElement('canvas');
   var context = canvas.getContext('2d');
@@ -49434,7 +49436,7 @@ function generateTextureCanvas(text, textSize, width, height) {
   // context.fillRect(0, 0, width, height);
 
   context.font = '' + weight + textSize + 'pt Roboto Condensed';
-  context.fillStyle = 'rgb(255, 255, 255)';
+  context.fillStyle = fill;
 
   if (split) {
     var splitText = text.split(' ');
@@ -49454,10 +49456,10 @@ function generateTextureCanvas(text, textSize, width, height) {
     context.fillText(thisline, 0, lineCount * textSize * 1.5);
   } else {
     var textWidth = context.measureText(text).width;
-    context.strokeStyle = 'rgb(0, 0, 0)';
+    context.strokeStyle = stroke;
     context.lineWidth = 6;
     context.strokeText(text, width / 2 - textWidth / 2, height / 2 + textSize / 2.25);
-    context.fillStyle = 'rgb(255, 255, 255)';
+    context.fillStyle = fill;
     context.fillText(text, width / 2 - textWidth / 2, height / 2 + textSize / 2.25);
   }
 
@@ -49703,7 +49705,10 @@ function updateSphereMaterial() {
   }).start();
 }
 
-/* global document */
+/* global document, Flourish */
+
+var textureLoader$1 = new TextureLoader();
+var imgGeometry$1 = new PlaneGeometry(256, 256);
 
 function generate(state, lineMaterials, userHeight) {
   var container = new Group();
@@ -49749,10 +49754,26 @@ function generate(state, lineMaterials, userHeight) {
   outText.position.set(0.025, -0.2, 0);
   container.add(outText);
 
+  var infoMaterial = new MeshBasicMaterial({
+    map: textureLoader$1.load(Flourish.static_prefix + '/info.png'),
+    transparent: true,
+    depthTest: false
+  });
+  var info = new Mesh(imgGeometry$1, infoMaterial);
+  info.name = 'info';
+  info.userData.type = 'button';
+  info.scale.set(0.0005, 0.0005, 0.0005);
+  info.position.set(0, -0.35, 0);
+  container.add(info);
+
+  var made = generateTextureCanvas('Made by Pitch Interactive', 36, 512, 128);
+  made.scale.set(0.001, 0.001, 0.001);
+  made.position.set(0.45, -0.5, 0);
+  container.add(made);
+
   container.name = 'legend';
-  // container.position.set(-1, 0.75, -1);
-  // container.position.set(-0.5, 0.75, -1);
-  // container.position.set(-0.45, 0.675, -0.9);
+  container.userData.name = 'info';
+  container.userData.type = 'button';
   container.position.set(-0.45, 0.6, -0.8);
   container.rotation.set(Math.PI / 180 * -45, 0, 0);
 
@@ -49797,6 +49818,25 @@ function generate$2(state) {
   }));
   highlightCursor.name = 'active';
   container.add(highlightCursor);
+
+  [{
+    x: 0.0, y: 0.045, w: 0.0025, h: 0.01
+  }, {
+    x: 0.045, y: 0.0, w: 0.01, h: 0.0025
+  }, {
+    x: 0.0, y: -0.045, w: 0.0025, h: 0.01
+  }, {
+    x: -0.045, y: 0.0, w: 0.01, h: 0.0025
+  }].forEach(function (t) {
+    var tick = new Mesh(new PlaneGeometry(t.w, t.h), new MeshBasicMaterial({
+      color: new Color(state.cursorInnerColor),
+      transparent: false,
+      depthTest: false
+    }));
+    tick.position.set(t.x, t.y, 0);
+    tick.name = 'tick';
+    container.add(tick);
+  });
 
   container.position.z = -1;
   container.name = 'cursor';
@@ -49846,38 +49886,28 @@ function updateStarMaterial() {
 
 /* global Flourish */
 
-function generateIntroButton(name, image, width, yoffset, innerYOffset, zoffset) {
+function generateIntroButton(name, width, yoffset) {
   var button = new Group();
   button.name = name;
   button.userData.type = name;
-  var text = generateTextureCanvas(name, 36, width / 2, width / 2, '', false);
-  text.position.set(width / 4.75, innerYOffset, 64);
+
+  var text = generateTextureCanvas(name, 36, width, width / 4, 'bold ', false, 1, 'rgb(17, 32, 59)', 'rgba(255, 255, 255, 0)');
+  text.scale.set(0.5, 0.5, 0.5);
+  text.position.set(0, 0, 2);
   text.userData.type = 'text';
   button.add(text);
-  var rect = new Mesh(new PlaneGeometry(width, width / 2 * 0.65), new MeshBasicMaterial({
+
+  var rect = new Mesh(new PlaneGeometry(width / 3 * 2, width / 10), new MeshBasicMaterial({
     color: new Color('#FFFFFF'),
     transparent: true,
-    opacity: 0.1
+    opacity: 1.0
   }));
   rect.position.set(0, 0, 1);
   rect.userData.type = 'button';
   button.add(rect);
-  //
-  var textureLoader = new TextureLoader();
-  var imgGeometry = new PlaneGeometry(256, 256);
-  var imgMaterial = new MeshBasicMaterial({
-    map: textureLoader.load(Flourish.static_prefix + '/' + image),
-    transparent: true,
-    depthTest: false
-  });
-  var icon = new Mesh(imgGeometry, imgMaterial);
-  icon.scale.set(0.65, 0.65, 0.65);
-  icon.position.set(-width / 4.75, innerYOffset, 64);
-  button.add(icon);
-  //
-  // button.scale.set(0.8, 0.8, 0.8);
+
   button.scale.set(0.906, 0.906, 0.906);
-  button.position.set(0, yoffset, zoffset);
+  button.position.set(0, yoffset, 0);
   return button;
 }
 
@@ -49886,7 +49916,7 @@ function generate$5(state, stageSize) {
   intro.name = 'intro';
 
   var width = 512;
-  var height = 512;
+  var height = 384;
 
   var backgroundGeometry = new PlaneGeometry(width, height);
   var backgroundMaterial = new MeshBasicMaterial({
@@ -49895,10 +49925,9 @@ function generate$5(state, stageSize) {
     opacity: 0.75,
     depthTest: false
   });
-  var background = new Mesh(backgroundGeometry, backgroundMaterial);
-  intro.add(background);
+  intro.add(new Mesh(backgroundGeometry, backgroundMaterial));
 
-  var rectSize = 220;
+  var rectSize = 192;
   var textureLoader = new TextureLoader();
   var imgGeometry = new PlaneGeometry(rectSize, rectSize);
 
@@ -49909,11 +49938,11 @@ function generate$5(state, stageSize) {
     depthTest: false
   });
   cursor.add(new Mesh(imgGeometry, cursorMaterial));
-  var cursorText = generateTextureCanvas('Look at any node to show it\'s connections', 36, 512, 256, '', true);
+  var cursorText = generateTextureCanvas('Position the ring cursor over a node to show it\'s connections.', 36, 512, 256, '', true);
   cursorText.scale.set(0.43, 0.43, 0.43);
   cursorText.position.set(0, -166, 0);
   cursor.add(cursorText);
-  cursor.position.set(-122, 122, 1);
+  cursor.position.set(-122, 80, 1);
   intro.add(cursor);
 
   var fuse = new Group();
@@ -49923,15 +49952,14 @@ function generate$5(state, stageSize) {
     depthTest: false
   });
   fuse.add(new Mesh(imgGeometry, fuseMaterial));
-  var fuseText = generateTextureCanvas('When the cursor fills, the connected nodes will be brought into view', 36, 512, 256, '', true);
+  var fuseText = generateTextureCanvas('When the cursor fills, the connected nodes will be brought into view.', 36, 512, 256, '', true);
   fuseText.scale.set(0.43, 0.43, 0.43);
   fuseText.position.set(0, -166, 0);
   fuse.add(fuseText);
-  fuse.position.set(122, 122, 1);
+  fuse.position.set(122, 80, 1);
   intro.add(fuse);
 
-  var ready = generateIntroButton('Ready?', 'cardboard.png', 512, -160, 16, 0);
-  intro.add(ready);
+  intro.add(generateIntroButton('GOT IT', 512, -152));
 
   intro.scale.set(0.01, 0.01, 0.01);
   intro.position.set(0, 1.5, stageSize / 4);
@@ -50179,9 +50207,9 @@ var toConsumableArray = function (arr) {
 var worldState = {
   intro: {
     active: true,
-    headset: false,
     updating: true,
-    zooming: false
+    zooming: false,
+    returning: false
   },
   vrEnabled: false,
   isTransitioning: false,
@@ -50194,6 +50222,7 @@ var sceneObjects = {
   links: new Group(),
   stars: new Group(),
   cursor: new Group(),
+  lookup: new Group(),
   buttons: new Group()
 };
 var linkScale = {
@@ -50213,7 +50242,6 @@ var shadertime = 0;
 var scene = void 0;
 var effect = void 0;
 var camera = void 0;
-var lookup = void 0;
 var renderer = void 0;
 var controls = void 0;
 var vrDisplay = void 0;
@@ -50473,6 +50501,18 @@ function toggleVREnabled(set, value) {
   effect.setSize(window.innerWidth, window.innerHeight);
 }
 
+function showIntroduction() {
+  worldState.intro.active = true;
+  worldState.intro.returning = true;
+  sceneObjects.buttons.children.forEach(function (b) {
+    if (b.name === 'updating') {
+      b.visible = false;
+    } else {
+      b.visible = true;
+    }
+  });
+}
+
 function transitionElements() {
   if (worldState.intro.active) {
     sceneObjects.intro.quaternion.copy(camera.quaternion);
@@ -50487,14 +50527,23 @@ function transitionElements() {
         worldState.intro.active = false;
       }
       return;
+    } else if (worldState.intro.returning) {
+      var _userTarget = new Vector3(0, 0, stageSize / 3 * 2);
+      if (sceneObjects.user.position.distanceTo(_userTarget) > 0.01) {
+        var _tpos = new Vector3(sceneObjects.user.position.x, sceneObjects.user.position.y, sceneObjects.user.position.z).lerp(_userTarget, 0.1);
+        sceneObjects.user.position.set(_tpos.x, _tpos.y, _tpos.z);
+      } else {
+        worldState.intro.return = false;
+        sceneObjects.intro.visible = true;
+      }
     }
   }
   //
   var countTransitioning = 0;
   sceneObjects.nodes.children.forEach(function (n) {
     if (n.position.distanceTo(n.userData.nextPos) > 0.01) {
-      var _tpos = new Vector3(n.position.x, n.position.y, n.position.z).lerp(n.userData.nextPos, 0.1);
-      n.position.set(_tpos.x, _tpos.y, _tpos.z);
+      var _tpos2 = new Vector3(n.position.x, n.position.y, n.position.z).lerp(n.userData.nextPos, 0.1);
+      n.position.set(_tpos2.x, _tpos2.y, _tpos2.z);
       countTransitioning += 1;
     }
     if (Math.abs(n.scale.x - n.userData.nextScale) > 0.01) {
@@ -50599,18 +50648,25 @@ function resetIntersected() {
 
 function checkIntersected() {
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
-  //
-  var intersects = [];
-  if (worldState.intro.active) {
-    var objectsToCheck = [];
-    if (scene.getObjectByName('Explore', true)) objectsToCheck.push(scene.getObjectByName('Explore', true));
-    if (scene.getObjectByName('Ready?', true)) objectsToCheck.push(scene.getObjectByName('Ready?', true));
-    intersects = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(raycaster.intersectObjects(objectsToCheck, true))))));
-  } else {
-    var nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
-    var buttonIntersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
-    intersects = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(nodeIntersects), toConsumableArray(buttonIntersects)))));
+  if (hoveredButton) {
+    hoveredButton.opacity = hoveredButton.lastOpacity;
+    hoveredButton = null;
   }
+  //
+  var objectsToCheck = [];
+  if (worldState.intro.active) {
+    if (scene.getObjectByName('Explore', true)) objectsToCheck.push(scene.getObjectByName('Explore', true));
+    if (scene.getObjectByName('GOT IT', true)) objectsToCheck.push(scene.getObjectByName('GOT IT', true));
+  } else {
+    if (sceneObjects.nodes.children) {
+      objectsToCheck = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(objectsToCheck), toConsumableArray(sceneObjects.nodes.children)))));
+    }
+    if (sceneObjects.buttons.children) {
+      objectsToCheck = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(objectsToCheck), toConsumableArray(sceneObjects.buttons.children)))));
+    }
+    if (scene.getObjectByName('info', true)) objectsToCheck.push(scene.getObjectByName('info', true));
+  }
+  var intersects = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(raycaster.intersectObjects(objectsToCheck, true))))));
   //
   if (intersects.length > 0) {
     var searching = true;
@@ -50638,8 +50694,10 @@ function checkIntersected() {
           nextIntersected = intersects[index].object;
         }
         if (intersects[index].object.userData.type === 'button') {
-          intersects[index].object.material.opacity = 0.25;
+          var lastOpacity = intersects[index].object.material.opacity;
+          intersects[index].object.material.opacity = 0.5;
           hoveredButton = intersects[index].object.material;
+          hoveredButton.lastOpacity = lastOpacity;
         }
         searching = false;
       }
@@ -50706,7 +50764,7 @@ function checkIntersected() {
     } else if (!foundCurrent && timer !== null) {
       //
       if (hoveredButton) {
-        hoveredButton.opacity = 0.1;
+        hoveredButton.opacity = hoveredButton.lastOpacity;
         hoveredButton = null;
       }
       //
@@ -50718,7 +50776,7 @@ function checkIntersected() {
   } else {
     //
     if (hoveredButton) {
-      hoveredButton.opacity = 0.1;
+      hoveredButton.opacity = hoveredButton.lastOpacity;
       hoveredButton = null;
     }
     //
@@ -50797,7 +50855,7 @@ function takeAction(centerNode) {
       }
     });
     if (hoveredButton) {
-      hoveredButton.opacity = 0.1;
+      hoveredButton.opacity = hoveredButton.lastOpacity;
       hoveredButton = null;
     }
     timer = null;
@@ -50812,11 +50870,14 @@ function takeAction(centerNode) {
       case 'Simulation':
         layoutByForce();
         break;
+      case 'info':
+        showIntroduction();
+        break;
       default:
         globalData = lodash_clonedeep(initData);
         break;
     }
-  } else if (centerNode.type === 'Ready?') {
+  } else if (centerNode.type === 'GOT IT') {
     worldState.intro.zooming = true;
     layoutByRank();
   }
@@ -50828,7 +50889,7 @@ function updateCursor() {
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
-        timer += Math.PI / 45;
+        timer += Math.PI / 60;
         sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
         sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
@@ -50850,7 +50911,7 @@ function animate() {
   if (!worldState.intro.updating) {
     controls.update();
   }
-  lookup.quaternion.copy(camera.quaternion);
+  sceneObjects.lookup.quaternion.copy(camera.quaternion);
 
   var time = performance.now() * 0.01;
   if (scene.getObjectByName('updating')) {
@@ -50998,7 +51059,7 @@ function buildOutScene() {
     vrDisplay.resetPose();
     worldState.intro.updating = false;
   }
-  setTimeout(buildOutScene, 100);
+  setTimeout(buildOutScene, 2000);
 }
 
 function sceneReady() {
@@ -51041,6 +51102,19 @@ function setupScene(data, state) {
   // Generate Non-network Scene Elements
   scene.add(generateHorizon(flourishState.horizonTopColor, flourishState.horizonBottomColor, flourishState.horizonExponent, true));
   scene.add(generate$4(sceneObjects.stars, stageSize, 1000));
+  scene.add(generate(state, lineMaterials, controls.userHeight));
+  scene.add(generateButtons(sceneObjects.buttons));
+
+  //
+  var cover = new Mesh(new PlaneGeometry(1600, 800), new MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 1.0
+  }));
+  cover.scale.set(0.001, 0.001, 0.001);
+  cover.position.set(0, 0.6, 0);
+  cover.name = 'cover';
+  scene.add(cover);
 
   //
   var textureLoader = new TextureLoader();
@@ -51050,11 +51124,10 @@ function setupScene(data, state) {
     transparent: true,
     depthTest: false
   });
-  lookup = new Mesh(imgGeometry, lookMaterial);
-  lookup.name = 'lookup';
-  lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
-  lookup.scale.set(0.0025, 0.0025, 0.0025);
-  //
+  sceneObjects.lookup.add(new Mesh(imgGeometry, lookMaterial));
+  sceneObjects.lookup.name = 'lookup';
+  sceneObjects.lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
+  sceneObjects.lookup.scale.set(0.0025, 0.0025, 0.0025);
 
   //
   sceneObjects.cursor = generate$2(state);
@@ -51062,7 +51135,6 @@ function setupScene(data, state) {
   sceneObjects.user.add(camera);
   sceneObjects.user.position.set(0, 0, stageSize / 3 * 2);
   scene.add(sceneObjects.user);
-  //
 
   // Apply VR stereo rendering to renderer.
   effect = new StereoEffect(renderer);
@@ -51072,10 +51144,9 @@ function setupScene(data, state) {
   window.addEventListener('resize', onResize, true);
   window.addEventListener('vrdisplaypresentchange', onResize, true);
   window.addEventListener('touchstart', enableNoSleep, true);
-
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
-  // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
 
+  //
   formatData();
 
   //
@@ -51096,19 +51167,17 @@ function setupScene(data, state) {
       });
     }).start();
   });
-  //
   sceneBuildOutFunctions.push(function () {
-    scene.add(generate(state, lineMaterials, controls.userHeight));
-    scene.add(generateButtons(sceneObjects.buttons));
-    scene.getObjectByName('updating').visible = false;
-    scene.add(lookup);
+    var baseOpacity = { opacity: 1 };
+    new Tween.Tween(baseOpacity).to({ opacity: 0 }, 2000).onUpdate(function () {
+      cover.material.opacity = baseOpacity.opacity;
+    }).start();
   });
-  //
   sceneBuildOutFunctions.push(function () {
+    sceneObjects.user.add(sceneObjects.lookup);
     sceneObjects.intro = generate$5(state, stageSize);
     scene.add(sceneObjects.intro);
   });
-  //
 }
 
 function updateSceneFromState(state) {
@@ -51154,7 +51223,7 @@ var data = {};
 var state = {
   logo: logoURI,
   title: 'Related Searches between Top 50 TV Shows 2017',
-  description: 'Look at each Node to see the seach interest relationships between the Top 50 Seached TV Shows',
+  description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
   horizonTopColor: '#000000',
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,
@@ -51166,8 +51235,8 @@ var state = {
   legendOutboundLabel: 'Related Searches',
   cursorInnerColor: '#ffffff',
   cursorOuterColor: '#000000',
-  cursorActiveColor: '#0FA200',
-  cursorOpacity: 0.5
+  cursorActiveColor: '#ffffff', // '#0FA200',
+  cursorOpacity: 0.25
 };
 
 var timerduration = 4;
@@ -51234,7 +51303,7 @@ function showSlide(id) {
 }
 
 function swapSlidesOnOrientation() {
-  if (introState.slide === 1 || introState.slide === 0) {
+  if (introState.slide === 1) {
     if (introState.orientation.includes('landscape')) {
       showSlide(2);
     }

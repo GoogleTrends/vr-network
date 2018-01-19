@@ -12,7 +12,7 @@ export const data = {};
 export const state = {
   logo: logoURI,
   title: 'Related Searches between Top 50 TV Shows 2017',
-  description: 'Look at each Node to see the seach interest relationships between the Top 50 Seached TV Shows',
+  description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
   horizonTopColor: '#000000',
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,
@@ -24,8 +24,8 @@ export const state = {
   legendOutboundLabel: 'Related Searches',
   cursorInnerColor: '#ffffff',
   cursorOuterColor: '#000000',
-  cursorActiveColor: '#0FA200',
-  cursorOpacity: 0.5,
+  cursorActiveColor: '#ffffff', // '#0FA200',
+  cursorOpacity: 0.25,
 };
 
 const timerduration = 4;
@@ -92,7 +92,7 @@ function showSlide(id) {
 }
 
 function swapSlidesOnOrientation() {
-  if (introState.slide === 1 || introState.slide === 0) {
+  if (introState.slide === 1) {
     if (introState.orientation.includes('landscape')) {
       showSlide(2);
     }

@@ -10,7 +10,6 @@ import d3Force from '../node_modules/d3-force-3d/build/d3-force-3d.min';
 import NoSleep from '../node_modules/nosleep.js/dist/NoSleep';
 import '../node_modules/webvr-polyfill/build/webvr-polyfill.min';
 
-
 import { generateTextureCanvas } from './generateTextureCanvas';
 import { generateCurveGeometry } from './generateCurveGeometry';
 import { generateHorizon, updateHorizonVisibility } from './elements/horizon';
@@ -26,9 +25,9 @@ import * as scaleValue from './scaleValue';
 const worldState = {
   intro: {
     active: true,
-    headset: false,
     updating: true,
     zooming: false,
+    returning: false,
   },
   vrEnabled: false,
   isTransitioning: false,
@@ -41,6 +40,7 @@ const sceneObjects = {
   links: new THREE.Group(),
   stars: new THREE.Group(),
   cursor: new THREE.Group(),
+  lookup: new THREE.Group(),
   buttons: new THREE.Group(),
 };
 const linkScale = {
@@ -60,7 +60,6 @@ let shadertime = 0;
 let scene;
 let effect;
 let camera;
-let lookup;
 let renderer;
 let controls;
 let vrDisplay;
@@ -324,6 +323,18 @@ export function toggleVREnabled(set, value) {
   effect.setSize(window.innerWidth, window.innerHeight);
 }
 
+function showIntroduction() {
+  worldState.intro.active = true;
+  worldState.intro.returning = true;
+  sceneObjects.buttons.children.forEach((b) => {
+    if (b.name === 'updating') {
+      b.visible = false;
+    } else {
+      b.visible = true;
+    }
+  });
+}
+
 function transitionElements() {
   if (worldState.intro.active) {
     sceneObjects.intro.quaternion.copy(camera.quaternion);
@@ -342,6 +353,19 @@ function transitionElements() {
         worldState.intro.active = false;
       }
       return;
+    } else if (worldState.intro.returning) {
+      const userTarget = new THREE.Vector3(0, 0, (stageSize / 3) * 2);
+      if (sceneObjects.user.position.distanceTo(userTarget) > 0.01) {
+        const tpos = new THREE.Vector3(
+          sceneObjects.user.position.x,
+          sceneObjects.user.position.y,
+          sceneObjects.user.position.z,
+        ).lerp(userTarget, 0.1);
+        sceneObjects.user.position.set(tpos.x, tpos.y, tpos.z);
+      } else {
+        worldState.intro.return = false;
+        sceneObjects.intro.visible = true;
+      }
     }
   }
   //
@@ -482,18 +506,25 @@ function resetIntersected() {
 
 function checkIntersected() {
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
-  //
-  let intersects = [];
-  if (worldState.intro.active) {
-    const objectsToCheck = [];
-    if (scene.getObjectByName('Explore', true)) objectsToCheck.push(scene.getObjectByName('Explore', true));
-    if (scene.getObjectByName('Ready?', true)) objectsToCheck.push(scene.getObjectByName('Ready?', true));
-    intersects = [...new Set([...raycaster.intersectObjects(objectsToCheck, true)])];
-  } else {
-    const nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
-    const buttonIntersects = raycaster.intersectObjects(sceneObjects.buttons.children, true);
-    intersects = [...new Set([...nodeIntersects, ...buttonIntersects])];
+  if (hoveredButton) {
+    hoveredButton.opacity = hoveredButton.lastOpacity;
+    hoveredButton = null;
   }
+  //
+  let objectsToCheck = [];
+  if (worldState.intro.active) {
+    if (scene.getObjectByName('Explore', true)) objectsToCheck.push(scene.getObjectByName('Explore', true));
+    if (scene.getObjectByName('GOT IT', true)) objectsToCheck.push(scene.getObjectByName('GOT IT', true));
+  } else {
+    if (sceneObjects.nodes.children) {
+      objectsToCheck = [...new Set([...objectsToCheck, ...sceneObjects.nodes.children])];
+    }
+    if (sceneObjects.buttons.children) {
+      objectsToCheck = [...new Set([...objectsToCheck, ...sceneObjects.buttons.children])];
+    }
+    if (scene.getObjectByName('info', true)) objectsToCheck.push(scene.getObjectByName('info', true));
+  }
+  const intersects = [...new Set([...raycaster.intersectObjects(objectsToCheck, true)])];
   //
   if (intersects.length > 0) {
     let searching = true;
@@ -546,8 +577,10 @@ function checkIntersected() {
           nextIntersected = intersects[index].object;
         }
         if (intersects[index].object.userData.type === 'button') {
-          intersects[index].object.material.opacity = 0.25;
+          const lastOpacity = intersects[index].object.material.opacity;
+          intersects[index].object.material.opacity = 0.5;
           hoveredButton = intersects[index].object.material;
+          hoveredButton.lastOpacity = lastOpacity;
         }
         searching = false;
       }
@@ -614,7 +647,7 @@ function checkIntersected() {
     } else if (!foundCurrent && timer !== null) {
       //
       if (hoveredButton) {
-        hoveredButton.opacity = 0.1;
+        hoveredButton.opacity = hoveredButton.lastOpacity;
         hoveredButton = null;
       }
       //
@@ -626,7 +659,7 @@ function checkIntersected() {
   } else {
     //
     if (hoveredButton) {
-      hoveredButton.opacity = 0.1;
+      hoveredButton.opacity = hoveredButton.lastOpacity;
       hoveredButton = null;
     }
     //
@@ -708,7 +741,7 @@ function takeAction(centerNode) {
       }
     });
     if (hoveredButton) {
-      hoveredButton.opacity = 0.1;
+      hoveredButton.opacity = hoveredButton.lastOpacity;
       hoveredButton = null;
     }
     timer = null;
@@ -723,11 +756,14 @@ function takeAction(centerNode) {
       case 'Simulation':
         layoutByForce();
         break;
+      case 'info':
+        showIntroduction();
+        break;
       default:
         globalData = cloneDeep(initData);
         break;
     }
-  } else if (centerNode.type === 'Ready?') {
+  } else if (centerNode.type === 'GOT IT') {
     worldState.intro.zooming = true;
     layoutByRank();
   }
@@ -739,7 +775,7 @@ function updateCursor() {
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
-        timer += Math.PI / 45;
+        timer += Math.PI / 60;
         sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
         sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(
@@ -774,7 +810,7 @@ function animate() { // Request animation frame loop function
   if (!worldState.intro.updating) {
     controls.update();
   }
-  lookup.quaternion.copy(camera.quaternion);
+  sceneObjects.lookup.quaternion.copy(camera.quaternion);
 
   const time = performance.now() * 0.01;
   if (scene.getObjectByName('updating')) {
@@ -916,7 +952,7 @@ function buildOutScene() {
     vrDisplay.resetPose();
     worldState.intro.updating = false;
   }
-  setTimeout(buildOutScene, 100);
+  setTimeout(buildOutScene, 2000);
 }
 
 export function sceneReady() {
@@ -962,6 +998,22 @@ export function setupScene(data, state) {
     true,
   ));
   scene.add(stars.generate(sceneObjects.stars, stageSize, 1000));
+  scene.add(legend.generate(state, lineMaterials, controls.userHeight));
+  scene.add(generateButtons(sceneObjects.buttons));
+
+  //
+  const cover = new THREE.Mesh(
+    new THREE.PlaneGeometry(1600, 800),
+    new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 1.0,
+    }),
+  );
+  cover.scale.set(0.001, 0.001, 0.001);
+  cover.position.set(0, 0.6, 0);
+  cover.name = 'cover';
+  scene.add(cover);
 
   //
   const textureLoader = new THREE.TextureLoader();
@@ -971,11 +1023,10 @@ export function setupScene(data, state) {
     transparent: true,
     depthTest: false,
   });
-  lookup = new THREE.Mesh(imgGeometry, lookMaterial);
-  lookup.name = 'lookup';
-  lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
-  lookup.scale.set(0.0025, 0.0025, 0.0025);
-  //
+  sceneObjects.lookup.add(new THREE.Mesh(imgGeometry, lookMaterial));
+  sceneObjects.lookup.name = 'lookup';
+  sceneObjects.lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
+  sceneObjects.lookup.scale.set(0.0025, 0.0025, 0.0025);
 
   //
   sceneObjects.cursor = cursor.generate(state);
@@ -983,7 +1034,6 @@ export function setupScene(data, state) {
   sceneObjects.user.add(camera);
   sceneObjects.user.position.set(0, 0, (stageSize / 3) * 2);
   scene.add(sceneObjects.user);
-  //
 
   // Apply VR stereo rendering to renderer.
   effect = new StereoEffect(renderer);
@@ -993,10 +1043,9 @@ export function setupScene(data, state) {
   window.addEventListener('resize', onResize, true);
   window.addEventListener('vrdisplaypresentchange', onResize, true);
   window.addEventListener('touchstart', enableNoSleep, true);
-
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
-  // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
 
+  //
   formatData();
 
   //
@@ -1019,19 +1068,19 @@ export function setupScene(data, state) {
         });
       }).start();
   });
-  //
   sceneBuildOutFunctions.push(() => {
-    scene.add(legend.generate(state, lineMaterials, controls.userHeight));
-    scene.add(generateButtons(sceneObjects.buttons));
-    scene.getObjectByName('updating').visible = false;
-    scene.add(lookup);
+    const baseOpacity = { opacity: 1 };
+    new TWEEN.Tween(baseOpacity)
+      .to({ opacity: 0 }, 2000)
+      .onUpdate(() => {
+        cover.material.opacity = baseOpacity.opacity;
+      }).start();
   });
-  //
   sceneBuildOutFunctions.push(() => {
+    sceneObjects.user.add(sceneObjects.lookup);
     sceneObjects.intro = intro.generate(state, stageSize);
     scene.add(sceneObjects.intro);
   });
-  //
 }
 
 export function updateSceneFromState(state) {

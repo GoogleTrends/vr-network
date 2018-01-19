@@ -51,6 +51,33 @@ export function generate(state) {
   highlightCursor.name = 'active';
   container.add(highlightCursor);
 
+  [
+    {
+      x: 0.0, y: 0.045, w: 0.0025, h: 0.01,
+    },
+    {
+      x: 0.045, y: 0.0, w: 0.01, h: 0.0025,
+    },
+    {
+      x: 0.0, y: -0.045, w: 0.0025, h: 0.01,
+    },
+    {
+      x: -0.045, y: 0.0, w: 0.01, h: 0.0025,
+    },
+  ].forEach((t) => {
+    const tick = new THREE.Mesh(
+      new THREE.PlaneGeometry(t.w, t.h),
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(state.cursorInnerColor),
+        transparent: false,
+        depthTest: false,
+      }),
+    );
+    tick.position.set(t.x, t.y, 0);
+    tick.name = 'tick';
+    container.add(tick);
+  });
+
   container.position.z = -1;
   container.name = 'cursor';
   return container;
