@@ -49800,6 +49800,17 @@ function generate$2(state) {
   highlightCursor.name = 'active';
   container.add(highlightCursor);
 
+  [{ x: 0.0, y: 0.045, w: 0.0025, h: 0.01 }, { x: 0.045, y: 0.0, w: 0.01, h: 0.0025 }, { x: 0.0, y: -0.045, w: 0.0025, h: 0.01 }, { x: -0.045, y: 0.0, w: 0.01, h: 0.0025 }].forEach(function (t) {
+    var tick = new Mesh(new PlaneGeometry(t.w, t.h), new MeshBasicMaterial({
+      color: new Color(state.cursorInnerColor),
+      transparent: false,
+      depthTest: false
+    }));
+    tick.position.set(t.x, t.y, 0);
+    tick.name = 'tick';
+    container.add(tick);
+  });
+
   container.position.z = -1;
   container.name = 'cursor';
   return container;
@@ -50824,7 +50835,7 @@ function updateCursor() {
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
-        timer += Math.PI / 45;
+        timer += Math.PI / 60;
         sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
         sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
@@ -51050,7 +51061,6 @@ function setupScene(data, state) {
   lookup.name = 'lookup';
   lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
   lookup.scale.set(0.0025, 0.0025, 0.0025);
-  //
 
   //
   sceneObjects.cursor = generate$2(state);
@@ -51058,7 +51068,6 @@ function setupScene(data, state) {
   sceneObjects.user.add(camera);
   sceneObjects.user.position.set(0, 0, stageSize / 3 * 2);
   scene.add(sceneObjects.user);
-  //
 
   // Apply VR stereo rendering to renderer.
   effect = new StereoEffect(renderer);
@@ -51068,10 +51077,9 @@ function setupScene(data, state) {
   window.addEventListener('resize', onResize, true);
   window.addEventListener('vrdisplaypresentchange', onResize, true);
   window.addEventListener('touchstart', enableNoSleep, true);
-
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
-  // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
 
+  //
   formatData();
 
   //
@@ -51162,8 +51170,8 @@ var state = {
   legendOutboundLabel: 'Related Searches',
   cursorInnerColor: '#ffffff',
   cursorOuterColor: '#000000',
-  cursorActiveColor: '#0FA200',
-  cursorOpacity: 0.5
+  cursorActiveColor: '#ffffff', // '#0FA200',
+  cursorOpacity: 0.25
 };
 
 var timerduration = 4;

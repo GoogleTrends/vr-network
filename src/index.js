@@ -24,8 +24,8 @@ export const state = {
   legendOutboundLabel: 'Related Searches',
   cursorInnerColor: '#ffffff',
   cursorOuterColor: '#000000',
-  cursorActiveColor: '#0FA200',
-  cursorOpacity: 0.5,
+  cursorActiveColor: '#ffffff', // '#0FA200',
+  cursorOpacity: 0.25,
 };
 
 const timerduration = 4;

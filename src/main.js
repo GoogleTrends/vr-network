@@ -10,7 +10,6 @@ import d3Force from '../node_modules/d3-force-3d/build/d3-force-3d.min';
 import NoSleep from '../node_modules/nosleep.js/dist/NoSleep';
 import '../node_modules/webvr-polyfill/build/webvr-polyfill.min';
 
-
 import { generateTextureCanvas } from './generateTextureCanvas';
 import { generateCurveGeometry } from './generateCurveGeometry';
 import { generateHorizon, updateHorizonVisibility } from './elements/horizon';
@@ -745,7 +744,7 @@ function updateCursor() {
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
-        timer += Math.PI / 45;
+        timer += Math.PI / 60;
         sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
         sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(
@@ -981,7 +980,6 @@ export function setupScene(data, state) {
   lookup.name = 'lookup';
   lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
   lookup.scale.set(0.0025, 0.0025, 0.0025);
-  //
 
   //
   sceneObjects.cursor = cursor.generate(state);
@@ -989,7 +987,6 @@ export function setupScene(data, state) {
   sceneObjects.user.add(camera);
   sceneObjects.user.position.set(0, 0, (stageSize / 3) * 2);
   scene.add(sceneObjects.user);
-  //
 
   // Apply VR stereo rendering to renderer.
   effect = new StereoEffect(renderer);
@@ -999,10 +996,9 @@ export function setupScene(data, state) {
   window.addEventListener('resize', onResize, true);
   window.addEventListener('vrdisplaypresentchange', onResize, true);
   window.addEventListener('touchstart', enableNoSleep, true);
-
   document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
-  // document.querySelector('#inbutton').addEventListener('click', showIntro, true);
 
+  //
   formatData();
 
   //
