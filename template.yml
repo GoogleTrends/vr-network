@@ -40,6 +40,20 @@ settings:
     description: Introductory and explanatory text
     type: text
 
+  - Nodes
+  - property: basicNodeColor
+    name: Node Color
+    description: The basic node color
+    type: color
+  - property: adjacentNodeColor
+    name: Adjacent Node Color
+    description: The adjacent node color
+    type: color
+  - property: highlightNodeColor
+    name: Highlight Node Color
+    description: The highlight node color
+    type: color
+
   - Links
   - property: linkInboundColor
     name: Inbound Color

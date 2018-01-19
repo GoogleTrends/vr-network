@@ -15,7 +15,7 @@ import { generateCurveGeometry } from './generateCurveGeometry';
 import { generateHorizon, updateHorizonVisibility } from './elements/horizon';
 import { generateButtons } from './elements/buttons';
 import { updateLineMaterials } from './materials/lineMaterials';
-import * as sphereMaterials from './materials/sphereMaterials';
+import { updateSphereMaterials, updateSphereOpacity } from './materials/sphereMaterials';
 import * as legend from './elements/legend';
 import * as cursor from './elements/cursor';
 import * as stars from './elements/stars';
@@ -48,6 +48,7 @@ const linkScale = {
   max: 3,
 };
 const light = new THREE.DirectionalLight(0xffffff);
+const textureLoader = new THREE.TextureLoader();
 const raycaster = new THREE.Raycaster();
 const noSleep = new NoSleep();
 const stageSize = 10;
@@ -64,8 +65,9 @@ let renderer;
 let controls;
 let vrDisplay;
 let intersected;
-let lineMaterials;
 let hoveredButton;
+let lineMaterials;
+let sphereMaterials;
 
 const sceneBuildOutFunctions = [];
 const nodeLabels = [];
@@ -880,10 +882,9 @@ function drawNetwork() {
     sphere.userData.type = 'sphere';
 
     // Sprite Glow Effect
-    const textureLoader = new THREE.TextureLoader();
     const spriteMaterial = new THREE.SpriteMaterial({
       map: textureLoader.load(`${Flourish.static_prefix}/glow.png`),
-      color: 0xFF6F00, // 0xffA000,
+      color: new THREE.Color(flourishState.highlightNodeColor), // 0xFF6F00, // 0xffA000,
       transparent: true,
       opacity: 0.75,
       blending: THREE.AdditiveBlending,
@@ -962,6 +963,7 @@ export function sceneReady() {
 export function setupScene(data, state) {
   globalData = data;
   flourishState = state;
+  sphereMaterials = updateSphereMaterials(state);
   lineMaterials = updateLineMaterials(state);
   lineMaterials.basic.visible = false;
 
@@ -1016,7 +1018,6 @@ export function setupScene(data, state) {
   scene.add(cover);
 
   //
-  const textureLoader = new THREE.TextureLoader();
   const imgGeometry = new THREE.PlaneGeometry(512, 256);
   const lookMaterial = new THREE.MeshBasicMaterial({
     map: textureLoader.load(`${Flourish.static_prefix}/lookup.png`),
@@ -1052,7 +1053,7 @@ export function setupScene(data, state) {
   sceneBuildOutFunctions.push(updateHorizonVisibility);
   sceneBuildOutFunctions.push(stars.updateStarMaterial);
   sceneBuildOutFunctions.push(() => {
-    sphereMaterials.updateSphereMaterial();
+    updateSphereOpacity();
     nodeLabels.forEach((node) => {
       // add the rank & name label to the node object
       node[0].add(node[1][0]);
@@ -1090,11 +1091,21 @@ export function updateSceneFromState(state) {
   sceneObjects.cursor = cursor.generate(state);
   camera.add(sceneObjects.cursor);
   //
+  sphereMaterials = updateSphereMaterials(state);
+  sphereMaterials.basic.opacity = 1;
   lineMaterials = updateLineMaterials(flourishState);
   lineMaterials.basic.visible = false;
   //
   scene.remove(scene.getObjectByName('legend', true));
   scene.add(legend.generate(state, lineMaterials, controls.userHeight));
+  //
+  sceneObjects.nodes.children.forEach((n) => {
+    n.children.forEach((c) => {
+      if (c.name === '') {
+        c.children[0].material.color = new THREE.Color(state.highlightNodeColor);
+      }
+    });
+  });
   //
   sceneObjects.links.children.forEach((l) => {
     if (l.userData.status === 'out') {

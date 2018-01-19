@@ -49533,7 +49533,7 @@ function updateHorizonVisibility() {
 
 /* global Flourish */
 
-var textureLoader = new TextureLoader();
+var textureLoader$1 = new TextureLoader();
 var imgGeometry = new PlaneGeometry(256, 256);
 
 function generateButton(name, color, yoffset) {
@@ -49544,7 +49544,7 @@ function generateButton(name, color, yoffset) {
   button.position.set(-0.025, yoffset, 0);
   //
   var iconMaterial = new MeshBasicMaterial({
-    map: textureLoader.load(Flourish.static_prefix + '/' + name + '.png'),
+    map: textureLoader$1.load(Flourish.static_prefix + '/' + name + '.png'),
     transparent: true,
     depthTest: false
   });
@@ -49661,53 +49661,54 @@ function updateLineMaterials(state) {
   return lineMaterials;
 }
 
-var basic = new MeshBasicMaterial({
-  color: 0x262626,
-  // emissive: 0x262626,
-  flatShading: true,
-  opacity: 0,
-  transparent: true,
-  depthTest: true
-});
+var sphereMaterials$1 = {};
 
-var adjacent = new MeshPhongMaterial({
-  color: 0x848484,
-  // emissive: 0x848484,
-  flatShading: false,
-  // opacity: 0.75,
-  transparent: false,
-  depthTest: true
-});
+function updateSphereMaterials(state) {
+  sphereMaterials$1.basic = new MeshBasicMaterial({
+    color: new Color(state.basicNodeColor),
+    flatShading: true,
+    opacity: 0,
+    transparent: true,
+    depthTest: true
+  });
 
-var selected = new MeshPhongMaterial({
-  color: 0xFF6F00,
-  emissive: 0xFF6F00,
-  flatShading: false,
-  // opacity: 1.0,
-  transparent: false,
-  depthTest: true
-});
+  sphereMaterials$1.adjacent = new MeshPhongMaterial({
+    color: new Color(state.adjacentNodeColor),
+    flatShading: false,
+    transparent: false,
+    depthTest: true
+  });
 
-var highlight = new MeshPhongMaterial({
-  color: 0xFF6F00,
-  emissive: 0xFF6F00,
-  flatShading: false,
-  // opacity: 1.0,
-  transparent: false,
-  depthTest: true
-});
+  sphereMaterials$1.selected = new MeshPhongMaterial({
+    color: new Color(state.highlightNodeColor),
+    emissive: new Color(state.highlightNodeColor),
+    flatShading: false,
+    transparent: false,
+    depthTest: true
+  });
 
-function updateSphereMaterial() {
-  new Tween.Tween(basic).to({
+  sphereMaterials$1.highlight = new MeshPhongMaterial({
+    color: new Color(state.highlightNodeColor),
+    emissive: new Color(state.highlightNodeColor),
+    flatShading: false,
+    transparent: false,
+    depthTest: true
+  });
+
+  return sphereMaterials$1;
+}
+
+function updateSphereOpacity() {
+  new Tween.Tween(sphereMaterials$1.basic).to({
     opacity: 1
   }, 500).onComplete(function () {
-    basic.transparent = false;
+    sphereMaterials$1.basic.transparent = false;
   }).start();
 }
 
 /* global document, Flourish */
 
-var textureLoader$1 = new TextureLoader();
+var textureLoader$2 = new TextureLoader();
 var imgGeometry$1 = new PlaneGeometry(256, 256);
 
 function generate(state, lineMaterials, userHeight) {
@@ -49755,7 +49756,7 @@ function generate(state, lineMaterials, userHeight) {
   container.add(outText);
 
   var infoMaterial = new MeshBasicMaterial({
-    map: textureLoader$1.load(Flourish.static_prefix + '/info.png'),
+    map: textureLoader$2.load(Flourish.static_prefix + '/info.png'),
     transparent: true,
     depthTest: false
   });
@@ -50230,6 +50231,7 @@ var linkScale = {
   max: 3
 };
 var light = new DirectionalLight(0xffffff);
+var textureLoader = new TextureLoader();
 var raycaster = new Raycaster();
 var noSleep = new NoSleep$1();
 var stageSize = 10;
@@ -50246,8 +50248,9 @@ var renderer = void 0;
 var controls = void 0;
 var vrDisplay = void 0;
 var intersected = void 0;
-var lineMaterials = void 0;
 var hoveredButton = void 0;
+var lineMaterials = void 0;
+var sphereMaterials = void 0;
 
 var sceneBuildOutFunctions = [];
 var nodeLabels = [];
@@ -50268,14 +50271,14 @@ function updateNetwork() {
         c.material.dispose(); // Dispose existing geometry
         c.material = null;
         if (nd.status === 'center') {
-          c.currentMaterial = selected;
-          c.material = highlight;
+          c.currentMaterial = sphereMaterials.selected;
+          c.material = sphereMaterials.highlight;
           c.children[0].material.visible = true;
         } else if (nd.status === 'adjacent') {
-          c.material = adjacent;
+          c.material = sphereMaterials.adjacent;
           c.children[0].material.visible = false;
         } else {
-          c.material = basic;
+          c.material = sphereMaterials.basic;
           c.children[0].material.visible = false;
         }
       } else if (c.name === 'name') {
@@ -50737,19 +50740,19 @@ function checkIntersected() {
         intersected.children.forEach(function (c) {
           if (c.userData.type === 'sphere') {
             if (intersected.userData.status === 'center') {
-              c.currentMaterial = selected;
+              c.currentMaterial = sphereMaterials.selected;
             } else if (intersected.userData.status === 'adjacent') {
-              c.currentMaterial = adjacent;
+              c.currentMaterial = sphereMaterials.adjacent;
             } else {
-              c.currentMaterial = basic;
+              c.currentMaterial = sphereMaterials.basic;
             }
             c.material.dispose(); // Dispose existing geometry
             c.material = null;
             if (foundCurrent || intersected.userData.status === 'center') {
-              c.material = highlight;
+              c.material = sphereMaterials.highlight;
               c.children[0].material.visible = true;
             } else {
-              c.material = selected;
+              c.material = sphereMaterials.selected;
               c.children[0].material.visible = false;
             }
           } else {
@@ -50979,14 +50982,13 @@ function drawNetwork() {
     node.shifted = false;
     node.status = '';
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
-    var sphere = new Mesh(sphereGeometry, basic);
+    var sphere = new Mesh(sphereGeometry, sphereMaterials.basic);
     sphere.userData.type = 'sphere';
 
     // Sprite Glow Effect
-    var textureLoader = new TextureLoader();
     var spriteMaterial = new SpriteMaterial({
       map: textureLoader.load(Flourish.static_prefix + '/glow.png'),
-      color: 0xFF6F00, // 0xffA000,
+      color: new Color(flourishState.highlightNodeColor), // 0xFF6F00, // 0xffA000,
       transparent: true,
       opacity: 0.75,
       blending: AdditiveBlending
@@ -51069,6 +51071,7 @@ function sceneReady() {
 function setupScene(data, state) {
   globalData = data;
   flourishState = state;
+  sphereMaterials = updateSphereMaterials(state);
   lineMaterials = updateLineMaterials(state);
   lineMaterials.basic.visible = false;
 
@@ -51117,7 +51120,6 @@ function setupScene(data, state) {
   scene.add(cover);
 
   //
-  var textureLoader = new TextureLoader();
   var imgGeometry = new PlaneGeometry(512, 256);
   var lookMaterial = new MeshBasicMaterial({
     map: textureLoader.load(Flourish.static_prefix + '/lookup.png'),
@@ -51153,7 +51155,7 @@ function setupScene(data, state) {
   sceneBuildOutFunctions.push(updateHorizonVisibility);
   sceneBuildOutFunctions.push(updateStarMaterial);
   sceneBuildOutFunctions.push(function () {
-    updateSphereMaterial();
+    updateSphereOpacity();
     nodeLabels.forEach(function (node) {
       // add the rank & name label to the node object
       node[0].add(node[1][0]);
@@ -51187,11 +51189,21 @@ function updateSceneFromState(state) {
   sceneObjects.cursor = generate$2(state);
   camera.add(sceneObjects.cursor);
   //
+  sphereMaterials = updateSphereMaterials(state);
+  sphereMaterials.basic.opacity = 1;
   lineMaterials = updateLineMaterials(flourishState);
   lineMaterials.basic.visible = false;
   //
   scene.remove(scene.getObjectByName('legend', true));
   scene.add(generate(state, lineMaterials, controls.userHeight));
+  //
+  sceneObjects.nodes.children.forEach(function (n) {
+    n.children.forEach(function (c) {
+      if (c.name === '') {
+        c.children[0].material.color = new Color(state.highlightNodeColor);
+      }
+    });
+  });
   //
   sceneObjects.links.children.forEach(function (l) {
     if (l.userData.status === 'out') {
@@ -51227,6 +51239,9 @@ var state = {
   horizonTopColor: '#000000',
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,
+  basicNodeColor: '#262626',
+  adjacentNodeColor: '#848484',
+  highlightNodeColor: '#FF6F00',
   linkUnselectedColor: '#ffffff',
   linkUnselectedOpacity: 0.01,
   linkInboundColor: '#FDD835',
