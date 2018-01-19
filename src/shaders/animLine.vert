@@ -7,6 +7,7 @@ attribute float side;
 attribute float width;
 attribute vec2 uv;
 attribute float counters;
+attribute float lineLength;
 
 uniform mat4 projectionMatrix;
 uniform mat4 modelViewMatrix;
@@ -20,6 +21,7 @@ uniform float sizeAttenuation;
 
 varying vec2 vUV;
 varying vec4 vColor;
+varying float vLineLength;
 // varying vec2 vResolution;
 // varying float vCounters;
 
@@ -39,6 +41,7 @@ void main() {
 
   vColor = vec4( color, opacity );
   vUV = uv;
+  vLineLength = lineLength;
 
   mat4 m = projectionMatrix * modelViewMatrix;
   vec4 finalPosition = m * vec4( position, 1.0 );
