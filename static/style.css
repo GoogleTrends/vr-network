@@ -153,10 +153,17 @@ img {
   display: inline-block;
 }
 
+h1 {
+  font-size: 24px;
+  font-weight: 400;
+  text-align: left;
+  margin: 0;
+}
+
 p {
   padding: 8px 0;
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
   line-height: 1.5em;
   font-weight: 300;
   text-align: left;

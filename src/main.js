@@ -482,12 +482,16 @@ function resetIntersected() {
 
 function checkIntersected() {
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+  if (hoveredButton) {
+    hoveredButton.opacity = hoveredButton.lastOpacity;
+    hoveredButton = null;
+  }
   //
   let intersects = [];
   if (worldState.intro.active) {
     const objectsToCheck = [];
     if (scene.getObjectByName('Explore', true)) objectsToCheck.push(scene.getObjectByName('Explore', true));
-    if (scene.getObjectByName('Ready?', true)) objectsToCheck.push(scene.getObjectByName('Ready?', true));
+    if (scene.getObjectByName('GOT IT', true)) objectsToCheck.push(scene.getObjectByName('GOT IT', true));
     intersects = [...new Set([...raycaster.intersectObjects(objectsToCheck, true)])];
   } else {
     const nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
@@ -546,8 +550,10 @@ function checkIntersected() {
           nextIntersected = intersects[index].object;
         }
         if (intersects[index].object.userData.type === 'button') {
-          intersects[index].object.material.opacity = 0.25;
+          const lastOpacity = intersects[index].object.material.opacity;
+          intersects[index].object.material.opacity = 0.5;
           hoveredButton = intersects[index].object.material;
+          hoveredButton.lastOpacity = lastOpacity;
         }
         searching = false;
       }
@@ -614,7 +620,7 @@ function checkIntersected() {
     } else if (!foundCurrent && timer !== null) {
       //
       if (hoveredButton) {
-        hoveredButton.opacity = 0.1;
+        hoveredButton.opacity = hoveredButton.lastOpacity;
         hoveredButton = null;
       }
       //
@@ -626,7 +632,7 @@ function checkIntersected() {
   } else {
     //
     if (hoveredButton) {
-      hoveredButton.opacity = 0.1;
+      hoveredButton.opacity = hoveredButton.lastOpacity;
       hoveredButton = null;
     }
     //
@@ -708,7 +714,7 @@ function takeAction(centerNode) {
       }
     });
     if (hoveredButton) {
-      hoveredButton.opacity = 0.1;
+      hoveredButton.opacity = hoveredButton.lastOpacity;
       hoveredButton = null;
     }
     timer = null;
@@ -727,7 +733,7 @@ function takeAction(centerNode) {
         globalData = cloneDeep(initData);
         break;
     }
-  } else if (centerNode.type === 'Ready?') {
+  } else if (centerNode.type === 'GOT IT') {
     worldState.intro.zooming = true;
     layoutByRank();
   }
@@ -916,7 +922,7 @@ function buildOutScene() {
     vrDisplay.resetPose();
     worldState.intro.updating = false;
   }
-  setTimeout(buildOutScene, 100);
+  setTimeout(buildOutScene, 1000);
 }
 
 export function sceneReady() {

@@ -49423,6 +49423,8 @@ function generateTextureCanvas(text, textSize, width, height) {
   var weight = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
   var split = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
   var opacity = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 1;
+  var fill = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 'rgb(255, 255, 255)';
+  var stroke = arguments.length > 8 && arguments[8] !== undefined ? arguments[8] : 'rgb(0, 0, 0)';
 
   var canvas = document.createElement('canvas');
   var context = canvas.getContext('2d');
@@ -49434,7 +49436,7 @@ function generateTextureCanvas(text, textSize, width, height) {
   // context.fillRect(0, 0, width, height);
 
   context.font = '' + weight + textSize + 'pt Roboto Condensed';
-  context.fillStyle = 'rgb(255, 255, 255)';
+  context.fillStyle = fill;
 
   if (split) {
     var splitText = text.split(' ');
@@ -49454,10 +49456,10 @@ function generateTextureCanvas(text, textSize, width, height) {
     context.fillText(thisline, 0, lineCount * textSize * 1.5);
   } else {
     var textWidth = context.measureText(text).width;
-    context.strokeStyle = 'rgb(0, 0, 0)';
+    context.strokeStyle = stroke;
     context.lineWidth = 6;
     context.strokeText(text, width / 2 - textWidth / 2, height / 2 + textSize / 2.25);
-    context.fillStyle = 'rgb(255, 255, 255)';
+    context.fillStyle = fill;
     context.fillText(text, width / 2 - textWidth / 2, height / 2 + textSize / 2.25);
   }
 
@@ -49846,38 +49848,28 @@ function updateStarMaterial() {
 
 /* global Flourish */
 
-function generateIntroButton(name, image, width, yoffset, innerYOffset, zoffset) {
+function generateIntroButton(name, width, yoffset) {
   var button = new Group();
   button.name = name;
   button.userData.type = name;
-  var text = generateTextureCanvas(name, 36, width / 2, width / 2, '', false);
-  text.position.set(width / 4.75, innerYOffset, 64);
+
+  var text = generateTextureCanvas(name, 36, width, width / 4, 'bold ', false, 1, 'rgb(17, 32, 59)', 'rgba(255, 255, 255, 0)');
+  text.scale.set(0.5, 0.5, 0.5);
+  text.position.set(0, 0, 2);
   text.userData.type = 'text';
   button.add(text);
-  var rect = new Mesh(new PlaneGeometry(width, width / 2 * 0.65), new MeshBasicMaterial({
+
+  var rect = new Mesh(new PlaneGeometry(width / 3 * 2, width / 10), new MeshBasicMaterial({
     color: new Color('#FFFFFF'),
     transparent: true,
-    opacity: 0.1
+    opacity: 1.0
   }));
   rect.position.set(0, 0, 1);
   rect.userData.type = 'button';
   button.add(rect);
-  //
-  var textureLoader = new TextureLoader();
-  var imgGeometry = new PlaneGeometry(256, 256);
-  var imgMaterial = new MeshBasicMaterial({
-    map: textureLoader.load(Flourish.static_prefix + '/' + image),
-    transparent: true,
-    depthTest: false
-  });
-  var icon = new Mesh(imgGeometry, imgMaterial);
-  icon.scale.set(0.65, 0.65, 0.65);
-  icon.position.set(-width / 4.75, innerYOffset, 64);
-  button.add(icon);
-  //
-  // button.scale.set(0.8, 0.8, 0.8);
+
   button.scale.set(0.906, 0.906, 0.906);
-  button.position.set(0, yoffset, zoffset);
+  button.position.set(0, yoffset, 0);
   return button;
 }
 
@@ -49886,7 +49878,7 @@ function generate$5(state, stageSize) {
   intro.name = 'intro';
 
   var width = 512;
-  var height = 512;
+  var height = 384;
 
   var backgroundGeometry = new PlaneGeometry(width, height);
   var backgroundMaterial = new MeshBasicMaterial({
@@ -49895,10 +49887,9 @@ function generate$5(state, stageSize) {
     opacity: 0.75,
     depthTest: false
   });
-  var background = new Mesh(backgroundGeometry, backgroundMaterial);
-  intro.add(background);
+  intro.add(new Mesh(backgroundGeometry, backgroundMaterial));
 
-  var rectSize = 220;
+  var rectSize = 192;
   var textureLoader = new TextureLoader();
   var imgGeometry = new PlaneGeometry(rectSize, rectSize);
 
@@ -49909,11 +49900,11 @@ function generate$5(state, stageSize) {
     depthTest: false
   });
   cursor.add(new Mesh(imgGeometry, cursorMaterial));
-  var cursorText = generateTextureCanvas('Look at any node to show it\'s connections', 36, 512, 256, '', true);
+  var cursorText = generateTextureCanvas('Position the ring cursor over a node to show it\'s connections.', 36, 512, 256, '', true);
   cursorText.scale.set(0.43, 0.43, 0.43);
   cursorText.position.set(0, -166, 0);
   cursor.add(cursorText);
-  cursor.position.set(-122, 122, 1);
+  cursor.position.set(-122, 80, 1);
   intro.add(cursor);
 
   var fuse = new Group();
@@ -49923,15 +49914,14 @@ function generate$5(state, stageSize) {
     depthTest: false
   });
   fuse.add(new Mesh(imgGeometry, fuseMaterial));
-  var fuseText = generateTextureCanvas('When the cursor fills, the connected nodes will be brought into view', 36, 512, 256, '', true);
+  var fuseText = generateTextureCanvas('When the cursor fills, the connected nodes will be brought into view.', 36, 512, 256, '', true);
   fuseText.scale.set(0.43, 0.43, 0.43);
   fuseText.position.set(0, -166, 0);
   fuse.add(fuseText);
-  fuse.position.set(122, 122, 1);
+  fuse.position.set(122, 80, 1);
   intro.add(fuse);
 
-  var ready = generateIntroButton('Ready?', 'cardboard.png', 512, -160, 16, 0);
-  intro.add(ready);
+  intro.add(generateIntroButton('GOT IT', 512, -152));
 
   intro.scale.set(0.01, 0.01, 0.01);
   intro.position.set(0, 1.5, stageSize / 4);
@@ -50599,12 +50589,16 @@ function resetIntersected() {
 
 function checkIntersected() {
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+  if (hoveredButton) {
+    hoveredButton.opacity = hoveredButton.lastOpacity;
+    hoveredButton = null;
+  }
   //
   var intersects = [];
   if (worldState.intro.active) {
     var objectsToCheck = [];
     if (scene.getObjectByName('Explore', true)) objectsToCheck.push(scene.getObjectByName('Explore', true));
-    if (scene.getObjectByName('Ready?', true)) objectsToCheck.push(scene.getObjectByName('Ready?', true));
+    if (scene.getObjectByName('GOT IT', true)) objectsToCheck.push(scene.getObjectByName('GOT IT', true));
     intersects = [].concat(toConsumableArray(new Set([].concat(toConsumableArray(raycaster.intersectObjects(objectsToCheck, true))))));
   } else {
     var nodeIntersects = raycaster.intersectObjects(sceneObjects.nodes.children, true);
@@ -50638,8 +50632,10 @@ function checkIntersected() {
           nextIntersected = intersects[index].object;
         }
         if (intersects[index].object.userData.type === 'button') {
-          intersects[index].object.material.opacity = 0.25;
+          var lastOpacity = intersects[index].object.material.opacity;
+          intersects[index].object.material.opacity = 0.5;
           hoveredButton = intersects[index].object.material;
+          hoveredButton.lastOpacity = lastOpacity;
         }
         searching = false;
       }
@@ -50706,7 +50702,7 @@ function checkIntersected() {
     } else if (!foundCurrent && timer !== null) {
       //
       if (hoveredButton) {
-        hoveredButton.opacity = 0.1;
+        hoveredButton.opacity = hoveredButton.lastOpacity;
         hoveredButton = null;
       }
       //
@@ -50718,7 +50714,7 @@ function checkIntersected() {
   } else {
     //
     if (hoveredButton) {
-      hoveredButton.opacity = 0.1;
+      hoveredButton.opacity = hoveredButton.lastOpacity;
       hoveredButton = null;
     }
     //
@@ -50797,7 +50793,7 @@ function takeAction(centerNode) {
       }
     });
     if (hoveredButton) {
-      hoveredButton.opacity = 0.1;
+      hoveredButton.opacity = hoveredButton.lastOpacity;
       hoveredButton = null;
     }
     timer = null;
@@ -50816,7 +50812,7 @@ function takeAction(centerNode) {
         globalData = lodash_clonedeep(initData);
         break;
     }
-  } else if (centerNode.type === 'Ready?') {
+  } else if (centerNode.type === 'GOT IT') {
     worldState.intro.zooming = true;
     layoutByRank();
   }
@@ -50998,7 +50994,7 @@ function buildOutScene() {
     vrDisplay.resetPose();
     worldState.intro.updating = false;
   }
-  setTimeout(buildOutScene, 100);
+  setTimeout(buildOutScene, 1000);
 }
 
 function sceneReady() {
@@ -51154,7 +51150,7 @@ var data = {};
 var state = {
   logo: logoURI,
   title: 'Related Searches between Top 50 TV Shows 2017',
-  description: 'Look at each Node to see the seach interest relationships between the Top 50 Seached TV Shows',
+  description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
   horizonTopColor: '#000000',
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,
