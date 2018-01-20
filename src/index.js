@@ -126,7 +126,6 @@ function showIntro() {
 }
 
 function setupIntro() {
-  document.querySelector('#logo').src = state.logo;
   introState.width = window.innerWidth;
   window.addEventListener('resize', updateOrientation, false);
   document.querySelector('#intro').addEventListener('click', requestPresent, true);
@@ -141,6 +140,7 @@ function setupIntro() {
 }
 
 function updateHtml() {
+  document.querySelector('#logo').src = state.logo;
   document.querySelector('#introTitle').innerText = state.title;
   document.querySelector('#introDescription').innerText = state.description;
 }

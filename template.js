@@ -49481,6 +49481,7 @@ function generateTextureCanvas(text, textSize, width, height) {
 
 function generateCurveGeometry(start, end, userHeight) {
   var lineGeometry = new Geometry();
+
   var startVector = new Vector3(start.x, start.y, start.z);
 
   var variance = 0.0; // 0.25; // 1.0;
@@ -49493,7 +49494,11 @@ function generateCurveGeometry(start, end, userHeight) {
   curvePath.getPoints(18).forEach(function (p) {
     lineGeometry.vertices.push(p);
   });
-  return lineGeometry;
+
+  return {
+    lineGeometry: lineGeometry,
+    lineLength: curvePath.getCurveLengths()
+  };
 }
 
 var horizonVertex = "#define GLSLIFY 1\nvarying vec3 vWorldPosition;\nvoid main() {\n  vec4 worldPosition = modelMatrix * vec4( position, 1.0 );\n  vWorldPosition = worldPosition.xyz;\n  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n}\n";
@@ -49592,9 +49597,9 @@ function generateButtons(container) {
   return container;
 }
 
-var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  gl_Position = finalPosition;\n}\n";
+var animLineVertex = "precision highp float;\n#define GLSLIFY 1\nattribute vec3 position;\nattribute vec3 previous;\nattribute vec3 next;\nattribute float side;\nattribute float width;\nattribute vec2 uv;\nattribute float counters;\nattribute float lineLength;\nuniform mat4 projectionMatrix;\nuniform mat4 modelViewMatrix;\nuniform vec2 resolution;\nuniform float lineWidth;\nuniform vec3 color;\nuniform float opacity;\nuniform float near;\nuniform float far;\nuniform float sizeAttenuation;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvarying float vLineLength;\nvec2 fix( vec4 i, float aspect ) {\n    vec2 res = i.xy / i.w;\n    res.x *= aspect;\n    return res;\n}\nvoid main() {\n  float aspect = resolution.x / resolution.y;\n  float pixelWidthRatio = 1. / (resolution.x * projectionMatrix[0][0]);\n  vColor = vec4( color, opacity );\n  vUV = uv;\n  vLineLength = lineLength;\n  mat4 m = projectionMatrix * modelViewMatrix;\n  vec4 finalPosition = m * vec4( position, 1.0 );\n  vec4 prevPos = m * vec4( previous, 1.0 );\n  vec4 nextPos = m * vec4( next, 1.0 );\n  vec2 currentP = fix( finalPosition, aspect );\n  vec2 prevP = fix( prevPos, aspect );\n  vec2 nextP = fix( nextPos, aspect );\n  float pixelWidth = finalPosition.w * pixelWidthRatio;\n  float w = 1.8 * pixelWidth * lineWidth * width;\n  if( sizeAttenuation == 1. ) {\n      w = 1.8 * lineWidth * width;\n  }\n  vec2 dir;\n  if( nextP == currentP ) dir = normalize( currentP - prevP );\n  else if( prevP == currentP ) dir = normalize( nextP - currentP );\n  else {\n      vec2 dir1 = normalize( currentP - prevP );\n      vec2 dir2 = normalize( nextP - currentP );\n      dir = normalize( dir1 + dir2 );\n      vec2 perp = vec2( -dir1.y, dir1.x );\n      vec2 miter = vec2( -dir.y, dir.x );\n  }\n  vec2 normal = vec2( -dir.y, dir.x );\n  normal.x /= aspect;\n  normal *= .5 * w;\n  vec4 offset = vec4( normal * side, 0.0, 1.0 );\n  finalPosition.xy += offset.xy;\n  gl_Position = finalPosition;\n}\n";
 
-var animLineFragment = "precision highp float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvoid main() {\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(cos(vUV.x * 100.0 - time));\n  vec4 color = vec4( vColor );\n  color.a = (yCurve + xCurve) * color.a;\n  gl_FragColor = color;\n}\n";
+var animLineFragment = "precision highp float;\nprecision mediump int;\n#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUV;\nvarying vec4 vColor;\nvarying float vLineLength;\nvoid main() {\n  float yCurve = cos((vUV.y - 0.5) * 5.0);\n  float xCurve = sin(cos(vUV.x * 100.0 * (vLineLength * 0.8) - time));\n  vec4 color = vec4( vColor );\n  color.a = (yCurve + xCurve) * color.a;\n  gl_FragColor = color;\n}\n";
 
 var linkWidth = 1.0;
 
@@ -49731,9 +49736,14 @@ function generate(state, lineMaterials, userHeight) {
   mesh.position.set(0, 0.25, 0);
   container.add(mesh);
 
-  var inLineGeometry = generateCurveGeometry(new Vector3(-0.3, 0.0, 0.0), new Vector3(0.3, 0.0, 0.0), userHeight / 2);
+  var inLineCurve = generateCurveGeometry(new Vector3(-0.3, 0.0, 0.0), new Vector3(0.3, 0.0, 0.0), userHeight / 2);
+  var inLineGeometry = inLineCurve.lineGeometry;
+  var inLineLength = inLineCurve.lineLength;
   var inLine = new MeshLine();
   inLine.setGeometry(inLineGeometry);
+  var inLineLengths = new Float32Array(inLine.geometry.attributes.position.count).fill(inLineLength);
+  inLine.geometry.addAttribute('lineLength', new Float32BufferAttribute(inLineLengths, 1));
+
   var inLineMesh = new Mesh(inLine.geometry, lineMaterials.highlightIn);
   inLineMesh.userData.type = 'in';
   container.add(inLineMesh);
@@ -49743,9 +49753,13 @@ function generate(state, lineMaterials, userHeight) {
   inText.position.set(0.025, 0, 0);
   container.add(inText);
 
-  var outLineGeometry = generateCurveGeometry(new Vector3(0.3, -0.2, 0.0), new Vector3(-0.3, -0.2, 0.0), userHeight / 2);
+  var outLineCurve = generateCurveGeometry(new Vector3(0.3, -0.2, 0.0), new Vector3(-0.3, -0.2, 0.0), userHeight / 2);
+  var outLineGeometry = outLineCurve.lineGeometry;
+  var outLineLength = outLineCurve.lineLength;
   var outLine = new MeshLine();
   outLine.setGeometry(outLineGeometry);
+  var outLineLengths = new Float32Array(outLine.geometry.attributes.position.count).fill(outLineLength);
+  outLine.geometry.addAttribute('lineLength', new Float32BufferAttribute(outLineLengths, 1));
   var outLineMesh = new Mesh(outLine.geometry, lineMaterials.highlightOut);
   outLineMesh.userData.type = 'out';
   container.add(outLineMesh);
@@ -50605,7 +50619,11 @@ function transitionElements() {
         l.geometry = null;
         l.userData.spos = new Vector3(l.userData.nextSPos.x, l.userData.nextSPos.y, l.userData.nextSPos.z);
         l.userData.tpos = new Vector3(l.userData.nextTPos.x, l.userData.nextTPos.y, l.userData.nextTPos.z);
-        var lineGeometry = generateCurveGeometry(l.userData.spos, l.userData.tpos, controls.userHeight);
+
+        var _generateCurveGeometr = generateCurveGeometry(l.userData.spos, l.userData.tpos, controls.userHeight),
+            lineGeometry = _generateCurveGeometr.lineGeometry,
+            lineLength = _generateCurveGeometr.lineLength;
+
         var line = new MeshLine();
         line.setGeometry(lineGeometry, function () {
           return toRange(l.userData.value, { min: 1, max: 100 }, linkScale);
@@ -50613,6 +50631,10 @@ function transitionElements() {
         var lineMesh = new Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
         l.geometry.attributes.position.needsUpdate = true;
+        var lengths = new Float32Array(l.geometry.attributes.position.count).fill(lineLength);
+
+        l.geometry.addAttribute('lineLength', new Float32BufferAttribute(lengths, 1));
+
         if (l.userData.status === 'out') {
           l.material.visible = true;
         } else if (l.userData.status === 'in') {
@@ -50956,14 +50978,20 @@ function setupStage() {
 
 function drawNetwork() {
   layoutByRandom();
-
   globalData.links.forEach(function (l) {
-    var lineGeometry = generateCurveGeometry(l.spos, l.tpos, controls.userHeight);
+    var _generateCurveGeometr2 = generateCurveGeometry(l.spos, l.tpos, controls.userHeight),
+        lineGeometry = _generateCurveGeometr2.lineGeometry,
+        lineLength = _generateCurveGeometr2.lineLength;
+
     var line = new MeshLine();
     line.setGeometry(lineGeometry, function () {
       return toRange(l.value, { min: 1, max: 100 }, linkScale);
     });
+    var lengths = new Float32Array(line.geometry.attributes.position.count).fill(lineLength);
+
+    line.geometry.addAttribute('lineLength', new Float32BufferAttribute(lengths, 1));
     var lineMesh = new Mesh(line.geometry, lineMaterials.basic);
+
     lineMesh.userData.source = l.source;
     lineMesh.userData.spos = l.spos;
     lineMesh.userData.target = l.target;
@@ -51349,7 +51377,6 @@ function showIntro() {
 }
 
 function setupIntro() {
-  document.querySelector('#logo').src = state.logo;
   introState.width = window.innerWidth;
   window.addEventListener('resize', updateOrientation, false);
   document.querySelector('#intro').addEventListener('click', requestPresent, true);
@@ -51365,6 +51392,12 @@ function setupIntro() {
   });
 }
 
+function updateHtml() {
+  document.querySelector('#logo').src = state.logo;
+  document.querySelector('#introTitle').innerText = state.title;
+  document.querySelector('#introDescription').innerText = state.description;
+}
+
 // The update function is called whenever the user changes a data table or settings
 // in the visualisation editor, or when changing slides in the story editor.
 // Tip: to make your template work nicely in the story editor, ensure that all user
@@ -51374,6 +51407,7 @@ function update() {
   if (introState.sceneExists) {
     updateSceneFromState(state);
   }
+  updateHtml();
 }
 
 // The draw function is called when the template first loads
@@ -51393,6 +51427,7 @@ function draw() {
     },
     timeout: 2000
   });
+  updateHtml();
 }
 
 exports.data = data;
