@@ -34,7 +34,7 @@ canvas {
   background-size: cover;
   background-repeat: none;
   user-select: none;
-  opacity: 0.15;
+  opacity: 0.25;
 }
 
 #vrbutton {
@@ -58,12 +58,12 @@ canvas {
 }
 
 .button.enabled {
-  opacity: 1.0;
+  opacity: 0.75;
 }
 
-.button:hover, .button.enabled:hover {
-  opacity: 0.85;
-}
+/*.button:hover, .button.enabled:hover {
+  opacity: 0.25;
+}*/
 
 /**/
 #centerline {

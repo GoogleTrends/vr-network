@@ -50257,6 +50257,7 @@ var linkScale = {
   min: 1,
   max: 3
 };
+var buildOutInterval = 1000;
 var sceneBuildOutFunctions = [];
 var nodeLabels = [];
 var light = new DirectionalLight(0xffffff);
@@ -50724,10 +50725,7 @@ function checkIntersected() {
     });
     //
     while (searching) {
-      if (
-      // intersects[index].object.parent !== intersected
-      // &&
-      intersects[index].distance > stageSize / 2 && intersects[index].object.userData.type === 'text' || intersects[index].object.userData.type === 'sphere' || intersects[index].object.userData.type === 'button') {
+      if (intersects[index].distance > stageSize / 2 && intersects[index].object.userData.type === 'text' || intersects[index].object.userData.type === 'sphere' || intersects[index].object.userData.type === 'button') {
         if (intersects[index].object.parent !== intersected) {
           nextIntersected = intersects[index].object;
         }
@@ -50774,16 +50772,30 @@ function checkIntersected() {
         intersected.userData.nextScale = scaleBy;
         intersected.children.forEach(function (c) {
           if (c.userData.type === 'sphere') {
+            var _sceneObjects$nodes$c = sceneObjects.nodes.children.filter(function (n) {
+              return n.userData.status === 'center';
+            }),
+                _sceneObjects$nodes$c2 = slicedToArray(_sceneObjects$nodes$c, 1),
+                cn = _sceneObjects$nodes$c2[0];
+
             if (intersected.userData.status === 'center') {
               c.currentMaterial = sphereMaterials.selected;
             } else if (intersected.userData.status === 'adjacent') {
               c.currentMaterial = sphereMaterials.adjacent;
+              if (cn) {
+                cn.children[0].material = sphereMaterials.selected;
+                cn.children[0].children[0].visible = true;
+              }
             } else {
               c.currentMaterial = sphereMaterials.basic;
+              if (cn) {
+                cn.children[0].material = sphereMaterials.adjacent;
+                cn.children[0].children[0].visible = false;
+              }
             }
             c.material.dispose(); // Dispose existing geometry
             c.material = null;
-            if (foundCurrent || intersected.userData.status === 'center') {
+            if (intersected.userData.status === 'center') {
               c.material = sphereMaterials.highlight;
               c.children[0].material.visible = true;
             } else {
@@ -51105,7 +51117,7 @@ function buildOutScene() {
   }
   var nextStep = sceneBuildOutFunctions.shift();
   nextStep();
-  setTimeout(buildOutScene, 2000);
+  setTimeout(buildOutScene, buildOutInterval);
 }
 
 function sceneReady() {
@@ -51208,7 +51220,7 @@ function setupScene(data, state) {
       node[0].add(node[1][1]);
     });
     var baseOpacity = { opacity: 0 };
-    new Tween.Tween(baseOpacity).to({ opacity: 1 }, 2000).onUpdate(function () {
+    new Tween.Tween(baseOpacity).to({ opacity: 1 }, buildOutInterval).onUpdate(function () {
       nodeLabels.forEach(function (node) {
         node[1][0].material.opacity = baseOpacity.opacity;
         node[1][1].material.opacity = baseOpacity.opacity;
@@ -51217,13 +51229,13 @@ function setupScene(data, state) {
   });
   sceneBuildOutFunctions.push(function () {
     var baseOpacity = { opacity: 1 };
-    new Tween.Tween(baseOpacity).to({ opacity: 0 }, 2000).onUpdate(function () {
+    new Tween.Tween(baseOpacity).to({ opacity: 0 }, buildOutInterval).onUpdate(function () {
       cover.material.opacity = baseOpacity.opacity;
     }).start();
   });
   sceneBuildOutFunctions.push(function () {
     var baseOpacity = { opacity: 0 };
-    new Tween.Tween(baseOpacity).to({ opacity: 1 }, 2000).onUpdate(function () {
+    new Tween.Tween(baseOpacity).to({ opacity: 1 }, buildOutInterval).onUpdate(function () {
       sceneObjects.intro.children.forEach(function (c) {
         if (c.children.length) {
           c.children.forEach(function (m) {

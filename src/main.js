@@ -47,6 +47,7 @@ const linkScale = {
   min: 1,
   max: 3,
 };
+const buildOutInterval = 1000;
 const sceneBuildOutFunctions = [];
 const nodeLabels = [];
 const light = new THREE.DirectionalLight(0xffffff);
@@ -566,19 +567,15 @@ function checkIntersected() {
     //
     while (searching) {
       if (
-        // intersects[index].object.parent !== intersected
-        // &&
         (
-          (
-            intersects[index].distance > (stageSize / 2)
-              &&
-            intersects[index].object.userData.type === 'text'
-          )
+          intersects[index].distance > (stageSize / 2)
+            &&
+          intersects[index].object.userData.type === 'text'
+        )
             ||
           intersects[index].object.userData.type === 'sphere'
             ||
           intersects[index].object.userData.type === 'button'
-        )
       ) {
         if (intersects[index].object.parent !== intersected) {
           nextIntersected = intersects[index].object;
@@ -626,16 +623,25 @@ function checkIntersected() {
         intersected.userData.nextScale = scaleBy;
         intersected.children.forEach((c) => {
           if (c.userData.type === 'sphere') {
+            const [cn] = sceneObjects.nodes.children.filter(n => n.userData.status === 'center');
             if (intersected.userData.status === 'center') {
               c.currentMaterial = sphereMaterials.selected;
             } else if (intersected.userData.status === 'adjacent') {
               c.currentMaterial = sphereMaterials.adjacent;
+              if (cn) {
+                cn.children[0].material = sphereMaterials.selected;
+                cn.children[0].children[0].visible = true;
+              }
             } else {
               c.currentMaterial = sphereMaterials.basic;
+              if (cn) {
+                cn.children[0].material = sphereMaterials.adjacent;
+                cn.children[0].children[0].visible = false;
+              }
             }
             c.material.dispose(); // Dispose existing geometry
             c.material = null;
-            if (foundCurrent || intersected.userData.status === 'center') {
+            if (intersected.userData.status === 'center') {
               c.material = sphereMaterials.highlight;
               c.children[0].material.visible = true;
             } else {
@@ -965,7 +971,7 @@ function buildOutScene() {
   }
   const nextStep = sceneBuildOutFunctions.shift();
   nextStep();
-  setTimeout(buildOutScene, 2000);
+  setTimeout(buildOutScene, buildOutInterval);
 }
 
 export function sceneReady() {
@@ -1075,7 +1081,7 @@ export function setupScene(data, state) {
     });
     const baseOpacity = { opacity: 0 };
     new TWEEN.Tween(baseOpacity)
-      .to({ opacity: 1 }, 2000)
+      .to({ opacity: 1 }, buildOutInterval)
       .onUpdate(() => {
         nodeLabels.forEach((node) => {
           node[1][0].material.opacity = baseOpacity.opacity;
@@ -1086,7 +1092,7 @@ export function setupScene(data, state) {
   sceneBuildOutFunctions.push(() => {
     const baseOpacity = { opacity: 1 };
     new TWEEN.Tween(baseOpacity)
-      .to({ opacity: 0 }, 2000)
+      .to({ opacity: 0 }, buildOutInterval)
       .onUpdate(() => {
         cover.material.opacity = baseOpacity.opacity;
       }).start();
@@ -1094,7 +1100,7 @@ export function setupScene(data, state) {
   sceneBuildOutFunctions.push(() => {
     const baseOpacity = { opacity: 0 };
     new TWEEN.Tween(baseOpacity)
-      .to({ opacity: 1 }, 2000)
+      .to({ opacity: 1 }, buildOutInterval)
       .onUpdate(() => {
         sceneObjects.intro.children.forEach((c) => {
           if (c.children.length) {
