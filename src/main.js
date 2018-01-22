@@ -47,6 +47,8 @@ const linkScale = {
   min: 1,
   max: 3,
 };
+const sceneBuildOutFunctions = [];
+const nodeLabels = [];
 const light = new THREE.DirectionalLight(0xffffff);
 const textureLoader = new THREE.TextureLoader();
 const raycaster = new THREE.Raycaster();
@@ -57,6 +59,7 @@ let globalData = {};
 let initData = {};
 let flourishState = {};
 let timer = null;
+let lastTime = 0;
 let shadertime = 0;
 let scene;
 let effect;
@@ -68,9 +71,6 @@ let intersected;
 let hoveredButton;
 let lineMaterials;
 let sphereMaterials;
-
-const sceneBuildOutFunctions = [];
-const nodeLabels = [];
 
 
 function updateNetwork() {
@@ -782,7 +782,8 @@ function updateCursor() {
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
-        timer += Math.PI / 60;
+        const elapsed = (performance.now() - lastTime);
+        timer += ((Math.PI * 2) / 2000) * elapsed;
         sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
         sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(
@@ -797,6 +798,7 @@ function updateCursor() {
         takeAction(intersected.userData);
       }
     }
+    lastTime = performance.now();
   } else {
     timer = null;
     sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
@@ -955,13 +957,14 @@ function formatData() {
 }
 
 function buildOutScene() {
-  if (sceneBuildOutFunctions.length === 0) return;
-  const nextStep = sceneBuildOutFunctions.shift();
-  nextStep();
-  if (sceneBuildOutFunctions.length === 1) {
+  // if (sceneBuildOutFunctions.length === 0) return;
+  if (sceneBuildOutFunctions.length === 0) {
     vrDisplay.resetPose();
     worldState.intro.updating = false;
+    return;
   }
+  const nextStep = sceneBuildOutFunctions.shift();
+  nextStep();
   setTimeout(buildOutScene, 2000);
 }
 
@@ -1012,6 +1015,10 @@ export function setupScene(data, state) {
   scene.add(legend.generate(state, lineMaterials, controls.userHeight));
   scene.add(generateButtons(sceneObjects.buttons));
 
+  sceneObjects.intro = intro.generate(state, stageSize);
+  scene.add(sceneObjects.intro);
+  sceneObjects.user.add(sceneObjects.lookup);
+
   //
   const cover = new THREE.Mesh(
     new THREE.PlaneGeometry(1600, 800),
@@ -1025,7 +1032,6 @@ export function setupScene(data, state) {
   cover.position.set(0, 0.6, 0);
   cover.name = 'cover';
   scene.add(cover);
-
   //
   const imgGeometry = new THREE.PlaneGeometry(512, 256);
   const lookMaterial = new THREE.MeshBasicMaterial({
@@ -1037,7 +1043,6 @@ export function setupScene(data, state) {
   sceneObjects.lookup.name = 'lookup';
   sceneObjects.lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
   sceneObjects.lookup.scale.set(0.0025, 0.0025, 0.0025);
-
   //
   sceneObjects.cursor = cursor.generate(state);
   camera.add(sceneObjects.cursor);
@@ -1057,10 +1062,6 @@ export function setupScene(data, state) {
 
   //
   formatData();
-
-  sceneObjects.intro = intro.generate(state, stageSize);
-  scene.add(sceneObjects.intro);
-  sceneObjects.user.add(sceneObjects.lookup);
 
   //
   sceneBuildOutFunctions.push(updateHorizonVisibility);
@@ -1100,12 +1101,10 @@ export function setupScene(data, state) {
             c.children.forEach((m) => {
               m.material.opacity = baseOpacity.opacity;
             });
+          } else if (c.name === 'background' && baseOpacity.opacity > 0.75) {
+            c.material.opacity = 0.75;
           } else {
-            let opacity = baseOpacity.opacity;
-            if (c.name === 'background' && opacity > 0.75) {
-              opacity = 0.75;
-            }
-            c.material.opacity = opacity;
+            c.material.opacity = baseOpacity.opacity;
           }
         });
       }).start();

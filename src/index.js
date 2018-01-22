@@ -122,6 +122,10 @@ function updateOrientation() {
 function showIntro() {
   introState.active = true;
   showSlide(0);
+  document.querySelector('#explore').addEventListener('click', () => {
+    document.querySelector('#intro').classList.add('hide');
+    introState.active = false;
+  }, true);
   document.querySelector('#intro').classList.remove('hide');
 }
 

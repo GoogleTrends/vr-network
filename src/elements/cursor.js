@@ -69,7 +69,8 @@ export function generate(state) {
       new THREE.PlaneGeometry(t.w, t.h),
       new THREE.MeshBasicMaterial({
         color: new THREE.Color(state.cursorInnerColor),
-        transparent: false,
+        opacity: 1.0,
+        transparent: true,
         depthTest: false,
       }),
     );

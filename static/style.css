@@ -24,8 +24,7 @@ canvas {
   font-weight: 300;
   position: fixed;
   width: 60px;
-  height: 60px;
-  /*height: 37px;*/
+  height: 34px;
   padding: 0;
   margin: 0;
   text-align: center;
@@ -35,22 +34,21 @@ canvas {
   background-size: cover;
   background-repeat: none;
   user-select: none;
-  opacity: 0.5;
+  opacity: 0.15;
 }
 
 #vrbutton {
   bottom: 8px;
-  right: 8px;
+  right: 5px;
   background-image: url(cardboard.png);
+  background-position: center;
 }
 
 #inbutton {
   bottom: 8px;
-  left: 8px;
-  /**/
-  /*margin: 16px 0;*/
-  height: 34px;
-  margin-bottom: 12px;
+  left: 5px;
+  width: 54px;
+  margin: 0 3px;
   line-height: 34px;
   background: #FFFFFF;
   color: #000000;
@@ -64,7 +62,7 @@ canvas {
 }
 
 .button:hover, .button.enabled:hover {
-  opacity: 0.75;
+  opacity: 0.85;
 }
 
 /**/
@@ -178,14 +176,14 @@ a {
   width: 50%;
 }
 
-.introlink {
+/*.introlink {
   width: 128px;
   text-transform: uppercase;
   text-align: center;
   margin: auto;
   padding: 1em;
   color: white;
-}
+}*/
 
 
 .countdown {
@@ -221,6 +219,7 @@ a {
   background: none;
   font-weight: 300;
   color: white;
+  font-size: 16px;
 }
 
 .introbutton.link:hover {
@@ -262,8 +261,14 @@ a {
   .ls-right-pad {
     padding-right: 4px;
   }
+  .ls-right-pad .icon.half {
+    margin: 36px 0;
+  }
   .ls-left-pad {
     padding-left: 4px;
+  }
+  .ls-left-pad h1 {
+    margin-top: 48px;
   }
   .landscape {
     display: inline-block;

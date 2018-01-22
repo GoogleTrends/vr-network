@@ -49845,7 +49845,8 @@ function generate$2(state) {
   }].forEach(function (t) {
     var tick = new Mesh(new PlaneGeometry(t.w, t.h), new MeshBasicMaterial({
       color: new Color(state.cursorInnerColor),
-      transparent: false,
+      opacity: 1.0,
+      transparent: true,
       depthTest: false
     }));
     tick.position.set(t.x, t.y, 0);
@@ -50256,6 +50257,8 @@ var linkScale = {
   min: 1,
   max: 3
 };
+var sceneBuildOutFunctions = [];
+var nodeLabels = [];
 var light = new DirectionalLight(0xffffff);
 var textureLoader = new TextureLoader();
 var raycaster = new Raycaster();
@@ -50266,6 +50269,7 @@ var globalData = {};
 var initData = {};
 var flourishState = {};
 var timer = null;
+var lastTime = 0;
 var shadertime = 0;
 var scene = void 0;
 var effect = void 0;
@@ -50277,9 +50281,6 @@ var intersected = void 0;
 var hoveredButton = void 0;
 var lineMaterials = void 0;
 var sphereMaterials = void 0;
-
-var sceneBuildOutFunctions = [];
-var nodeLabels = [];
 
 function updateNetwork() {
   sceneObjects.nodes.children.forEach(function (n) {
@@ -50926,7 +50927,8 @@ function updateCursor() {
     //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
-        timer += Math.PI / 60;
+        var elapsed = performance.now() - lastTime;
+        timer += Math.PI * 2 / 2000 * elapsed;
         sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
         sceneObjects.cursor.children[3].geometry = null;
         sceneObjects.cursor.children[3].geometry = new RingGeometry(0.02, 0.03, 24, 8, -timer, timer);
@@ -50934,6 +50936,7 @@ function updateCursor() {
         takeAction(intersected.userData);
       }
     }
+    lastTime = performance.now();
   } else {
     timer = null;
     sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
@@ -51094,13 +51097,14 @@ function formatData() {
 }
 
 function buildOutScene() {
-  if (sceneBuildOutFunctions.length === 0) return;
-  var nextStep = sceneBuildOutFunctions.shift();
-  nextStep();
-  if (sceneBuildOutFunctions.length === 1) {
+  // if (sceneBuildOutFunctions.length === 0) return;
+  if (sceneBuildOutFunctions.length === 0) {
     vrDisplay.resetPose();
     worldState.intro.updating = false;
+    return;
   }
+  var nextStep = sceneBuildOutFunctions.shift();
+  nextStep();
   setTimeout(buildOutScene, 2000);
 }
 
@@ -51148,6 +51152,10 @@ function setupScene(data, state) {
   scene.add(generate(state, lineMaterials, controls.userHeight));
   scene.add(generateButtons(sceneObjects.buttons));
 
+  sceneObjects.intro = generate$5(state, stageSize);
+  scene.add(sceneObjects.intro);
+  sceneObjects.user.add(sceneObjects.lookup);
+
   //
   var cover = new Mesh(new PlaneGeometry(1600, 800), new MeshBasicMaterial({
     color: 0x000000,
@@ -51158,7 +51166,6 @@ function setupScene(data, state) {
   cover.position.set(0, 0.6, 0);
   cover.name = 'cover';
   scene.add(cover);
-
   //
   var imgGeometry = new PlaneGeometry(512, 256);
   var lookMaterial = new MeshBasicMaterial({
@@ -51170,7 +51177,6 @@ function setupScene(data, state) {
   sceneObjects.lookup.name = 'lookup';
   sceneObjects.lookup.rotation.set(Math.PI / 180 * -45, 0, 0);
   sceneObjects.lookup.scale.set(0.0025, 0.0025, 0.0025);
-
   //
   sceneObjects.cursor = generate$2(state);
   camera.add(sceneObjects.cursor);
@@ -51190,9 +51196,6 @@ function setupScene(data, state) {
 
   //
   formatData();
-
-  sceneObjects.intro = generate$5(state, stageSize);
-  scene.add(sceneObjects.intro);
 
   //
   sceneBuildOutFunctions.push(updateHorizonVisibility);
@@ -51219,8 +51222,6 @@ function setupScene(data, state) {
     }).start();
   });
   sceneBuildOutFunctions.push(function () {
-    sceneObjects.user.add(sceneObjects.lookup);
-    // intro.updateVisibility();
     var baseOpacity = { opacity: 0 };
     new Tween.Tween(baseOpacity).to({ opacity: 1 }, 2000).onUpdate(function () {
       sceneObjects.intro.children.forEach(function (c) {
@@ -51228,13 +51229,10 @@ function setupScene(data, state) {
           c.children.forEach(function (m) {
             m.material.opacity = baseOpacity.opacity;
           });
+        } else if (c.name === 'background' && baseOpacity.opacity > 0.75) {
+          c.material.opacity = 0.75;
         } else {
-          // console.log(c.name);
-          var opacity = baseOpacity.opacity;
-          if (c.name === 'background' && opacity > 0.75) {
-            opacity = 0.75;
-          }
-          c.material.opacity = opacity;
+          c.material.opacity = baseOpacity.opacity;
         }
       });
     }).start();
@@ -51404,6 +51402,10 @@ function updateOrientation() {
 function showIntro() {
   introState.active = true;
   showSlide(0);
+  document.querySelector('#explore').addEventListener('click', function () {
+    document.querySelector('#intro').classList.add('hide');
+    introState.active = false;
+  }, true);
   document.querySelector('#intro').classList.remove('hide');
 }
 
