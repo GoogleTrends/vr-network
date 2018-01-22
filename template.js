@@ -49940,7 +49940,9 @@ function generate$5(state, stageSize) {
     opacity: 0.75,
     depthTest: false
   });
-  intro.add(new Mesh(backgroundGeometry, backgroundMaterial));
+  var background = new Mesh(backgroundGeometry, backgroundMaterial);
+  background.name = 'background';
+  intro.add(background);
 
   var rectSize = 192;
   var textureLoader = new TextureLoader();
@@ -49978,6 +49980,16 @@ function generate$5(state, stageSize) {
 
   intro.scale.set(0.01, 0.01, 0.01);
   intro.position.set(0, 1.5, stageSize / 4);
+
+  intro.children.forEach(function (c) {
+    if (c.children.length) {
+      c.children.forEach(function (m) {
+        m.material.opacity = 0;
+      });
+    } else {
+      c.material.opacity = 0;
+    }
+  });
 
   return intro;
 }
@@ -51179,6 +51191,9 @@ function setupScene(data, state) {
   //
   formatData();
 
+  sceneObjects.intro = generate$5(state, stageSize);
+  scene.add(sceneObjects.intro);
+
   //
   sceneBuildOutFunctions.push(updateHorizonVisibility);
   sceneBuildOutFunctions.push(updateStarMaterial);
@@ -51205,8 +51220,24 @@ function setupScene(data, state) {
   });
   sceneBuildOutFunctions.push(function () {
     sceneObjects.user.add(sceneObjects.lookup);
-    sceneObjects.intro = generate$5(state, stageSize);
-    scene.add(sceneObjects.intro);
+    // intro.updateVisibility();
+    var baseOpacity = { opacity: 0 };
+    new Tween.Tween(baseOpacity).to({ opacity: 1 }, 2000).onUpdate(function () {
+      sceneObjects.intro.children.forEach(function (c) {
+        if (c.children.length) {
+          c.children.forEach(function (m) {
+            m.material.opacity = baseOpacity.opacity;
+          });
+        } else {
+          // console.log(c.name);
+          var opacity = baseOpacity.opacity;
+          if (c.name === 'background' && opacity > 0.75) {
+            opacity = 0.75;
+          }
+          c.material.opacity = opacity;
+        }
+      });
+    }).start();
   });
 }
 

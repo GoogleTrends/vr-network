@@ -1058,6 +1058,10 @@ export function setupScene(data, state) {
   //
   formatData();
 
+  sceneObjects.intro = intro.generate(state, stageSize);
+  scene.add(sceneObjects.intro);
+  sceneObjects.user.add(sceneObjects.lookup);
+
   //
   sceneBuildOutFunctions.push(updateHorizonVisibility);
   sceneBuildOutFunctions.push(stars.updateStarMaterial);
@@ -1087,9 +1091,24 @@ export function setupScene(data, state) {
       }).start();
   });
   sceneBuildOutFunctions.push(() => {
-    sceneObjects.user.add(sceneObjects.lookup);
-    sceneObjects.intro = intro.generate(state, stageSize);
-    scene.add(sceneObjects.intro);
+    const baseOpacity = { opacity: 0 };
+    new TWEEN.Tween(baseOpacity)
+      .to({ opacity: 1 }, 2000)
+      .onUpdate(() => {
+        sceneObjects.intro.children.forEach((c) => {
+          if (c.children.length) {
+            c.children.forEach((m) => {
+              m.material.opacity = baseOpacity.opacity;
+            });
+          } else {
+            let opacity = baseOpacity.opacity;
+            if (c.name === 'background' && opacity > 0.75) {
+              opacity = 0.75;
+            }
+            c.material.opacity = opacity;
+          }
+        });
+      }).start();
   });
 }
 

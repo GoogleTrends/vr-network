@@ -45,7 +45,9 @@ export function generate(state, stageSize) {
     opacity: 0.75,
     depthTest: false,
   });
-  intro.add(new THREE.Mesh(backgroundGeometry, backgroundMaterial));
+  const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+  background.name = 'background';
+  intro.add(background);
 
   const rectSize = 192;
   const textureLoader = new THREE.TextureLoader();
@@ -83,6 +85,16 @@ export function generate(state, stageSize) {
 
   intro.scale.set(0.01, 0.01, 0.01);
   intro.position.set(0, 1.5, stageSize / 4);
+
+  intro.children.forEach((c) => {
+    if (c.children.length) {
+      c.children.forEach((m) => {
+        m.material.opacity = 0;
+      });
+    } else {
+      c.material.opacity = 0;
+    }
+  });
 
   return intro;
 }
