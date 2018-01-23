@@ -31,6 +31,9 @@ settings:
     name: Logo
     description: Data URI of Logo at 1024 x 256 pixels
     type: text
+  - property: gatid
+    name: Google Analytics Tracking ID
+    type: string
   - property: title
     name: Title
     description: Visualizaiton title

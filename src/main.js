@@ -10,6 +10,7 @@ import d3Force from '../node_modules/d3-force-3d/build/d3-force-3d.min';
 import NoSleep from '../node_modules/nosleep.js/dist/NoSleep';
 import '../node_modules/webvr-polyfill/build/webvr-polyfill.min';
 
+import { sendEvent } from './analytics';
 import { generateTextureCanvas } from './generateTextureCanvas';
 import { generateCurveGeometry } from './generateCurveGeometry';
 import { generateHorizon, updateHorizonVisibility } from './elements/horizon';
@@ -601,6 +602,11 @@ function checkIntersected() {
       }
       timer = 0;
       intersected = nextIntersected.parent;
+      //
+      const name = intersected.name || intersected.userData.name;
+      const type = intersected.userData.type === 'node' ? 'node' : 'button';
+      sendEvent('look', type, name);
+      //
       if (intersected.userData.type === 'node') {
         sceneObjects.links.children.forEach((l) => {
           l.material.dispose(); // Dispose existing geometry
@@ -684,6 +690,11 @@ function checkIntersected() {
 }
 
 function takeAction(centerNode) {
+  //
+  const name = centerNode.name || centerNode.type;
+  const type = centerNode.type === 'node' ? 'node' : 'button';
+  sendEvent('fuse', type, name);
+  //
   if (centerNode.type === 'node') {
     const sourceLinks = globalData.links
       .filter(l => (l.sourceId === centerNode.id))
@@ -1064,7 +1075,10 @@ export function setupScene(data, state) {
   window.addEventListener('resize', onResize, true);
   window.addEventListener('vrdisplaypresentchange', onResize, true);
   window.addEventListener('touchstart', enableNoSleep, true);
-  document.querySelector('#vrbutton').addEventListener('click', toggleVREnabled, true);
+  document.querySelector('#vrbutton').addEventListener('click', () => {
+    sendEvent('click', 'button', 'toggleVR');
+    toggleVREnabled();
+  }, true);
 
   //
   formatData();

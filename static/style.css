@@ -173,18 +173,9 @@ a {
 }
 
 #logo {
-  width: 50%;
+  max-height: 65px;
+  max-width: 50%;
 }
-
-/*.introlink {
-  width: 128px;
-  text-transform: uppercase;
-  text-align: center;
-  margin: auto;
-  padding: 1em;
-  color: white;
-}*/
-
 
 .countdown {
   height: 242px;

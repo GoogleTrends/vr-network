@@ -4,6 +4,7 @@
 
 import { setupScene, updateSceneFromState, requestPresent, toggleVREnabled, sceneReady } from './main';
 import { logoURI } from './logo';
+import { setupAnalytics, sendEvent } from './analytics';
 
 export const data = {};
 
@@ -11,6 +12,7 @@ export const data = {};
 // of the state object available to the user as settings in settings.js.
 export const state = {
   logo: logoURI,
+  gatid: '',
   title: 'Related Searches between Top 50 TV Shows 2017',
   description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
   horizonTopColor: '#000000',
@@ -27,7 +29,7 @@ export const state = {
   legendOutboundLabel: 'Related Searches',
   cursorInnerColor: '#ffffff',
   cursorOuterColor: '#000000',
-  cursorActiveColor: '#ffffff', // '#0FA200',
+  cursorActiveColor: '#ffffff',
   cursorOpacity: 0.25,
 };
 
@@ -70,6 +72,7 @@ function startTimer() {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
       //
+      sendEvent('fuse', 'button', 'enterScene');
       toggleVREnabled(true, true);
       enterScene();
     }
@@ -123,6 +126,7 @@ function showIntro() {
   introState.active = true;
   showSlide(0);
   document.querySelector('#explore').addEventListener('click', () => {
+    sendEvent('click', 'button', 'explore');
     document.querySelector('#intro').classList.add('hide');
     introState.active = false;
   }, true);
@@ -133,10 +137,17 @@ function setupIntro() {
   introState.width = window.innerWidth;
   window.addEventListener('resize', updateOrientation, false);
   document.querySelector('#intro').addEventListener('click', requestPresent, true);
-  document.querySelector('#inbutton').addEventListener('click', showIntro, true);
-  document.querySelector('#explore').addEventListener('click', () => showSlide(1), true);
+  document.querySelector('#inbutton').addEventListener('click', () => {
+    sendEvent('click', 'button', 'about');
+    showIntro();
+  }, true);
+  document.querySelector('#explore').addEventListener('click', () => {
+    sendEvent('click', 'button', 'explore');
+    showSlide(1);
+  }, true);
   document.querySelectorAll('.threesixty').forEach((e) => {
     e.addEventListener('click', () => {
+      sendEvent('click', 'button', 'threesixty');
       toggleVREnabled(true, false);
       enterScene();
     }, true);
@@ -144,9 +155,18 @@ function setupIntro() {
 }
 
 function updateHtml() {
-  document.querySelector('#logo').src = state.logo;
   document.querySelector('#introTitle').innerText = state.title;
   document.querySelector('#introDescription').innerText = state.description;
+  //
+  document.querySelector('#logo').onerror = function error() {
+    this.onerror = null;
+    this.src = '';
+    this.style = 'opacity: 0;';
+    return true;
+  };
+  document.querySelector('#logo').src = state.logo;
+  //
+  setupAnalytics(state.gatid);
 }
 
 // The update function is called whenever the user changes a data table or settings
