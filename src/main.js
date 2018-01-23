@@ -123,7 +123,7 @@ function updateNetwork() {
 }
 
 function layoutByRank() {
-  const rowCount = 3;
+  const rowCount = 1 + Math.ceil(globalData.nodes.length / 50);
   const perRow = Math.ceil(globalData.nodes.length / rowCount);
 
   globalData.nodes.sort((a, b) => parseInt(a.rank, 10) - parseInt(b.rank, 10));
@@ -135,7 +135,7 @@ function layoutByRank() {
     n.nameOffset.y = -0.1;
     n.pos = new THREE.Vector3(
       Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
-      (controls.userHeight / (rowCount * 0.5)) + (i / perRow),
+      (controls.userHeight / (1 + (rowCount * 0.5))) + (i / perRow),
       Math.sin(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
     );
     return n;
@@ -154,6 +154,7 @@ function layoutByRank() {
 
 function layoutInGrid() {
   const perRow = 10;
+  const rowCount = Math.ceil(globalData.nodes.length / perRow);
 
   globalData.nodes.sort((a, b) => parseInt(a.rank, 10) - parseInt(b.rank, 10));
 
@@ -163,8 +164,8 @@ function layoutInGrid() {
     n.nameOffset.x = 0;
     n.nameOffset.y = -0.1;
     n.pos = new THREE.Vector3(
-      (-stageSize / 2) + (0.5 + (i % perRow)),
-      1 + Math.floor(i / perRow),
+      (-stageSize / 2) + ((stageSize / perRow) * (0.5 + (i % perRow))),
+      (1 + Math.floor(i / perRow)) * ((stageSize / 2) / rowCount),
       -stageSize / 3,
     );
     return n;
@@ -964,6 +965,8 @@ function formatData() {
     l.targetId = l.target;
     return l;
   });
+  globalData.links = globalData.links.filter(l =>
+    globalData.nodes.filter(n => (l.sourceId === n.id || l.targetId === n.id)).length > 1);
   globalData.nodes = globalData.nodes.map((n) => {
     n.nameOffset = new THREE.Vector2(0, -0.1);
     n.linkCount = globalData.links.filter(l => (l.sourceId === n.id || l.targetId === n.id)).length;

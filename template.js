@@ -50365,7 +50365,7 @@ function updateNetwork() {
 }
 
 function layoutByRank() {
-  var rowCount = 3;
+  var rowCount = 1 + Math.ceil(globalData.nodes.length / 50);
   var perRow = Math.ceil(globalData.nodes.length / rowCount);
 
   globalData.nodes.sort(function (a, b) {
@@ -50377,7 +50377,7 @@ function layoutByRank() {
     n.status = '';
     n.nameOffset.x = 0;
     n.nameOffset.y = -0.1;
-    n.pos = new Vector3(Math.cos(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3), controls.userHeight / (rowCount * 0.5) + i / perRow, Math.sin(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3));
+    n.pos = new Vector3(Math.cos(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3), controls.userHeight / (1 + rowCount * 0.5) + i / perRow, Math.sin(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3));
     return n;
   });
 
@@ -50398,6 +50398,7 @@ function layoutByRank() {
 
 function layoutInGrid() {
   var perRow = 10;
+  var rowCount = Math.ceil(globalData.nodes.length / perRow);
 
   globalData.nodes.sort(function (a, b) {
     return parseInt(a.rank, 10) - parseInt(b.rank, 10);
@@ -50408,7 +50409,7 @@ function layoutInGrid() {
     n.status = '';
     n.nameOffset.x = 0;
     n.nameOffset.y = -0.1;
-    n.pos = new Vector3(-stageSize / 2 + (0.5 + i % perRow), 1 + Math.floor(i / perRow), -stageSize / 3);
+    n.pos = new Vector3(-stageSize / 2 + stageSize / perRow * (0.5 + i % perRow), (1 + Math.floor(i / perRow)) * (stageSize / 2 / rowCount), -stageSize / 3);
     return n;
   });
 
@@ -51131,6 +51132,11 @@ function formatData() {
     l.targetId = l.target;
     return l;
   });
+  globalData.links = globalData.links.filter(function (l) {
+    return globalData.nodes.filter(function (n) {
+      return l.sourceId === n.id || l.targetId === n.id;
+    }).length > 1;
+  });
   globalData.nodes = globalData.nodes.map(function (n) {
     n.nameOffset = new Vector2(0, -0.1);
     n.linkCount = globalData.links.filter(function (l) {
@@ -51343,8 +51349,8 @@ var data = {};
 var state = {
   logo: logoURI,
   gatid: '',
-  title: 'Related Searches between Top 50 TV Shows 2017',
-  description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
+  title: 'Search Interest in Television 2017',
+  description: 'Explore search interest relationships between the top 50 most search about television series in 2017 in 3D space.',
   horizonTopColor: '#000000',
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,

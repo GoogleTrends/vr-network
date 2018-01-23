@@ -13,8 +13,8 @@ export const data = {};
 export const state = {
   logo: logoURI,
   gatid: '',
-  title: 'Related Searches between Top 50 TV Shows 2017',
-  description: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
+  title: 'Search Interest in Television 2017',
+  description: 'Explore search interest relationships between the top 50 most search about television series in 2017 in 3D space.',
   horizonTopColor: '#000000',
   horizonBottomColor: '#11203B',
   horizonExponent: 0.5,

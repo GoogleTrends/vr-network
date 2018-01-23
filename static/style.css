@@ -131,7 +131,6 @@ img {
 
 .center {
   text-align: center;
-  padding: 0 36px;
 }
 
 .icon {
@@ -161,7 +160,7 @@ h1 {
 p {
   padding: 8px 0;
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.5em;
   font-weight: 300;
   text-align: left;
@@ -258,9 +257,9 @@ a {
   .ls-left-pad {
     padding-left: 4px;
   }
-  .ls-left-pad h1 {
+  /*.ls-left-pad h1 {
     margin-top: 48px;
-  }
+  }*/
   .landscape {
     display: inline-block;
   }
