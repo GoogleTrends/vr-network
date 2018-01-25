@@ -165,7 +165,7 @@ function layoutInGrid() {
     n.nameOffset.y = -0.1;
     n.pos = new THREE.Vector3(
       (-stageSize / 2) + ((stageSize / perRow) * (0.5 + (i % perRow))),
-      (1 + Math.floor(i / perRow)) * ((stageSize / 2) / rowCount),
+      (0.75 + Math.floor(i / perRow)) * ((stageSize / 2) / rowCount),
       -stageSize / 3,
     );
     return n;
@@ -1134,7 +1134,12 @@ export function setupScene(data, state) {
   });
 }
 
-export function updateSceneFromState(state) {
+export function updateSceneFromState(data, state) {
+  globalData = data;
+  sceneObjects.nodes = new THREE.Group();
+  sceneObjects.links = new THREE.Group();
+  formatData();
+  //
   flourishState = state;
   //
   camera.remove(camera.getObjectByName('cursor', true));

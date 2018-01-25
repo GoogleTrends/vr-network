@@ -50409,7 +50409,7 @@ function layoutInGrid() {
     n.status = '';
     n.nameOffset.x = 0;
     n.nameOffset.y = -0.1;
-    n.pos = new Vector3(-stageSize / 2 + stageSize / perRow * (0.5 + i % perRow), (1 + Math.floor(i / perRow)) * (stageSize / 2 / rowCount), -stageSize / 3);
+    n.pos = new Vector3(-stageSize / 2 + stageSize / perRow * (0.5 + i % perRow), (0.75 + Math.floor(i / perRow)) * (stageSize / 2 / rowCount), -stageSize / 3);
     return n;
   });
 
@@ -51296,7 +51296,12 @@ function setupScene(data, state) {
   });
 }
 
-function updateSceneFromState(state) {
+function updateSceneFromState(data, state) {
+  globalData = data;
+  sceneObjects.nodes = new Group();
+  sceneObjects.links = new Group();
+  formatData();
+  //
   flourishState = state;
   //
   camera.remove(camera.getObjectByName('cursor', true));
@@ -51512,7 +51517,7 @@ function updateHtml() {
 function update() {
   setupIntro(state);
   if (introState.sceneExists) {
-    updateSceneFromState(state);
+    updateSceneFromState(data, state);
   }
   updateHtml();
 }

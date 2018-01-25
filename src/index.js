@@ -176,7 +176,7 @@ function updateHtml() {
 export function update() {
   setupIntro(state);
   if (introState.sceneExists) {
-    updateSceneFromState(state);
+    updateSceneFromState(data, state);
   }
   updateHtml();
 }
