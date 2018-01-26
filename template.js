@@ -50298,6 +50298,7 @@ var flourishState = {};
 var timer = null;
 var lastTime = 0;
 var shadertime = 0;
+
 var scene = void 0;
 var effect = void 0;
 var camera = void 0;
@@ -50308,6 +50309,7 @@ var intersected = void 0;
 var hoveredButton = void 0;
 var lineMaterials = void 0;
 var sphereMaterials = void 0;
+var animationHandle = void 0;
 
 function updateNetwork() {
   sceneObjects.nodes.children.forEach(function (n) {
@@ -50375,8 +50377,7 @@ function layoutByRank() {
   globalData.nodes = globalData.nodes.map(function (n, i) {
     n.shifted = false;
     n.status = '';
-    n.nameOffset.x = 0;
-    n.nameOffset.y = -0.1;
+    n.nameOffset = new Vector2(0, -0.1);
     n.pos = new Vector3(Math.cos(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3), controls.userHeight / (1 + rowCount * 0.5) + i / perRow, Math.sin(-(Math.PI / 2) + Math.PI * 2 / perRow * i) * (stageSize / 3));
     return n;
   });
@@ -51025,7 +51026,7 @@ function animate() {
   } else {
     renderer.render(scene, camera);
   }
-  vrDisplay.requestAnimationFrame(animate);
+  animationHandle = vrDisplay.requestAnimationFrame(animate);
 }
 
 function setupStage() {
@@ -51035,7 +51036,7 @@ function setupStage() {
 
       vrDisplay = _displays[0];
 
-      vrDisplay.requestAnimationFrame(animate);
+      animationHandle = vrDisplay.requestAnimationFrame(animate);
     }
   });
 }
@@ -51063,6 +51064,7 @@ function drawNetwork() {
     lineMesh.userData.value = l.value;
     sceneObjects.links.add(lineMesh);
   });
+  sceneObjects.links.name = 'links';
   scene.add(sceneObjects.links);
 
   var sphereGeometry = new SphereGeometry(0.1, 18, 18);
@@ -51116,6 +51118,7 @@ function drawNetwork() {
 
     sceneObjects.nodes.add(node);
   });
+  sceneObjects.nodes.name = 'nodes';
   scene.add(sceneObjects.nodes);
 
   setupStage();
@@ -51297,10 +51300,31 @@ function setupScene(data, state) {
 }
 
 function updateSceneFromState(data, state) {
+  //
+  vrDisplay.cancelAnimationFrame(animationHandle);
   globalData = data;
+  //
   sceneObjects.nodes = new Group();
+  scene.remove(scene.getObjectByName('nodes', true));
   sceneObjects.links = new Group();
+  scene.remove(scene.getObjectByName('links', true));
+  //
   formatData();
+  //
+  nodeLabels.forEach(function (node) {
+    node[0].add(node[1][0]);
+    node[0].add(node[1][1]);
+  });
+  var baseOpacity = { opacity: 0 };
+  new Tween.Tween(baseOpacity).to({ opacity: 1 }, 1).onUpdate(function () {
+    nodeLabels.forEach(function (node) {
+      node[1][0].material.opacity = baseOpacity.opacity;
+      node[1][1].material.opacity = baseOpacity.opacity;
+    });
+  }).start();
+  //
+  layoutByRank();
+  //
   //
   flourishState = state;
   //
@@ -51514,10 +51538,16 @@ function updateHtml() {
 // in the visualisation editor, or when changing slides in the story editor.
 // Tip: to make your template work nicely in the story editor, ensure that all user
 // interface controls such as buttons and sliders update the state and then call update.
+var handle = void 0;
 function update() {
   setupIntro(state);
   if (introState.sceneExists) {
-    updateSceneFromState(data, state);
+    if (handle) {
+      clearTimeout(handle);
+    }
+    handle = setTimeout(function () {
+      updateSceneFromState(data, state);
+    }, 1000);
   }
   updateHtml();
 }

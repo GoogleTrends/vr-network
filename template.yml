@@ -13,7 +13,9 @@ sdk_version: 2
 # Alternatively specify a fixed height or aspect ratio, such as "600px" or "4x3",
 # if your template fills will fill the available height. You can also specify
 # breakpoints (https://flourish.studio/developers/reference/template-files.html).
-autoheight: auto
+autoheight:
+  640: 9x16
+  ∞: 16x9
 
 settings:
   # Creates a settings panel that enables the end user to set the default state for

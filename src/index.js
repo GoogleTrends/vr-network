@@ -173,10 +173,16 @@ function updateHtml() {
 // in the visualisation editor, or when changing slides in the story editor.
 // Tip: to make your template work nicely in the story editor, ensure that all user
 // interface controls such as buttons and sliders update the state and then call update.
+let handle;
 export function update() {
   setupIntro(state);
   if (introState.sceneExists) {
-    updateSceneFromState(data, state);
+    if (handle) {
+      clearTimeout(handle);
+    }
+    handle = setTimeout(() => {
+      updateSceneFromState(data, state);
+    }, 1000);
   }
   updateHtml();
 }

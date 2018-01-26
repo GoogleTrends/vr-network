@@ -63,6 +63,7 @@ let flourishState = {};
 let timer = null;
 let lastTime = 0;
 let shadertime = 0;
+
 let scene;
 let effect;
 let camera;
@@ -73,6 +74,7 @@ let intersected;
 let hoveredButton;
 let lineMaterials;
 let sphereMaterials;
+let animationHandle;
 
 
 function updateNetwork() {
@@ -131,8 +133,7 @@ function layoutByRank() {
   globalData.nodes = globalData.nodes.map((n, i) => {
     n.shifted = false;
     n.status = '';
-    n.nameOffset.x = 0;
-    n.nameOffset.y = -0.1;
+    n.nameOffset = new THREE.Vector2(0, -0.1);
     n.pos = new THREE.Vector3(
       Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
       (controls.userHeight / (1 + (rowCount * 0.5))) + (i / perRow),
@@ -862,14 +863,14 @@ function animate() { // Request animation frame loop function
   } else {
     renderer.render(scene, camera);
   }
-  vrDisplay.requestAnimationFrame(animate);
+  animationHandle = vrDisplay.requestAnimationFrame(animate);
 }
 
 function setupStage() {
   navigator.getVRDisplays().then((displays) => {
     if (displays.length > 0) {
       [vrDisplay] = displays;
-      vrDisplay.requestAnimationFrame(animate);
+      animationHandle = vrDisplay.requestAnimationFrame(animate);
     }
   });
 }
@@ -896,6 +897,7 @@ function drawNetwork() {
     lineMesh.userData.value = l.value;
     sceneObjects.links.add(lineMesh);
   });
+  sceneObjects.links.name = 'links';
   scene.add(sceneObjects.links);
 
   const sphereGeometry = new THREE.SphereGeometry(0.1, 18, 18);
@@ -949,6 +951,7 @@ function drawNetwork() {
 
     sceneObjects.nodes.add(node);
   });
+  sceneObjects.nodes.name = 'nodes';
   scene.add(sceneObjects.nodes);
 
   setupStage();
@@ -1135,10 +1138,33 @@ export function setupScene(data, state) {
 }
 
 export function updateSceneFromState(data, state) {
+  //
+  vrDisplay.cancelAnimationFrame(animationHandle);
   globalData = data;
+  //
   sceneObjects.nodes = new THREE.Group();
+  scene.remove(scene.getObjectByName('nodes', true));
   sceneObjects.links = new THREE.Group();
+  scene.remove(scene.getObjectByName('links', true));
+  //
   formatData();
+  //
+  nodeLabels.forEach((node) => {
+    node[0].add(node[1][0]);
+    node[0].add(node[1][1]);
+  });
+  const baseOpacity = { opacity: 0 };
+  new TWEEN.Tween(baseOpacity)
+    .to({ opacity: 1 }, 1)
+    .onUpdate(() => {
+      nodeLabels.forEach((node) => {
+        node[1][0].material.opacity = baseOpacity.opacity;
+        node[1][1].material.opacity = baseOpacity.opacity;
+      });
+    }).start();
+  //
+  layoutByRank();
+  //
   //
   flourishState = state;
   //
