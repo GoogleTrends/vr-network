@@ -1,51 +1,101 @@
-id,rank,name
-0,1,Game of Thrones
-1,2,The Walking Dead
-4,3,Stranger Things
-7,4,Rick and Morty
-9,5,Shameless
-10,6,Grey's Anatomy
-6,7,Riverdale
-11,8,This Is Us
-13,9,13 Reasons Why
-17,10,The Office
-15,11,American Horror Story
-19,12,The Flash
-8,13,South Park
-18,14,Friends
-16,15,Pretty Little Liars
-5,16,Supernatural
-28,17,Orange is the New Black
-20,18,Arrow
-29,19,Vikings
-30,20,Doctor Who
-32,21,General Hospital
-33,22,The Big Bang Theory
-26,23,The Vampire Diaries
-35,24,Twin Peaks (1990)
-12,25,Criminal Minds
-3,26,House of Cards
-34,27,NCIS
-31,28,Sherlock
-22,29,Gotham
-24,30,The 100
-39,31,Breaking Bad
-40,32,Sons of Anarchy
-14,33,Big Little Lies
-44,34,Empire
-23,35,Prison Break
-25,36,Seinfeld
-45,37,Outlander
-21,38,Supergirl
-37,39,Better Call Saul
-2,40,Westworld
-46,41,Nashville
-36,42,Bones
-43,43,Black Mirror
-38,44,Narcos
-47,45,Legion
-48,46,One Tree Hill
-41,47,Dexter
-49,48,Suits
-42,49,Girls
-27,50,Gossip Girl
+id,rank,name,state,party,name-only
+48,86,Dan Sullivan (R-AK),AK,Republican,Dan Sullivan
+19,24,Lisa Murkowski (R-AK),AK,Republican,Lisa Murkowski
+92,77,Richard Shelby (R-AL),AL,Republican,Richard Shelby
+93,7,Doug Jones (D-AL),AL,Democratic,Doug Jones
+80,99,John Boozman (R-AR),AR,Republican,John Boozman
+51,23,Tom Cotton (R-AR),AR,Republican,Tom Cotton
+15,14,Jeff Flake (R-AZ),AZ,Republican,Jeff Flake
+64,1,John McCain (R-AZ),AZ,Republican,John McCain
+33,12,Dianne Feinstein (D-CA),CA,Democratic,Dianne Feinstein
+1,9,Kamala Harris (D-CA),CA,Democratic,Kamala Harris
+46,30,Cory Gardner (R-CO),CO,Republican,Cory Gardner
+47,44,Michael Bennet (D-CO),CO,Democratic,Michael Bennet
+37,37,Chris Murphy (D-CT),CT,Democratic,Chris Murphy
+38,20,Richard Blumenthal (D-CT),CT,Democratic,Richard Blumenthal
+35,65,Chris Coons (D-DE),DE,Democratic,Chris Coons
+36,96,Tom Carper (D-DE),DE,Democratic,Tom Carper
+20,48,Bill Nelson (D-FL),FL,Democratic,Bill Nelson
+21,11,Marco Rubio (R-FL),FL,Republican,Marco Rubio
+49,59,David Perdue (R-GA),GA,Republican,David Perdue
+50,62,Johnny Isakson (R-GA),GA,Republican,Johnny Isakson
+28,93,Brian Schatz (D-HI),HI,Democratic,Brian Schatz
+29,76,Mazie Hirono (D-HI),HI,Democratic,Mazie Hirono
+39,25,Chuck Grassley (R-IA),IA,Republican,Chuck Grassley
+40,64,Joni Ernst (R-IA),IA,Republican,Joni Ernst
+72,72,Jim (James) Risch (R-ID),ID,Republican,Jim (James) Risch
+75,89,Mike Crapo (R-ID),ID,Republican,Mike Crapo
+55,26,Dick Durbin (D-IL),IL,Democratic,Dick Durbin
+56,36,Tammy Duckworth (D-IL),IL,Democratic,Tammy Duckworth
+59,61,Joe Donnelly (D-IN),IN,Democratic,Joe Donnelly
+76,73,Todd Young (R-IN),IN,Republican,Todd Young
+68,82,Jerry Moran (R-KS),KS,Republican,Jerry Moran
+69,80,Pat Roberts (R-KS),KS,Republican,Pat Roberts
+42,5,Mitch McConnell (R-KY),KY,Republican,Mitch McConnell
+85,8,Rand Paul (R-KY),KY,Republican,Rand Paul
+18,38,Bill Cassidy (R-LA),LA,Republican,Bill Cassidy
+81,81,John Kennedy (R-LA),LA,Republican,John Kennedy
+58,68,Ed Markey (D-MA),MA,Democratic,Ed Markey
+3,4,Elizabeth Warren (D-MA),MA,Democratic,Elizabeth Warren
+11,49,Ben Cardin (D-MD),MD,Democratic,Ben Cardin
+12,78,Chris Van Hollen (D-MD),MD,Democratic,Chris Van Hollen
+5,54,Angus King (I-ME),ME,Independent,Angus King
+6,15,Susan Collins (R-ME),ME,Republican,Susan Collins
+53,60,Debbie Stabenow (D-MI),MI,Democratic,Debbie Stabenow
+54,83,Gary Peters (D-MI),MI,Democratic,Gary Peters
+0,43,Amy Klobuchar (D-MN),MN,Democratic,Amy Klobuchar
+99,74,Tina Smith (D-MN),MN,Democratic,Tina Smith
+43,32,Claire McCaskill (D-MO),MO,Democratic,Claire McCaskill
+44,51,Roy Blunt (R-MO),MO,Republican,Roy Blunt
+95,97,Roger Wicker (R-MS),MS,Republican,Roger Wicker
+96,87,Thad Cochran (R-MS),MS,Republican,Thad Cochran
+60,70,Jon Tester (D-MT),MT,Democratic,Jon Tester
+83,69,Steve Daines (R-MT),MT,Republican,Steve Daines
+74,33,Richard Burr (R-NC),NC,Republican,Richard Burr
+91,35,Thom Tillis (R-NC),NC,Republican,Thom Tillis
+45,66,Heidi Heitkamp (D-ND),ND,Democratic,Heidi Heitkamp
+61,98,John Hoeven (R-ND),ND,Republican,John Hoeven
+13,19,Ben Sasse (R-NE),NE,Republican,Ben Sasse
+14,84,Deb Fischer (R-NE),NE,Republican,Deb Fischer
+65,95,Jeanne Shaheen (D-NH),NH,Democratic,Jeanne Shaheen
+34,85,Maggie Hassan (D-NH),NH,Democratic,Maggie Hassan
+26,29,Bob Menendez (D-NJ),NJ,Democratic,Bob Menendez
+27,16,Cory Booker (D-NJ),NJ,Democratic,Cory Booker
+10,71,Martin Heinrich (D-NM),NM,Democratic,Martin Heinrich
+88,91,Tom Udall (D-NM),NM,Democratic,Tom Udall
+31,90,Catherine Cortez Masto (D-NV),NV,Democratic,Catherine Cortez Masto
+32,46,Dean Heller (R-NV),NV,Republican,Dean Heller
+41,6,Chuck Schumer (D-NY),NY,Democratic,Chuck Schumer
+2,17,Kirsten Gillibrand (D-NY),NY,Democratic,Kirsten Gillibrand
+94,34,Rob Portman (R-OH),OH,Republican,Rob Portman
+89,45,Sherrod Brown (D-OH),OH,Democratic,Sherrod Brown
+9,41,James Lankford (R-OK),OK,Republican,James Lankford
+71,88,Jim Inhofe (R-OK),OK,Republican,Jim Inhofe
+66,53,Jeff Merkley (D-OR),OR,Democratic,Jeff Merkley
+67,40,Ron Wyden (D-OR),OR,Democratic,Ron Wyden
+22,47,Bob Casey Jr. (D-PA),PA,Democratic,Bob Casey Jr.
+23,22,Pat Toomey (R-PA),PA,Republican,Pat Toomey
+62,79,Jack Reed (D-RI),RI,Democratic,Jack Reed
+63,58,Sheldon Whitehouse (D-RI),RI,Democratic,Sheldon Whitehouse
+16,10,Lindsey Graham (R-SC),SC,Republican,Lindsey Graham
+98,42,Tim Scott (R-SC),SC,Republican,Tim Scott
+79,75,John Thune (R-SD),SD,Republican,John Thune
+82,100,Mike Rounds (R-SD),SD,Republican,Mike Rounds
+24,13,Bob Corker (R-TN),TN,Republican,Bob Corker
+25,52,Lamar Alexander (R-TN),TN,Republican,Lamar Alexander
+57,28,John Cornyn (R-TX),TX,Republican,John Cornyn
+17,3,Ted Cruz (R-TX),TX,Republican,Ted Cruz
+70,50,Mike Lee (R-UT),UT,Republican,Mike Lee
+30,18,Orrin Hatch (R-UT),UT,Republican,Orrin Hatch
+73,27,Mark Warner (D-VA),VA,Democratic,Mark Warner
+87,21,Tim Kaine (D-VA),VA,Democratic,Tim Kaine
+8,2,Bernie Sanders (I-VT),VT,Independent,Bernie Sanders
+90,56,Patrick Leahy (D-VT),VT,Democratic,Patrick Leahy
+86,67,Maria Cantwell (D-WA),WA,Democratic,Maria Cantwell
+84,57,Patty Murray (D-WA),WA,Democratic,Patty Murray
+97,39,Ron Johnson (R-WI),WI,Republican,Ron Johnson
+4,63,Tammy Baldwin (D-WI),WI,Democratic,Tammy Baldwin
+7,31,Joe Manchin (D-WV),WV,Democratic,Joe Manchin
+52,55,Shelley Moore Capito (R-WV),WV,Republican,Shelley Moore Capito
+77,92,John Barrasso (R-WY),WY,Republican,John Barrasso
+78,94,Mike Enzi (R-WY),WY,Republican,Mike Enzi

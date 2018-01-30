@@ -46,17 +46,9 @@ settings:
     type: text
 
   - Nodes
-  - property: basicNodeColor
-    name: Node Color
-    description: The basic node color
-    type: color
-  - property: adjacentNodeColor
-    name: Adjacent Node Color
-    description: The adjacent node color
-    type: color
-  - property: highlightNodeColor
-    name: Highlight Node Color
-    description: The highlight node color
+  - property: defaultNodeColor
+    name: Default Node Color
+    description: The node color if colors are not set in the categories table
     type: color
 
   - Links
@@ -117,43 +109,6 @@ settings:
     max: 1
     step: 0.01
 
-
-
-  # - Nodes
-  # - property: unselectedNodeColor
-  #   name: Unselected Node Color
-  #   description: The color of unselected nodes
-  #   type: color
-  # - property: unselectedNodeOpacity
-  #   name: Unselected Node Opacity
-  #   description: The opacity of unselected nodes
-  #   type: number
-  #   min: 0
-  #   max: 1
-  #   step: 0.05
-  # - property: adjacentNodeColor
-  #   name: Adjacent Node Color
-  #   description: The color of adjacent nodes
-  #   type: color
-  # - property: adjacentNodeOpacity
-  #   name: Adjacent Node Opacity
-  #   description: The opacity of adjacent nodes
-  #   type: number
-  #   min: 0
-  #   max: 1
-  #   step: 0.05
-  # - property: highlightedNodeColor
-  #   name: Highlighted Node Color
-  #   description: The color of highlighted node
-  #   type: color
-  # - property: highlightedNodeOpacity
-  #   name: Highlighted Node Opacity
-  #   description: The opacity of highlighted node
-  #   type: number
-  #   min: 0
-  #   max: 1
-  #   step: 0.05
-
 data:
   - dataset: nodes
     key: id
@@ -170,6 +125,11 @@ data:
     name: Name
     type: column
     column: nodes::C
+  - dataset: nodes
+    key: category
+    name: Category
+    type: column
+    column: nodes::E
 
   - dataset: links
     key: source
@@ -187,6 +147,22 @@ data:
     type: column
     column: links::C
 
+  - dataset: categories
+    key: id
+    name: ID
+    type: column
+    column: categories::A
+  - dataset: categories
+    key: name
+    name: Name
+    type: column
+    column: categories::B
+  - dataset: categories
+    key: color
+    name: Color
+    type: column
+    column: categories::C
+
 build:
   # Defines the build processes used to build your template from source.
   # You can have any number of build processes, and changes to the relevant
@@ -202,7 +178,3 @@ build:
     files:
       - package.json
       - rollup.config.js
-
-  # less:
-  #   script: npm run less
-  #   directory: less

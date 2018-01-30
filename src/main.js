@@ -89,14 +89,14 @@ function updateNetwork() {
           c.material.dispose(); // Dispose existing geometry
           c.material = null;
           if (nd.status === 'center') {
-            c.currentMaterial = sphereMaterials.selected;
-            c.material = sphereMaterials.highlight;
+            c.currentMaterial = sphereMaterials[n.userData.category].selected;
+            c.material = sphereMaterials[n.userData.category].highlight;
             c.children[0].material.visible = true;
           } else if (nd.status === 'adjacent') {
-            c.material = sphereMaterials.adjacent;
+            c.material = sphereMaterials[n.userData.category].adjacent;
             c.children[0].material.visible = false;
           } else {
-            c.material = sphereMaterials.basic;
+            c.material = sphereMaterials[n.userData.category].basic;
             c.children[0].material.visible = false;
           }
         } else if (c.name === 'name') {
@@ -125,7 +125,7 @@ function updateNetwork() {
 }
 
 function layoutByRank() {
-  const rowCount = 1 + Math.ceil(globalData.nodes.length / 50);
+  const rowCount = 1 + Math.ceil(globalData.nodes.length / 35);
   const perRow = Math.ceil(globalData.nodes.length / rowCount);
 
   globalData.nodes.sort((a, b) => parseInt(a.rank, 10) - parseInt(b.rank, 10));
@@ -136,7 +136,7 @@ function layoutByRank() {
     n.nameOffset = new THREE.Vector2(0, -0.1);
     n.pos = new THREE.Vector3(
       Math.cos(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
-      (controls.userHeight / (1 + (rowCount * 0.5))) + (i / perRow),
+      (controls.userHeight / (1 + (rowCount * 0.5))) + (((i / 3) * 2) / perRow),
       Math.sin(-(Math.PI / 2) + (((Math.PI * 2) / perRow) * i)) * (stageSize / 3),
     );
     return n;
@@ -633,27 +633,27 @@ function checkIntersected() {
           if (c.userData.type === 'sphere') {
             const [cn] = sceneObjects.nodes.children.filter(n => n.userData.status === 'center');
             if (intersected.userData.status === 'center') {
-              c.currentMaterial = sphereMaterials.selected;
+              c.currentMaterial = sphereMaterials[intersected.userData.category].selected;
             } else if (intersected.userData.status === 'adjacent') {
-              c.currentMaterial = sphereMaterials.adjacent;
+              c.currentMaterial = sphereMaterials[intersected.userData.category].adjacent;
               if (cn) {
-                cn.children[0].material = sphereMaterials.selected;
+                cn.children[0].material = sphereMaterials[cn.userData.category].selected;
                 cn.children[0].children[0].visible = true;
               }
             } else {
-              c.currentMaterial = sphereMaterials.basic;
+              c.currentMaterial = sphereMaterials[intersected.userData.category].basic;
               if (cn) {
-                cn.children[0].material = sphereMaterials.adjacent;
+                cn.children[0].material = sphereMaterials[cn.userData.category].adjacent;
                 cn.children[0].children[0].visible = false;
               }
             }
             c.material.dispose(); // Dispose existing geometry
             c.material = null;
             if (intersected.userData.status === 'center') {
-              c.material = sphereMaterials.highlight;
+              c.material = sphereMaterials[intersected.userData.category].highlight;
               c.children[0].material.visible = true;
             } else {
-              c.material = sphereMaterials.selected;
+              c.material = sphereMaterials[intersected.userData.category].selected;
               c.children[0].material.visible = false;
             }
           } else {
@@ -906,21 +906,24 @@ function drawNetwork() {
     node.userData.type = 'node';
     node.userData.name = d.name;
     node.userData.id = d.id;
+    node.userData.category = d.category;
+    //
     node.shifted = false;
     node.status = '';
     node.position.set(d.pos.x, d.pos.y, d.pos.z);
-    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterials.basic);
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterials[node.userData.category].basic);
     sphere.userData.type = 'sphere';
 
     // Sprite Glow Effect
     const spriteMaterial = new THREE.SpriteMaterial({
       map: textureLoader.load(`${Flourish.static_prefix}/glow.png`),
-      color: new THREE.Color(flourishState.highlightNodeColor), // 0xFF6F00, // 0xffA000,
+      color: new THREE.Color(0xffffff),
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.35,
       blending: THREE.AdditiveBlending,
     });
     const sprite = new THREE.Sprite(spriteMaterial);
+
     sprite.userData.type = 'glow';
     sprite.position.set(0, 0, 0.1);
     sprite.scale.set(0.4, 0.4, 0.4);
@@ -935,13 +938,13 @@ function drawNetwork() {
       weight = '300 ';
     }
 
-    const rank = generateTextureCanvas(`${d.rank}`, 66, 1024, 256, weight, false, 0);
+    const rank = generateTextureCanvas(`${d.rank}`, 64, 1024, 256, weight, false, 0);
     rank.scale.set(0.001, 0.001, 0.001);
     rank.position.set(0, 0, 0.15);
     rank.userData.type = 'text';
     rank.name = 'rank';
 
-    const text = generateTextureCanvas(`${d.name}`, 66, 1024, 256, weight, false, 0);
+    const text = generateTextureCanvas(`${d.name}`, 64, 1024, 256, weight, false, 0);
     text.scale.set(0.001, 0.001, 0.001);
     text.position.set(0, -0.1, 0.15);
     text.userData.type = 'text';
@@ -958,7 +961,6 @@ function drawNetwork() {
 
   updateNetwork();
 
-  // layoutByRank();
   layoutInGrid();
 }
 
@@ -976,11 +978,11 @@ function formatData() {
     return n;
   });
   globalData.nodes = globalData.nodes.filter(n => n.linkCount);
+  //
   drawNetwork();
 }
 
 function buildOutScene() {
-  // if (sceneBuildOutFunctions.length === 0) return;
   if (sceneBuildOutFunctions.length === 0) {
     vrDisplay.resetPose();
     worldState.intro.updating = false;
@@ -995,9 +997,44 @@ export function sceneReady() {
   setTimeout(buildOutScene, 500);
 }
 
+function updateColorMap(state, datacategories) {
+  state.colorMap = [];
+  if (datacategories.length) {
+    datacategories.forEach((c) => {
+      c.name = c.name.trim().toLowerCase();
+      state.colorMap.push(c);
+    });
+  }
+  if (state.colorMap.filter(c => c.name === 'default').length < 1) {
+    state.colorMap.push({
+      name: 'default',
+      color: state.defaultNodeColor,
+    });
+  }
+  return state;
+}
+
+function updateCategories(nodes, colorMap) {
+  const categoryNames = colorMap.map(c => c.name);
+  return nodes.map((n) => {
+    if (n.category) {
+      n.category = n.category.trim().toLowerCase();
+      if (!categoryNames.includes(n.category)) {
+        n.category = 'default';
+      }
+    } else {
+      n.category = 'default';
+    }
+    return n;
+  });
+}
+
 export function setupScene(data, state) {
   globalData = data;
+  state = updateColorMap(state, data.categories);
   flourishState = state;
+  globalData.nodes = updateCategories(globalData.nodes, state.colorMap);
+
   sphereMaterials = updateSphereMaterials(state);
   lineMaterials = updateLineMaterials(state);
   lineMaterials.basic.visible = false;
@@ -1141,6 +1178,8 @@ export function updateSceneFromState(data, state) {
   //
   vrDisplay.cancelAnimationFrame(animationHandle);
   globalData = data;
+  state = updateColorMap(state, data.categories);
+  globalData.nodes = updateCategories(globalData.nodes, state.colorMap);
   //
   sceneObjects.nodes = new THREE.Group();
   scene.remove(scene.getObjectByName('nodes', true));
@@ -1163,7 +1202,9 @@ export function updateSceneFromState(data, state) {
       });
     }).start();
   //
-  layoutByRank();
+  if (!worldState.intro.active) {
+    layoutByRank();
+  }
   //
   //
   flourishState = state;
@@ -1173,7 +1214,8 @@ export function updateSceneFromState(data, state) {
   camera.add(sceneObjects.cursor);
   //
   sphereMaterials = updateSphereMaterials(state);
-  sphereMaterials.basic.opacity = 1;
+  updateSphereOpacity();
+  //
   lineMaterials = updateLineMaterials(flourishState);
   lineMaterials.basic.visible = false;
   //
@@ -1183,7 +1225,7 @@ export function updateSceneFromState(data, state) {
   sceneObjects.nodes.children.forEach((n) => {
     n.children.forEach((c) => {
       if (c.name === '') {
-        c.children[0].material.color = new THREE.Color(state.highlightNodeColor);
+        c.material = sphereMaterials[n.userData.category].basic;
       }
     });
   });
@@ -1205,8 +1247,6 @@ export function updateSceneFromState(data, state) {
     flourishState.horizonExponent,
     false,
   ));
-  //
-  // toggleVREnabled(true, flourishState.vrEnabled);
   //
 }
 
