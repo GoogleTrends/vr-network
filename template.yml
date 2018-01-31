@@ -46,9 +46,17 @@ settings:
     type: text
 
   - Nodes
-  - property: defaultNodeColor
+  - property: basicNodeColor
     name: Default Node Color
-    description: The node color if colors are not set in the categories table
+    description: The default basic node color if category colors are not set in data
+    type: color
+  - property: adjacentNodeColor
+    name: Default Adjacent Node Color
+    description: The default adjacent node color if category colors are not set in data
+    type: color
+  - property: highlightNodeColor
+    name: Default Highlight Node Color
+    description: The default highlight node color if category colors are not set in data
     type: color
 
   - Links
@@ -129,7 +137,8 @@ data:
     key: category
     name: Category
     type: column
-    column: nodes::E
+    column: nodes::D
+    optional: true
 
   - dataset: links
     key: source
@@ -152,16 +161,19 @@ data:
     name: ID
     type: column
     column: categories::A
+    optional: true
   - dataset: categories
     key: name
     name: Name
     type: column
     column: categories::B
+    optional: true
   - dataset: categories
     key: color
     name: Color
     type: column
     column: categories::C
+    optional: true
 
 build:
   # Defines the build processes used to build your template from source.

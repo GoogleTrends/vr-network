@@ -9,8 +9,12 @@ export function updateSphereMaterials(state) {
   state.colorMap.forEach((c) => {
     const materials = {};
 
+    const basicColor = (c.name === 'default_no_category') ? c.basic : c.color;
+    const adjacentColor = (c.name === 'default_no_category') ? c.adjacent : c.color;
+    const highlightColor = (c.name === 'default_no_category') ? c.highlight : c.color;
+
     materials.basic = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(c.color),
+      color: new THREE.Color(basicColor),
       flatShading: false,
       opacity: 0,
       transparent: true,
@@ -18,23 +22,23 @@ export function updateSphereMaterials(state) {
     });
 
     materials.adjacent = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(c.color),
+      color: new THREE.Color(adjacentColor),
       flatShading: false,
       transparent: false,
       depthTest: true,
     });
 
     materials.selected = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(c.color),
-      emissive: new THREE.Color(c.color),
+      color: new THREE.Color(highlightColor),
+      emissive: new THREE.Color(highlightColor),
       flatShading: false,
       transparent: false,
       depthTest: true,
     });
 
     materials.highlight = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(c.color),
-      emissive: new THREE.Color(c.color),
+      color: new THREE.Color(highlightColor),
+      emissive: new THREE.Color(highlightColor),
       flatShading: false,
       transparent: false,
       depthTest: true,
@@ -49,10 +53,11 @@ export function updateSphereMaterials(state) {
 export function updateSphereOpacity() {
   const categories = Object.keys(sphereMaterials);
   categories.forEach((m) => {
+    const targetOpacity = (m === 'default_no_category') ? 1 : 0.35;
     const material = sphereMaterials[m];
     new TWEEN.Tween(material.basic)
       .to({
-        opacity: 0.35,
+        opacity: targetOpacity,
       }, 500)
       .start();
   });

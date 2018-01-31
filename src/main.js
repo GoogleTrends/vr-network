@@ -999,16 +999,16 @@ export function sceneReady() {
 
 function updateColorMap(state, datacategories) {
   state.colorMap = [];
+  state.colorMap.push({
+    name: 'default_no_category',
+    basic: state.basicNodeColor,
+    adjacent: state.adjacentNodeColor,
+    highlight: state.highlightNodeColor,
+  });
   if (datacategories.length) {
     datacategories.forEach((c) => {
       c.name = c.name.trim().toLowerCase();
       state.colorMap.push(c);
-    });
-  }
-  if (state.colorMap.filter(c => c.name === 'default').length < 1) {
-    state.colorMap.push({
-      name: 'default',
-      color: state.defaultNodeColor,
     });
   }
   return state;
@@ -1020,10 +1020,10 @@ function updateCategories(nodes, colorMap) {
     if (n.category) {
       n.category = n.category.trim().toLowerCase();
       if (!categoryNames.includes(n.category)) {
-        n.category = 'default';
+        n.category = 'default_no_category';
       }
     } else {
-      n.category = 'default';
+      n.category = 'default_no_category';
     }
     return n;
   });
