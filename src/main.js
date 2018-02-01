@@ -128,7 +128,7 @@ function setActiveButton(button) {
   sceneObjects.buttons.children.forEach((b) => {
     if (b.userData.name === button) {
       b.children.filter(c => c.userData.type === 'button').forEach((c) => {
-        c.material.opacity = 0.0;
+        c.material.opacity = 0.2;
       });
     } else {
       b.children.filter(c => c.userData.type === 'button').forEach((c) => {

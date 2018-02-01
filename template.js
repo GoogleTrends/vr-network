@@ -50392,7 +50392,7 @@ function setActiveButton(button) {
       b.children.filter(function (c) {
         return c.userData.type === 'button';
       }).forEach(function (c) {
-        c.material.opacity = 0.0;
+        c.material.opacity = 0.2;
       });
     } else {
       b.children.filter(function (c) {
