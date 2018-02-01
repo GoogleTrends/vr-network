@@ -124,7 +124,21 @@ function updateNetwork() {
   worldState.labelsNeedUpdate = true;
 }
 
-function layoutByRank() {
+function setActiveButton(button) {
+  sceneObjects.buttons.children.forEach((b) => {
+    if (b.userData.name === button) {
+      b.children.filter(c => c.userData.type === 'button').forEach((c) => {
+        c.material.opacity = 0.0;
+      });
+    } else {
+      b.children.filter(c => c.userData.type === 'button').forEach((c) => {
+        c.material.opacity = 0.1;
+      });
+    }
+  });
+}
+
+function layoutByRank(button = 'Spiral') {
   const rowCount = 1 + Math.ceil(globalData.nodes.length / 35);
   const perRow = Math.ceil(globalData.nodes.length / rowCount);
 
@@ -150,10 +164,12 @@ function layoutByRank() {
 
   initData = cloneDeep(globalData);
 
+  setActiveButton(button);
+
   updateNetwork();
 }
 
-function layoutInGrid() {
+function layoutInGrid(button = 'Grid') {
   const perRow = 10;
   const rowCount = Math.ceil(globalData.nodes.length / perRow);
 
@@ -180,10 +196,12 @@ function layoutInGrid() {
 
   initData = cloneDeep(globalData);
 
+  setActiveButton(button);
+
   updateNetwork();
 }
 
-function layoutByForce() {
+function layoutByForce(button = 'Simulation') {
   const simulation = d3Force.forceSimulation()
     .numDimensions(3)
     .nodes(globalData.nodes)
@@ -246,6 +264,8 @@ function layoutByForce() {
 
     initData = cloneDeep(globalData);
 
+    setActiveButton(button);
+
     updateNetwork();
   });
 }
@@ -282,7 +302,7 @@ function onResize() {
 
 function enableNoSleep() {
   noSleep.enable();
-  window.removeEventListener('touchstart', enableNoSleep, true);
+  // window.removeEventListener('touchstart', enableNoSleep, true);
 }
 
 export function requestPresent() {

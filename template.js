@@ -50386,7 +50386,27 @@ function updateNetwork() {
   worldState.labelsNeedUpdate = true;
 }
 
+function setActiveButton(button) {
+  sceneObjects.buttons.children.forEach(function (b) {
+    if (b.userData.name === button) {
+      b.children.filter(function (c) {
+        return c.userData.type === 'button';
+      }).forEach(function (c) {
+        c.material.opacity = 0.0;
+      });
+    } else {
+      b.children.filter(function (c) {
+        return c.userData.type === 'button';
+      }).forEach(function (c) {
+        c.material.opacity = 0.1;
+      });
+    }
+  });
+}
+
 function layoutByRank() {
+  var button = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'Spiral';
+
   var rowCount = 1 + Math.ceil(globalData.nodes.length / 35);
   var perRow = Math.ceil(globalData.nodes.length / rowCount);
 
@@ -50414,10 +50434,14 @@ function layoutByRank() {
 
   initData = lodash_clonedeep(globalData);
 
+  setActiveButton(button);
+
   updateNetwork();
 }
 
 function layoutInGrid() {
+  var button = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'Grid';
+
   var perRow = 10;
   var rowCount = Math.ceil(globalData.nodes.length / perRow);
 
@@ -50446,10 +50470,14 @@ function layoutInGrid() {
 
   initData = lodash_clonedeep(globalData);
 
+  setActiveButton(button);
+
   updateNetwork();
 }
 
 function layoutByForce() {
+  var button = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'Simulation';
+
   var simulation = d3Force.forceSimulation().numDimensions(3).nodes(globalData.nodes).force('link', d3Force.forceLink().id(function (d) {
     return d.id;
   }).links(globalData.links)).force('charge', d3Force.forceManyBody().strength(-1)) // 1, -1,
@@ -50497,6 +50525,8 @@ function layoutByForce() {
 
     initData = lodash_clonedeep(globalData);
 
+    setActiveButton(button);
+
     updateNetwork();
   });
 }
@@ -50533,7 +50563,7 @@ function onResize() {
 
 function enableNoSleep() {
   noSleep.enable();
-  window.removeEventListener('touchstart', enableNoSleep, true);
+  // window.removeEventListener('touchstart', enableNoSleep, true);
 }
 
 function requestPresent() {
