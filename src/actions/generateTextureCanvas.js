@@ -1,4 +1,13 @@
 /* global document */
+
+/*
+  file: generateTextureCanvas.js
+  description: Creates a mesh with a canvas texutre displaying given text
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 import * as THREE from 'three';
 
 export function generateTextureCanvas(text, textSize, width, height, weight = '', split = false, opacity = 1, fill = 'rgb(255, 255, 255)', stroke = 'rgb(0, 0, 0)') {
@@ -7,10 +16,6 @@ export function generateTextureCanvas(text, textSize, width, height, weight = ''
   canvas.width = width;
   canvas.height = height;
   context.clearRect(0, 0, width, height);
-
-  // context.fillStyle = 'rgba(255, 255, 255, 0.2)';
-  // context.fillRect(0, 0, width, height);
-
   context.font = `${weight}${textSize}pt Roboto Condensed`;
   context.fillStyle = fill;
 

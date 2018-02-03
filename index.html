@@ -4,24 +4,18 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width">
 		<!-- The <title> is inserted by Flourish -->
-		<!-- Link to a stylesheet, or include an inline <style> section here -->
 		<script async src="https://www.googletagmanager.com/gtag/js"></script>
-		<!--  -->
 		<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
 		<link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:300,400,700" rel="stylesheet">
 		<link rel="stylesheet" type="text/css" href="style.css">
 	</head>
 	<body>
-		<!-- If you want to start with a non-empty document, add elements here -->
-		<!-- Relative links are rewritten to refer to the files in the static directory -->
 		<div id="inbutton" class="button">About</div>
 		<div id="vrbutton" class="button"></div>
 		<div id="centerline"></div>
-		<!--  -->
 		<div id="intro">
 			<div id="card">
 				<img id="logo">
-				<!--  -->
 				<div class="slide" id="slide-0">
 					<div class="section ls-right-pad">
 						<h1 id="introTitle"></h1>
@@ -34,7 +28,6 @@
 						</div>
 					</div>
 				</div>
-				<!--  -->
 				<div class="slide hide" id="slide-1">
 					<div class="section ls-right-pad">
 						<h1>View in VR</h1>
@@ -60,7 +53,6 @@
 						</a>
 					</div>
 				</div>
-				<!--  -->
 				<div class="slide hide" id="slide-2">
 					<div class="section ls-right-pad">
 						<div class="icon half">
@@ -74,7 +66,6 @@
 							</p>
 							<div id="timer">
 								<svg width="126" height="126" xmlns="http://www.w3.org/2000/svg">
-									<!-- <rect width="126" height="126" fill="#999"></rect> -->
 									<circle id="ring" class="circle" r="60" cx="63" cy="63" stroke-width="4" stroke="#FF6F00" fill="none" stroke-dasharray="377" stroke-dashoffset="377"></circle>
 									<text id="count" x="58" y="72" id="count" font-size="24" fill="#ffffff">5</text>
 								</svg>
@@ -85,7 +76,6 @@
 						</div>
 					</div>
 				</div>
-				<!--  -->
 			</div>
 		</div>
 	</body>
@@ -94,31 +84,7 @@
 		  /**
 		   * webvr-polyfill configuration
 		   */
-		  // Forces availability of VR mode.
-		  //FORCE_ENABLE_VR: true, // Default: false.
-		  // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
-		  //K_FILTER: 0.98, // Default: 0.98.
-		  // How far into the future to predict during fast motion.
-		  //PREDICTION_TIME_S: 0.040, // Default: 0.040 (in seconds).
-		  // Flag to disable touch panner. In case you have your own touch controls
-		  //TOUCH_PANNER_DISABLED: true, // Default: false.
-		  // Enable yaw panning only, disabling roll and pitch. This can be useful for
-		  // panoramas with nothing interesting above or below.
-		  //YAW_ONLY: true, // Default: false.
-		  // Enable the deprecated version of the API (navigator.getVRDevices).
-		  //ENABLE_DEPRECATED_API: true, // Default: false.
-		  // Scales the recommended buffer size reported by WebVR, which can improve
-		  // performance. Making this very small can lower the effective resolution of
-		  // your scene.
 		  BUFFER_SCALE: 0.5, // default: 1.0
-		  // Allow VRDisplay.submitFrame to change gl bindings, which is more
-		  // efficient if the application code will re-bind it's resources on the
-		  // next frame anyway.
-		  // Dirty bindings include: gl.FRAMEBUFFER_BINDING, gl.CURRENT_PROGRAM,
-		  // gl.ARRAY_BUFFER_BINDING, gl.ELEMENT_ARRAY_BUFFER_BINDING,
-		  // and gl.TEXTURE_BINDING_2D for texture unit 0
-		  // Warning: enabling this might lead to rendering issues.
-		  //DIRTY_SUBMIT_FRAME_BINDINGS: true // default: false
 		};
 	</script>
 </html>

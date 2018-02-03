@@ -1,7 +1,18 @@
 /* global Flourish */
 
+/*
+  file: intro.js
+  description: Generates in-world introduction
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 import * as THREE from 'three';
-import { generateTextureCanvas } from '../generateTextureCanvas';
+import TWEEN from '@tweenjs/tween.js';
+import { generateTextureCanvas } from '../actions/generateTextureCanvas';
+
+const intro = new THREE.Group();
 
 function generateIntroButton(name, width, yoffset) {
   const button = new THREE.Group();
@@ -32,7 +43,6 @@ function generateIntroButton(name, width, yoffset) {
 }
 
 export function generate(state, stageSize) {
-  const intro = new THREE.Group();
   intro.name = 'intro';
 
   const width = 512;
@@ -99,4 +109,21 @@ export function generate(state, stageSize) {
   return intro;
 }
 
-export default generate;
+export function updateVisibility(buildOutInterval) {
+  const baseOpacity = { opacity: 0 };
+  new TWEEN.Tween(baseOpacity)
+    .to({ opacity: 1 }, buildOutInterval)
+    .onUpdate(() => {
+      intro.children.forEach((c) => {
+        if (c.children.length) {
+          c.children.forEach((m) => {
+            m.material.opacity = baseOpacity.opacity;
+          });
+        } else if (c.name === 'background' && baseOpacity.opacity > 0.75) {
+          c.material.opacity = 0.75;
+        } else {
+          c.material.opacity = baseOpacity.opacity;
+        }
+      });
+    }).start();
+}

@@ -1,9 +1,15 @@
 /* global window, document, WebFont */
 
-// import cloneDeep from 'lodash.clonedeep';
+/*
+  file: index.js
+  description: handles start and update from Flourish, as well as introduction screens
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
 
 import { setupScene, updateSceneFromState, requestPresent, toggleVREnabled, sceneReady } from './main';
-import { logoURI } from './logo';
+import { logoURI } from './elements/logo';
 import { setupAnalytics, sendEvent } from './analytics';
 
 export const data = {};
@@ -55,7 +61,7 @@ function enterScene() {
 }
 
 function startTimer() {
-  const offset = 377; // 2 * PI * radius of circle
+  const offset = 377; // (2 * PI * radius of circle #ring in index.html)
   introState.timer.count = timerduration;
   document.querySelector('#count').textContent = introState.timer.count;
   document.querySelector('#ring').setAttribute('stroke-dashoffset', offset - ((timerduration - introState.timer.count) * (offset / (timerduration))));
@@ -71,7 +77,6 @@ function startTimer() {
     if (introState.timer.count < 0) {
       introState.timer.count = timerduration;
       clearInterval(introState.timer.interval);
-      //
       sendEvent('fuse', 'button', 'enterScene');
       toggleVREnabled(true, true);
       enterScene();
@@ -157,7 +162,6 @@ function setupIntro() {
 function updateHtml() {
   document.querySelector('#introTitle').innerText = state.title;
   document.querySelector('#introDescription').innerText = state.description;
-  //
   document.querySelector('#logo').onerror = function error() {
     this.onerror = null;
     this.src = '';
@@ -165,7 +169,6 @@ function updateHtml() {
     return true;
   };
   document.querySelector('#logo').src = state.logo;
-  //
   setupAnalytics(state.gatid);
 }
 

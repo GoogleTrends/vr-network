@@ -4,7 +4,7 @@
   "description": "Flourish Starter Template",
   "main": "template.js",
   "author": "James Proctor",
-  "license": "ISC",
+  "license": "MIT",
   "keywords": [
     "flourish"
   ],

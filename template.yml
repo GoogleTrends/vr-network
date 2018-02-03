@@ -1,33 +1,12 @@
-# The 'id' should be a string that uniquely identifies your template
 id: 'vr-network'
 name: VR Network
 description: VR Network
-author: James Proctor
-
-# This template is compatible with SDK version 2
+author: James Proctor, Pitch Interactive
 sdk_version: 2
-
-# Defines how the template will behave when embedded with the default settings.
-# Use "auto" to have the iframe get taller and shorter to match the content of
-# the DOM (ideal if the template’s height is determined by the flow of the body).
-# Alternatively specify a fixed height or aspect ratio, such as "600px" or "4x3",
-# if your template fills will fill the available height. You can also specify
-# breakpoints (https://flourish.studio/developers/reference/template-files.html).
 autoheight:
   640: 9x16
   ∞: 16x9
-
 settings:
-  # Creates a settings panel that enables the end user to set the default state for
-  # individual visualisations made with this template.
-  #
-  # Available types:
-  # • "number" >> gives a number input. Optionally add "min:", "max:", and "step:" properties.
-  # • "string" >> gives an text input
-  # • "text" >> gives a textarea
-  # • "boolean" >> gives a checkbox
-  # • "color" >> gives a color picker
-
   - Introduction
   - property: logo
     name: Logo
@@ -44,7 +23,6 @@ settings:
     name: Description
     description: Introductory and explanatory text
     type: text
-
   - Nodes
   - property: basicNodeColor
     name: Default Node Color
@@ -58,7 +36,6 @@ settings:
     name: Default Highlight Node Color
     description: The default highlight node color if category colors are not set in data
     type: color
-
   - Links
   - property: linkInboundColor
     name: Inbound Color
@@ -68,7 +45,6 @@ settings:
     name: Outbound Color
     description: The color of links to related searches
     type: color
-
   - Cursor 
   - property: cursorInnerColor
     name: Inner Color
@@ -89,7 +65,6 @@ settings:
     min: 0
     max: 1
     step: 0.1
-
   - Legend
   - property: legendInboundLabel
     name: Inbound Label
@@ -99,12 +74,11 @@ settings:
     name: Outbound Label
     description: Legend Label for outbound links
     type: string
-
-  - Horizon # Headings can be used to break up the settings into collapsible sections
-  - property: horizonTopColor # Refers to a property in the template's state object
-    name: Top Color # Display name for the settings panel
-    description: The color of the sky # Optional description for the settings panel
-    type: color # See available types above
+  - Horizon
+  - property: horizonTopColor
+    name: Top Color
+    description: The color of the sky
+    type: color
   - property: horizonBottomColor
     name: Bottom Color
     description: The color at the horizon
@@ -116,7 +90,6 @@ settings:
     min: 0
     max: 1
     step: 0.01
-
 data:
   - dataset: nodes
     key: id
@@ -139,7 +112,6 @@ data:
     type: column
     column: nodes::D
     optional: true
-
   - dataset: links
     key: source
     name: Source
@@ -155,7 +127,6 @@ data:
     name: Value
     type: column
     column: links::C
-
   - dataset: categories
     key: id
     name: ID
@@ -174,18 +145,9 @@ data:
     type: column
     column: categories::C
     optional: true
-
 build:
-  # Defines the build processes used to build your template from source.
-  # You can have any number of build processes, and changes to the relevant
-  # files will trigger the appropriate build. Here we define build scripts
-  # for JavaScript and CSS.
-
   javascript:
     script: npm run build
-    # You can specify a whole directory, or individual files, or both.
-    # A change inside the directory or to any of the listed files will
-    # trigger a rebuild and reload.
     directory: src
     files:
       - package.json

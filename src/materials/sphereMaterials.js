@@ -1,3 +1,11 @@
+/*
+  file: sphereMaterials.js
+  description: Generates and updates sphere materials for each categories or selection state
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 import * as THREE from 'three';
 import TWEEN from '@tweenjs/tween.js';
 
@@ -50,7 +58,7 @@ export function updateSphereMaterials(state) {
   return sphereMaterials;
 }
 
-export function updateSphereOpacity() {
+export function updateSphereOpacity(buildOutInterval) {
   const categories = Object.keys(sphereMaterials);
   categories.forEach((m) => {
     const targetOpacity = (m === 'default_no_category') ? 1 : 0.35;
@@ -58,7 +66,7 @@ export function updateSphereOpacity() {
     new TWEEN.Tween(material.basic)
       .to({
         opacity: targetOpacity,
-      }, 500)
+      }, buildOutInterval)
       .start();
   });
 }

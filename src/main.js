@@ -1,5 +1,13 @@
 /* global window, document, navigator, performance, Flourish */
 
+/*
+  file: main.js
+  description: entry to generate visualiation and handle interactions
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 import * as THREE from 'three';
 import cloneDeep from 'lodash.clonedeep';
 import TWEEN from '@tweenjs/tween.js';
@@ -11,17 +19,26 @@ import NoSleep from '../node_modules/nosleep.js/dist/NoSleep';
 import '../node_modules/webvr-polyfill/build/webvr-polyfill.min';
 
 import { sendEvent } from './analytics';
-import { generateTextureCanvas } from './generateTextureCanvas';
-import { generateCurveGeometry } from './generateCurveGeometry';
+import { generateTextureCanvas } from './actions/generateTextureCanvas';
+import { generateCurveGeometry } from './actions/generateCurveGeometry';
+import { toRange, toRangeWithGap } from './actions/scaleValue';
+import { resetIntersected } from './actions/resetIntersected';
+import { updateCategories } from './actions/updateCategories';
+import { setActiveButton } from './actions/setActiveButton';
+import { updateColorMap } from './actions/updateColorMap';
+import { resetLinks } from './actions/resetLinks';
+import { updateSphereMaterials, updateSphereOpacity } from './materials/sphereMaterials';
+import { updateLineMaterials } from './materials/lineMaterials';
 import { generateHorizon, updateHorizonVisibility } from './elements/horizon';
 import { generateButtons } from './elements/buttons';
-import { updateLineMaterials } from './materials/lineMaterials';
-import { updateSphereMaterials, updateSphereOpacity } from './materials/sphereMaterials';
+
 import * as legend from './elements/legend';
 import * as cursor from './elements/cursor';
+import * as lookup from './elements/lookup';
 import * as stars from './elements/stars';
 import * as intro from './elements/intro';
-import * as scaleValue from './scaleValue';
+import * as cover from './elements/cover';
+
 
 const worldState = {
   intro: {
@@ -48,6 +65,7 @@ const linkScale = {
   min: 1,
   max: 3,
 };
+
 const buildOutInterval = 1000;
 const sceneBuildOutFunctions = [];
 const nodeLabels = [];
@@ -124,26 +142,10 @@ function updateNetwork() {
   worldState.labelsNeedUpdate = true;
 }
 
-function setActiveButton(button) {
-  sceneObjects.buttons.children.forEach((b) => {
-    if (b.userData.name === button) {
-      b.children.filter(c => c.userData.type === 'button').forEach((c) => {
-        c.material.opacity = 0.2;
-      });
-    } else {
-      b.children.filter(c => c.userData.type === 'button').forEach((c) => {
-        c.material.opacity = 0.1;
-      });
-    }
-  });
-}
-
 function layoutByRank(button = 'Spiral') {
   const rowCount = 1 + Math.ceil(globalData.nodes.length / 35);
   const perRow = Math.ceil(globalData.nodes.length / rowCount);
-
   globalData.nodes.sort((a, b) => parseInt(a.rank, 10) - parseInt(b.rank, 10));
-
   globalData.nodes = globalData.nodes.map((n, i) => {
     n.shifted = false;
     n.status = '';
@@ -155,26 +157,20 @@ function layoutByRank(button = 'Spiral') {
     );
     return n;
   });
-
   globalData.links = globalData.links.map((l) => {
     l.spos = globalData.nodes.filter(n => l.sourceId === n.id)[0].pos;
     l.tpos = globalData.nodes.filter(n => l.targetId === n.id)[0].pos;
     return l;
   });
-
   initData = cloneDeep(globalData);
-
-  setActiveButton(button);
-
+  sceneObjects.buttons = setActiveButton(sceneObjects.buttons, button);
   updateNetwork();
 }
 
 function layoutInGrid(button = 'Grid') {
   const perRow = 10;
   const rowCount = Math.ceil(globalData.nodes.length / perRow);
-
   globalData.nodes.sort((a, b) => parseInt(a.rank, 10) - parseInt(b.rank, 10));
-
   globalData.nodes = globalData.nodes.map((n, i) => {
     n.shifted = false;
     n.status = '';
@@ -187,17 +183,13 @@ function layoutInGrid(button = 'Grid') {
     );
     return n;
   });
-
   globalData.links = globalData.links.map((l) => {
     l.spos = globalData.nodes.filter(n => l.sourceId === n.id)[0].pos;
     l.tpos = globalData.nodes.filter(n => l.targetId === n.id)[0].pos;
     return l;
   });
-
   initData = cloneDeep(globalData);
-
-  setActiveButton(button);
-
+  sceneObjects.buttons = setActiveButton(sceneObjects.buttons, button);
   updateNetwork();
 }
 
@@ -208,7 +200,6 @@ function layoutByForce(button = 'Simulation') {
     .force('link', d3Force.forceLink().id(d => d.id).links(globalData.links))
     .force('charge', d3Force.forceManyBody().strength(-1)) // 1, -1,
     .force('center', d3Force.forceCenter());
-
   simulation.on('end', () => {
     const dimensionMap = {};
     ['x', 'y', 'z'].forEach((d) => {
@@ -218,14 +209,12 @@ function layoutByForce(button = 'Simulation') {
         max: Math.max.apply(null, values),
       };
     });
-
     const offset = new THREE.Vector3(-stageSize / 2, -controls.userHeight, -stageSize / 2);
-
     globalData.nodes = simulation.nodes().map((n) => {
       n.shifted = false;
       n.status = '';
       n.pos = new THREE.Vector3(
-        scaleValue.toRangeWithGap(
+        toRangeWithGap(
           n.x,
           dimensionMap.x,
           {
@@ -234,7 +223,7 @@ function layoutByForce(button = 'Simulation') {
           },
           stageSize / 10,
         ),
-        scaleValue.toRange(
+        toRange(
           n.y,
           dimensionMap.y,
           {
@@ -242,7 +231,7 @@ function layoutByForce(button = 'Simulation') {
             max: controls.userHeight * 3.0,
           },
         ),
-        scaleValue.toRangeWithGap(
+        toRangeWithGap(
           n.z,
           dimensionMap.z,
           {
@@ -255,17 +244,13 @@ function layoutByForce(button = 'Simulation') {
         .add(offset);
       return n;
     });
-
     globalData.links = globalData.links.map((l) => {
       l.spos = globalData.nodes.filter(n => l.sourceId === n.id)[0].pos;
       l.tpos = globalData.nodes.filter(n => l.targetId === n.id)[0].pos;
       return l;
     });
-
     initData = cloneDeep(globalData);
-
-    setActiveButton(button);
-
+    sceneObjects.buttons = setActiveButton(sceneObjects.buttons, button);
     updateNetwork();
   });
 }
@@ -281,15 +266,12 @@ function layoutByRandom() {
     );
     return n;
   });
-
   globalData.links = globalData.links.map((l) => {
     l.spos = globalData.nodes.filter(n => l.sourceId === n.id)[0].pos;
     l.tpos = globalData.nodes.filter(n => l.targetId === n.id)[0].pos;
     return l;
   });
-
   initData = cloneDeep(globalData);
-
   updateNetwork();
 }
 
@@ -302,7 +284,6 @@ function onResize() {
 
 function enableNoSleep() {
   noSleep.enable();
-  // window.removeEventListener('touchstart', enableNoSleep, true);
 }
 
 export function requestPresent() {
@@ -323,7 +304,6 @@ export function requestPresent() {
 
 export function toggleVREnabled(set, value) {
   enableNoSleep();
-  // TODO: remove stereo from desktop when done w/ development
   if (set === true && value !== undefined) {
     worldState.vrEnabled = value;
   } else {
@@ -333,14 +313,12 @@ export function toggleVREnabled(set, value) {
   if (worldState.vrEnabled) {
     if (vrDisplay.capabilities.canPresent) {
       vrDisplay.requestPresent([{ source: document.body }]);
-      // worldState.vrEnabled = !worldState.vrEnabled;
     }
     document.querySelector('#vrbutton').classList.add('enabled');
     document.querySelector('#centerline').classList.add('enabled');
   } else {
     if (vrDisplay.capabilities.canPresent) {
       vrDisplay.exitPresent();
-      // worldState.vrEnabled = !worldState.vrEnabled;
     }
     document.querySelector('#vrbutton').classList.remove('enabled');
     document.querySelector('#centerline').classList.remove('enabled');
@@ -394,7 +372,6 @@ function transitionElements() {
       }
     }
   }
-  //
   let countTransitioning = 0;
   sceneObjects.nodes.children.forEach((n) => {
     if (n.position.distanceTo(n.userData.nextPos) > 0.01) {
@@ -421,7 +398,6 @@ function transitionElements() {
   } else {
     worldState.isTransitioning = false;
   }
-  //
   if (!worldState.isTransitioning && worldState.labelsNeedUpdate) {
     const labelRaycaster = new THREE.Raycaster();
     sceneObjects.nodes.children.forEach((n) => {
@@ -462,7 +438,6 @@ function transitionElements() {
           });
       }
     });
-    //
     sceneObjects.links.children.forEach((l) => {
       if (
         (l.userData.spos.distanceTo(l.userData.nextSPos) > 0.01)
@@ -489,16 +464,14 @@ function transitionElements() {
         const line = new MeshLine();
         line.setGeometry(
           lineGeometry,
-          () => scaleValue.toRange(l.userData.value, { min: 1, max: 100 }, linkScale),
+          () => toRange(l.userData.value, { min: 1, max: 100 }, linkScale),
         );
         const lineMesh = new THREE.Mesh(line.geometry, lineMaterials.basic);
         l.geometry = lineMesh.geometry;
         l.geometry.attributes.position.needsUpdate = true;
         const lengths = new Float32Array(l.geometry.attributes.position.count)
           .fill(lineLength);
-
         l.geometry.addAttribute('lineLength', new THREE.Float32BufferAttribute(lengths, 1));
-
         if (l.userData.status === 'out') {
           l.material.visible = true;
         } else if (l.userData.status === 'in') {
@@ -506,32 +479,7 @@ function transitionElements() {
         }
       }
     });
-    //
     worldState.labelsNeedUpdate = false;
-  }
-  //
-}
-
-function resetLinks() {
-  sceneObjects.links.children.forEach((l) => {
-    l.material.dispose(); // Dispose existing geometry
-    l.material = null;
-    l.material = lineMaterials.basic;
-    l.material.visible = false;
-    l.userData.status = '';
-  });
-}
-
-function resetIntersected() {
-  if (intersected.userData.type === 'node') {
-    intersected.userData.nextScale = 1;
-    intersected.children.forEach((c) => {
-      if (c.userData.type === 'sphere') {
-        c.material.dispose(); // Dispose existing geometry
-        c.material = null;
-        c.material = c.currentMaterial;
-      }
-    });
   }
 }
 
@@ -541,7 +489,6 @@ function checkIntersected() {
     hoveredButton.opacity = hoveredButton.lastOpacity;
     hoveredButton = null;
   }
-  //
   let objectsToCheck = [];
   if (worldState.intro.active) {
     if (scene.getObjectByName('Explore', true)) objectsToCheck.push(scene.getObjectByName('Explore', true));
@@ -556,7 +503,6 @@ function checkIntersected() {
     if (scene.getObjectByName('info', true)) objectsToCheck.push(scene.getObjectByName('info', true));
   }
   const intersects = [...new Set([...raycaster.intersectObjects(objectsToCheck, true)])];
-  //
   if (intersects.length > 0) {
     let searching = true;
     let index = 0;
@@ -587,7 +533,6 @@ function checkIntersected() {
         }
       }
     });
-    //
     while (searching) {
       if (
         (
@@ -616,19 +561,16 @@ function checkIntersected() {
         searching = false;
       }
     }
-    //
     if (nextIntersected !== null) {
       light.target = nextIntersected;
       if (intersected) {
-        resetIntersected();
+        intersected = resetIntersected(intersected);
       }
       timer = 0;
       intersected = nextIntersected.parent;
-      //
       const name = intersected.name || intersected.userData.name;
       const type = intersected.userData.type === 'node' ? 'node' : 'button';
       sendEvent('look', type, name);
-      //
       if (intersected.userData.type === 'node') {
         sceneObjects.links.children.forEach((l) => {
           l.material.dispose(); // Dispose existing geometry
@@ -682,28 +624,23 @@ function checkIntersected() {
         });
       }
     }
-    //
     if (foundCurrent && timer === null) {
       timer = 0;
     } else if (!foundCurrent && timer !== null) {
-      //
       if (hoveredButton) {
         hoveredButton.opacity = hoveredButton.lastOpacity;
         hoveredButton = null;
       }
-      //
       timer = null;
       sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
       sceneObjects.cursor.children[3].geometry = null;
       sceneObjects.cursor.children[3].geometry = new THREE.RingGeometry(0.02, 0.03, 24, 8, 0, 0);
     }
   } else {
-    //
     if (hoveredButton) {
       hoveredButton.opacity = hoveredButton.lastOpacity;
       hoveredButton = null;
     }
-    //
     timer = null;
     sceneObjects.cursor.children[3].geometry.dispose(); // Dispose existing geometry
     sceneObjects.cursor.children[3].geometry = null;
@@ -712,11 +649,10 @@ function checkIntersected() {
 }
 
 function takeAction(centerNode) {
-  //
   const name = centerNode.name || centerNode.type;
   const type = centerNode.type === 'node' ? 'node' : 'button';
   sendEvent('fuse', type, name);
-  //
+
   if (centerNode.type === 'node') {
     const sourceLinks = globalData.links
       .filter(l => (l.sourceId === centerNode.id))
@@ -756,7 +692,6 @@ function takeAction(centerNode) {
           centerData.pos.z + (Math.sin(theta) * xzradius),
         );
         i += 1;
-        //
         n.nameOffset.x = xzradius * 0.1;
         n.nameOffset.y = Math.sin(phi * i) * 0.1;
         if (n.nameOffset.y < 0.1 && n.nameOffset.y >= 0) {
@@ -776,7 +711,6 @@ function takeAction(centerNode) {
         );
       }
     });
-
     updateNetwork();
   } else if (centerNode.type === 'button') {
     sceneObjects.buttons.children.forEach((b) => {
@@ -791,7 +725,7 @@ function takeAction(centerNode) {
       hoveredButton = null;
     }
     timer = null;
-    resetLinks();
+    sceneObjects.links = resetLinks(sceneObjects.links, lineMaterials.basic);
     switch (centerNode.name) {
       case 'Spiral':
         layoutByRank();
@@ -818,7 +752,6 @@ function takeAction(centerNode) {
 function updateCursor() {
   if (!worldState.isTransitioning) {
     checkIntersected();
-    //
     if (timer !== null) {
       if (timer < Math.PI * 2) {
         const elapsed = (performance.now() - lastTime);
@@ -873,10 +806,8 @@ function animate() { // Request animation frame loop function
   lineMaterials.highlightOut.uniforms.time.value = shadertime;
   lineMaterials.highlightIn.uniforms.time.value = shadertime;
 
-  // $$$
   transitionElements();
   updateCursor();
-  //
 
   if (worldState.vrEnabled) {
     effect.render(scene, camera); // Render the scene.
@@ -902,7 +833,7 @@ function drawNetwork() {
     const line = new MeshLine();
     line.setGeometry(
       lineGeometry,
-      () => scaleValue.toRange(l.value, { min: 1, max: 100 }, linkScale),
+      () => toRange(l.value, { min: 1, max: 100 }, linkScale),
     );
     const lengths = new Float32Array(line.geometry.attributes.position.count)
       .fill(lineLength);
@@ -1017,74 +948,36 @@ export function sceneReady() {
   setTimeout(buildOutScene, 500);
 }
 
-function updateColorMap(state, datacategories) {
-  state.colorMap = [];
-  state.colorMap.push({
-    name: 'default_no_category',
-    basic: state.basicNodeColor,
-    adjacent: state.adjacentNodeColor,
-    highlight: state.highlightNodeColor,
-  });
-  if (datacategories.length) {
-    datacategories.forEach((c) => {
-      c.name = c.name.trim().toLowerCase();
-      state.colorMap.push(c);
-    });
-  }
-  return state;
-}
-
-function updateCategories(nodes, colorMap) {
-  const categoryNames = colorMap.map(c => c.name);
-  return nodes.map((n) => {
-    if (n.category) {
-      n.category = n.category.trim().toLowerCase();
-      if (!categoryNames.includes(n.category)) {
-        n.category = 'default_no_category';
-      }
-    } else {
-      n.category = 'default_no_category';
-    }
-    return n;
-  });
-}
-
 export function setupScene(data, state) {
   globalData = data;
   state = updateColorMap(state, data.categories);
   flourishState = state;
   globalData.nodes = updateCategories(globalData.nodes, state.colorMap);
-
   sphereMaterials = updateSphereMaterials(state);
   lineMaterials = updateLineMaterials(state);
   lineMaterials.basic.visible = false;
 
-  // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
   renderer = new THREE.WebGLRenderer({
     antialias: true,
   });
-
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
+  const ctx = renderer.context;
+  ctx.getShaderInfoLog = () => ''; // Quiet shader complaint log: GL_ARB_gpu_shader5
   document.body.appendChild(renderer.domElement);
+
   scene = new THREE.Scene(); // Create a three.js scene.
 
-  // Create a three.js camera.
+  // Generate Non-network Scene Elements
   const aspect = window.innerWidth / window.innerHeight;
   camera = new THREE.PerspectiveCamera(75, aspect, 0.01, 10000);
   camera.name = 'camera';
-
   controls = new VRControls(camera);
   controls.standing = true;
   camera.position.y = controls.userHeight;
-
-  const ctx = renderer.context;
-  ctx.getShaderInfoLog = () => ''; // Quiet shader complaint log: GL_ARB_gpu_shader5
-
-  // Light
+  sceneObjects.cursor = cursor.generate(state);
+  camera.add(sceneObjects.cursor);
   scene.add(light);
-
-  // Generate Non-network Scene Elements
   scene.add(generateHorizon(
     flourishState.horizonTopColor,
     flourishState.horizonBottomColor,
@@ -1094,38 +987,11 @@ export function setupScene(data, state) {
   scene.add(stars.generate(sceneObjects.stars, stageSize, 1000));
   scene.add(legend.generate(state, lineMaterials, controls.userHeight));
   scene.add(generateButtons(sceneObjects.buttons));
-
   sceneObjects.intro = intro.generate(state, stageSize);
   scene.add(sceneObjects.intro);
+  scene.add(cover.generate());
+  sceneObjects.lookup = lookup.generate();
   sceneObjects.user.add(sceneObjects.lookup);
-
-  //
-  const cover = new THREE.Mesh(
-    new THREE.PlaneGeometry(1600, 800),
-    new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 1.0,
-    }),
-  );
-  cover.scale.set(0.001, 0.001, 0.001);
-  cover.position.set(0, 0.6, 0);
-  cover.name = 'cover';
-  scene.add(cover);
-  //
-  const imgGeometry = new THREE.PlaneGeometry(512, 256);
-  const lookMaterial = new THREE.MeshBasicMaterial({
-    map: textureLoader.load(`${Flourish.static_prefix}/lookup.png`),
-    transparent: true,
-    depthTest: false,
-  });
-  sceneObjects.lookup.add(new THREE.Mesh(imgGeometry, lookMaterial));
-  sceneObjects.lookup.name = 'lookup';
-  sceneObjects.lookup.rotation.set((Math.PI / 180) * -45, 0, 0);
-  sceneObjects.lookup.scale.set(0.0025, 0.0025, 0.0025);
-  //
-  sceneObjects.cursor = cursor.generate(state);
-  camera.add(sceneObjects.cursor);
   sceneObjects.user.add(camera);
   sceneObjects.user.position.set(0, 0, (stageSize / 3) * 2);
   scene.add(sceneObjects.user);
@@ -1143,16 +1009,13 @@ export function setupScene(data, state) {
     toggleVREnabled();
   }, true);
 
-  //
   formatData();
 
-  //
-  sceneBuildOutFunctions.push(updateHorizonVisibility);
-  sceneBuildOutFunctions.push(stars.updateStarMaterial);
+  sceneBuildOutFunctions.push(() => { updateHorizonVisibility(buildOutInterval); });
+  sceneBuildOutFunctions.push(() => { stars.updateStarMaterial(buildOutInterval); });
   sceneBuildOutFunctions.push(() => {
-    updateSphereOpacity();
-    nodeLabels.forEach((node) => {
-      // add the rank & name label to the node object
+    updateSphereOpacity(buildOutInterval);
+    nodeLabels.forEach((node) => { // add the rank & name label to the node object
       node[0].add(node[1][0]);
       node[0].add(node[1][1]);
     });
@@ -1166,48 +1029,21 @@ export function setupScene(data, state) {
         });
       }).start();
   });
-  sceneBuildOutFunctions.push(() => {
-    const baseOpacity = { opacity: 1 };
-    new TWEEN.Tween(baseOpacity)
-      .to({ opacity: 0 }, buildOutInterval)
-      .onUpdate(() => {
-        cover.material.opacity = baseOpacity.opacity;
-      }).start();
-  });
-  sceneBuildOutFunctions.push(() => {
-    const baseOpacity = { opacity: 0 };
-    new TWEEN.Tween(baseOpacity)
-      .to({ opacity: 1 }, buildOutInterval)
-      .onUpdate(() => {
-        sceneObjects.intro.children.forEach((c) => {
-          if (c.children.length) {
-            c.children.forEach((m) => {
-              m.material.opacity = baseOpacity.opacity;
-            });
-          } else if (c.name === 'background' && baseOpacity.opacity > 0.75) {
-            c.material.opacity = 0.75;
-          } else {
-            c.material.opacity = baseOpacity.opacity;
-          }
-        });
-      }).start();
-  });
+  sceneBuildOutFunctions.push(() => { cover.updateVisibility(buildOutInterval); });
+  sceneBuildOutFunctions.push(() => { intro.updateVisibility(buildOutInterval); });
 }
 
 export function updateSceneFromState(data, state) {
-  //
+  // data
   vrDisplay.cancelAnimationFrame(animationHandle);
   globalData = data;
   state = updateColorMap(state, data.categories);
   globalData.nodes = updateCategories(globalData.nodes, state.colorMap);
-  //
   sceneObjects.nodes = new THREE.Group();
   scene.remove(scene.getObjectByName('nodes', true));
   sceneObjects.links = new THREE.Group();
   scene.remove(scene.getObjectByName('links', true));
-  //
   formatData();
-  //
   nodeLabels.forEach((node) => {
     node[0].add(node[1][0]);
     node[0].add(node[1][1]);
@@ -1221,27 +1057,20 @@ export function updateSceneFromState(data, state) {
         node[1][1].material.opacity = baseOpacity.opacity;
       });
     }).start();
-  //
   if (!worldState.intro.active) {
     layoutByRank();
   }
-  //
-  //
+  // state
   flourishState = state;
-  //
   camera.remove(camera.getObjectByName('cursor', true));
-  sceneObjects.cursor = cursor.generate(state);
+  sceneObjects.cursor = cursor.generate(flourishState);
   camera.add(sceneObjects.cursor);
-  //
-  sphereMaterials = updateSphereMaterials(state);
-  updateSphereOpacity();
-  //
+  sphereMaterials = updateSphereMaterials(flourishState);
+  updateSphereOpacity(buildOutInterval);
   lineMaterials = updateLineMaterials(flourishState);
   lineMaterials.basic.visible = false;
-  //
   scene.remove(scene.getObjectByName('legend', true));
   scene.add(legend.generate(state, lineMaterials, controls.userHeight));
-  //
   sceneObjects.nodes.children.forEach((n) => {
     n.children.forEach((c) => {
       if (c.name === '') {
@@ -1249,7 +1078,6 @@ export function updateSceneFromState(data, state) {
       }
     });
   });
-  //
   sceneObjects.links.children.forEach((l) => {
     if (l.userData.status === 'out') {
       l.material = lineMaterials.highlightOut;
@@ -1259,7 +1087,6 @@ export function updateSceneFromState(data, state) {
       l.material = lineMaterials.basic;
     }
   });
-  //
   scene.remove(scene.getObjectByName('horizon', true));
   scene.add(generateHorizon(
     flourishState.horizonTopColor,
@@ -1267,7 +1094,6 @@ export function updateSceneFromState(data, state) {
     flourishState.horizonExponent,
     false,
   ));
-  //
 }
 
 export default setupScene;

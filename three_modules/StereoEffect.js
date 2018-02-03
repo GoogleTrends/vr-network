@@ -6,7 +6,6 @@
 */
 import * as THREE from 'three';
 
-// THREE.StereoEffect = function ( renderer ) {
 export default function StereoEffect ( renderer ) {
 
 	var _stereo = new THREE.StereoCamera();

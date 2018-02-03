@@ -1,3 +1,11 @@
+/*
+  file: horizon.js
+  description: Generates horizon and sky dome
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 import * as THREE from 'three';
 import TWEEN from '@tweenjs/tween.js';
 
@@ -27,11 +35,10 @@ export function generateHorizon(topColor, bottomColor, exponent, animate = true)
   return horizon;
 }
 
-export default generateHorizon;
-export function updateHorizonVisibility() {
+export function updateHorizonVisibility(buildOutInterval) {
   new TWEEN.Tween(uniforms.exponent)
     .to({
       value: targetExponent,
-    }, 1000)
+    }, buildOutInterval)
     .start();
 }

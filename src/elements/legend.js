@@ -1,9 +1,17 @@
 /* global document, Flourish */
 
+/*
+  file: legend.js
+  description: Generates legend area objects
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 import * as THREE from 'three';
 import MeshLine from '../../three_modules/THREE.MeshLine';
-import { generateTextureCanvas } from '../generateTextureCanvas';
-import { generateCurveGeometry } from '../generateCurveGeometry';
+import { generateTextureCanvas } from '../actions/generateTextureCanvas';
+import { generateCurveGeometry } from '../actions/generateCurveGeometry';
 
 const textureLoader = new THREE.TextureLoader();
 const imgGeometry = new THREE.PlaneGeometry(256, 256);
@@ -43,7 +51,7 @@ export function generate(state, lineMaterials, userHeight) {
   inLineMesh.userData.type = 'in';
   container.add(inLineMesh);
 
-  const inText = generateTextureCanvas(state.legendInboundLabel, 36, 1024, 256); // 64
+  const inText = generateTextureCanvas(state.legendInboundLabel, 36, 1024, 256);
   inText.scale.set(0.001, 0.001, 0.001);
   inText.position.set(0.025, 0, 0);
   container.add(inText);
@@ -64,7 +72,7 @@ export function generate(state, lineMaterials, userHeight) {
   outLineMesh.userData.type = 'out';
   container.add(outLineMesh);
 
-  const outText = generateTextureCanvas(state.legendOutboundLabel, 36, 1024, 256); // 64
+  const outText = generateTextureCanvas(state.legendOutboundLabel, 36, 1024, 256);
   outText.scale.set(0.001, 0.001, 0.001);
   outText.position.set(0.025, -0.2, 0);
   container.add(outText);
@@ -81,7 +89,7 @@ export function generate(state, lineMaterials, userHeight) {
   info.position.set(0, -0.35, 0);
   container.add(info);
 
-  const made = generateTextureCanvas('Made by Pitch Interactive', 36, 512, 128);
+  const made = generateTextureCanvas('Made by Pitch Interactive with Google News Lab', 36, 1024, 128);
   made.scale.set(0.001, 0.001, 0.001);
   made.position.set(0.45, -0.5, 0);
   container.add(made);

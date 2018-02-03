@@ -4,7 +4,6 @@
  */
 import * as THREE from 'three';
 
-// THREE.VRControls = function ( object, onError ) {
 export default function VRControls ( object, onError ) {
 
 	var scope = this;

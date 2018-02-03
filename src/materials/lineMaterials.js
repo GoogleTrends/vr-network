@@ -1,3 +1,11 @@
+/*
+  file: lineMaterials.js
+  description: Generates line materials for inbound and outbound links
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 import * as THREE from 'three';
 import { MeshLineMaterial } from '../../three_modules/THREE.MeshLine';
 

@@ -1,3 +1,11 @@
+/*
+  file: analytics.js
+  description: Sets up google analytics and sends events
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 let usinganalytics = false;
 
 window.dataLayer = window.dataLayer || []; // eslint-disable-line

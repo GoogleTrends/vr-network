@@ -1,3 +1,11 @@
+/*
+  file: stars.js
+  description: Creates and updates star objects
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 import * as THREE from 'three';
 import TWEEN from '@tweenjs/tween.js';
 
@@ -46,11 +54,11 @@ export function update(container, stageSize, time) {
   }
 }
 
-export function updateStarMaterial() {
+export function updateStarMaterial(buildOutInterval) {
   new TWEEN.Tween(starMaterial)
     .to({
       opacity: 1,
-    }, 500)
+    }, buildOutInterval)
     .onComplete(() => {
       starMaterial.transparent = false;
     })

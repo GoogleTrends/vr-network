@@ -1,3 +1,11 @@
+/*
+  file: scaleValue.js
+  description: Scales value from given domain to given range
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 export function toRange(value, domain, range) {
   return (((value - domain.min) / (domain.max - domain.min)) * (range.max - range.min)) + range.min;
 }

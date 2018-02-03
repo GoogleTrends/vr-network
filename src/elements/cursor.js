@@ -1,3 +1,11 @@
+/*
+  file: cursor.js
+  description: Generates cursor object
+  company: Pitch Interactive
+  author: James Proctor
+  license: MIT
+*/
+
 import * as THREE from 'three';
 
 export function generate(state) {
