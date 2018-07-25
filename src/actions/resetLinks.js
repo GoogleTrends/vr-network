@@ -7,13 +7,14 @@
 */
 
 export function resetLinks(links, basicMaterial) {
-  return links.children.forEach((l) => {
+  links.children.forEach((l) => {
     l.material.dispose(); // Dispose existing geometry
     l.material = null;
     l.material = basicMaterial;
     l.material.visible = false;
     l.userData.status = '';
   });
+  return links;
 }
 
 export default resetLinks;
